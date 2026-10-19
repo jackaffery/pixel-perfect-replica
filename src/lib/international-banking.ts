@@ -18,6 +18,24 @@ export interface CountryConfig {
 }
 
 export const SUPPORTED_COUNTRIES: Record<string, CountryConfig> = {
+  US: {
+    code: "US",
+    name: "United States",
+    flag: "🇺🇸",
+    currency: { code: "USD", symbol: "$", name: "US Dollar" },
+    phoneCode: "+1",
+    phoneFormat: "(555) 019-2834",
+    dateFormat: "MM/DD/YYYY",
+    regionsLabel: "State",
+    regions: ["California", "New York", "Texas", "Florida", "Illinois", "Pennsylvania", "Ohio", "Washington", "Massachusetts", "Georgia"],
+    idTypes: [
+      { id: "ssn", label: "Social Security Number (SSN) / ITIN", placeholder: "9-digit SSN / ITIN", reason: "Mandated by federal USA PATRIOT Act Customer Identification Program (CIP)." },
+      { id: "driver_license", label: "State Driver's License or ID Card", placeholder: "State ID number", reason: "Standard government-issued photographic identity credential." },
+      { id: "passport", label: "U.S. / International Passport", placeholder: "Passport number", reason: "Valid federal and international travel identification." }
+    ],
+    regulatoryNote: "Accounts are provisioned subject to U.S. federal banking regulations, Customer Due Diligence, and BSA/AML standards.",
+    languages: ["en", "es"]
+  },
   GB: {
     code: "GB",
     name: "United Kingdom",

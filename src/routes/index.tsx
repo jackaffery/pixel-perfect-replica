@@ -65,12 +65,12 @@ export const Route = createFileRoute("/")({
 
 export function Index() {
   // Localization State
-  const [currentCountryCode, setCurrentCountryCode] = useState<string>("GB");
+  const [currentCountryCode, setCurrentCountryCode] = useState<string>("US");
   const [currentLangCode, setCurrentLangCode] = useState<string>("en");
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   // Active configurations
-  const country = SUPPORTED_COUNTRIES[currentCountryCode] || SUPPORTED_COUNTRIES.GB;
+  const country = SUPPORTED_COUNTRIES[currentCountryCode] || SUPPORTED_COUNTRIES.US;
   const t = TRANSLATIONS[currentLangCode] || TRANSLATIONS.en;
 
   // Modals & Panels
@@ -1556,7 +1556,7 @@ export function Index() {
             <div>
               <h4 className="text-xs font-bold tracking-wider uppercase text-accent">Service Countries</h4>
               <p className="mt-3 text-xs text-white/70 leading-relaxed">
-                UK, Canada, Mexico, China, Taiwan, Japan, Vietnam, South Korea, Switzerland, Germany.
+                United States (USA), UK, Canada, Mexico, China, Taiwan, Japan, Vietnam, South Korea, Switzerland, Germany.
               </p>
               <div className="mt-3 text-xs text-white/60">
                 Regional Currency: <strong className="text-white">{country.currency.name} ({country.currency.symbol})</strong>
