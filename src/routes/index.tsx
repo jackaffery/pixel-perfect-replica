@@ -14,7 +14,6 @@ import {
   Lock,
   Eye,
   EyeOff,
-  UserCheck,
   CreditCard,
   Send,
   CheckCircle2,
@@ -26,13 +25,22 @@ import {
   KeyRound,
   LogIn,
   LogOut,
-  ChevronRight,
   Sparkles,
-  Clock,
+  Globe2,
+  Search,
+  Fingerprint,
+  FileCheck2,
+  HelpCircle,
   ShieldAlert,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import heroPhoto from "@/assets/hero.jpg";
+import usFinanceBuildingHero from "@/assets/us-finance-bank-building.jpg";
+import {
+  SUPPORTED_COUNTRIES,
+  SUPPORTED_LANGUAGES,
+  TRANSLATIONS,
+  type CountryConfig,
+} from "@/lib/international-banking";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -41,7 +49,7 @@ export const Route = createFileRoute("/")({
       {
         name: "description",
         content:
-          "Welcome to US Finance Bank. Discover a modern digital banking experience designed to make managing your money simple, convenient, and accessible.",
+          "Welcome to US Finance Bank. Modern, secure, multilingual digital banking serving global clients with local currency, ID verification, and 24/7 account protection.",
       },
       { property: "og:title", content: "US Finance Bank | Online Banking" },
       {
@@ -50,79 +58,48 @@ export const Route = createFileRoute("/")({
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
-      { name: "twitter:title", content: "US Finance Bank | Online Banking" },
-      {
-        name: "twitter:description",
-        content: "Banking Made Simpler. Your Future, Your Finance.",
-      },
     ],
   }),
   component: Index,
 });
 
-/* Navigation links */
-const navLinks = [
-  { label: "Home", href: "#top" },
-  { label: "Personal Banking", href: "#personal" },
-  { label: "Business Banking", href: "#business" },
-  { label: "Online Banking", href: "#online-banking" },
-  { label: "About Us", href: "#about" },
-  { label: "Contact Us", href: "#contact" },
-];
-
-function BrandLogo({ onHomeClick }: { onHomeClick?: () => void }) {
-  return (
-    <a
-      href="#top"
-      onClick={onHomeClick}
-      className="group flex min-w-0 items-center gap-3 rounded focus-visible:outline-2 focus-visible:outline-ring"
-      aria-label="US Finance Bank, Online Banking home"
-    >
-      <div className="relative flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-primary text-primary-foreground shadow-sm ring-2 ring-primary/20 transition-transform group-hover:scale-105">
-        <Landmark className="h-6 w-6 text-white" />
-        <span
-          className="absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full border-2 border-white bg-accent"
-          aria-hidden="true"
-        />
-      </div>
-      <div className="min-w-0 leading-tight">
-        <span className="block text-base font-extrabold tracking-tight text-primary sm:text-lg">
-          US FINANCE BANK
-        </span>
-        <span className="block text-xs font-semibold uppercase tracking-wider text-accent sm:text-[0.72rem]">
-          Online Banking
-        </span>
-      </div>
-    </a>
-  );
-}
-
 export function Index() {
+  // Localization State
+  const [currentCountryCode, setCurrentCountryCode] = useState<string>("GB");
+  const [currentLangCode, setCurrentLangCode] = useState<string>("en");
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
-  // Authentication Modals & States
+  // Active configurations
+  const country = SUPPORTED_COUNTRIES[currentCountryCode] || SUPPORTED_COUNTRIES.GB;
+  const t = TRANSLATIONS[currentLangCode] || TRANSLATIONS.en;
+
+  // Modals & Panels
   const [customerModalOpen, setCustomerModalOpen] = useState(false);
   const [staffModalOpen, setStaffModalOpen] = useState(false);
   const [forgotPasswordOpen, setForgotPasswordOpen] = useState(false);
   const [openAccountModalOpen, setOpenAccountModalOpen] = useState(false);
+  const [checkStatusModalOpen, setCheckStatusModalOpen] = useState(false);
 
-  // Customer Auth Session
+  // Customer Authentication & Multi-Factor Authentication (MFA)
   const [customerUser, setCustomerUser] = useState<string | null>(null);
   const [customerLoginEmail, setCustomerLoginEmail] = useState("");
   const [customerLoginPassword, setCustomerLoginPassword] = useState("");
   const [showCustomerPassword, setShowCustomerPassword] = useState(false);
   const [rememberCustomer, setRememberCustomer] = useState(true);
+  const [mfaStep, setMfaStep] = useState(false);
+  const [mfaCode, setMfaCode] = useState("");
+  const [generatedMfaCode, setGeneratedMfaCode] = useState("849201");
   const [customerAuthLoading, setCustomerAuthLoading] = useState(false);
   const [customerAuthError, setCustomerAuthError] = useState("");
 
-  // Customer Dashboard Demo State
+  // Customer Dashboard State
   const [checkingBalance, setCheckingBalance] = useState(12450.8);
   const [savingsBalance, setSavingsBalance] = useState(48200.0);
   const [transactions, setTransactions] = useState([
     {
       id: "tx-1",
       date: "Today, 10:14 AM",
-      desc: "Direct Deposit — US Treasury Payroll",
+      desc: "Direct Deposit — Official Payroll",
       category: "Income",
       amount: "+$3,450.00",
       positive: true,
@@ -130,7 +107,7 @@ export function Index() {
     {
       id: "tx-2",
       date: "Oct 18, 2026",
-      desc: "Whole Foods Market — Debit Card",
+      desc: "Merchant Transaction — Contactless",
       category: "Groceries",
       amount: "-$142.35",
       positive: false,
@@ -138,7 +115,7 @@ export function Index() {
     {
       id: "tx-3",
       date: "Oct 16, 2026",
-      desc: "City Power & Electric — Bill Pay",
+      desc: "Utility Provider — Bill Pay Direct",
       category: "Utilities",
       amount: "-$84.10",
       positive: false,
@@ -146,19 +123,17 @@ export function Index() {
     {
       id: "tx-4",
       date: "Oct 14, 2026",
-      desc: "High-Yield Interest Credit",
+      desc: "High-Yield Interest Accrual",
       category: "Interest",
       amount: "+$182.40",
       positive: true,
     },
   ]);
-
-  // Transfer demo inside Customer Dashboard
   const [transferAmount, setTransferAmount] = useState("");
   const [transferRecipient, setTransferRecipient] = useState("");
   const [transferSuccess, setTransferSuccess] = useState("");
 
-  // Staff Auth Session
+  // Staff Session State
   const [staffUser, setStaffUser] = useState<{
     name: string;
     role: string;
@@ -171,17 +146,35 @@ export function Index() {
   const [staffAuthLoading, setStaffAuthLoading] = useState(false);
   const [staffAuthError, setStaffAuthError] = useState("");
 
-  // Forgot password form
+  // Password Recovery State
   const [resetEmail, setResetEmail] = useState("");
   const [resetSent, setResetSent] = useState(false);
 
-  // Open Account Registration form
-  const [regName, setRegName] = useState("");
-  const [regEmail, setRegEmail] = useState("");
-  const [regType, setRegType] = useState("Personal Checking & Savings");
-  const [regSubmitted, setRegSubmitted] = useState(false);
+  // Application / Registration State
+  const [appFullName, setAppFullName] = useState("");
+  const [appEmail, setAppEmail] = useState("");
+  const [appPhone, setAppPhone] = useState("");
+  const [appPassword, setAppPassword] = useState("");
+  const [showAppPassword, setShowAppPassword] = useState(false);
+  const [appRegion, setAppRegion] = useState(country.regions[0] || "");
+  const [appAddress, setAppAddress] = useState("");
+  const [appSelectedIdType, setAppSelectedIdType] = useState(country.idTypes[0]?.id || "");
+  const [appIdNumber, setAppIdNumber] = useState("");
+  const [appAccountType, setAppAccountType] = useState("Checking & Savings");
+  const [appSourceOfFunds, setAppSourceOfFunds] = useState("Employment / Salary");
+  const [appConsent, setAppConsent] = useState(false);
+  const [appSubmissionSuccess, setAppSubmissionSuccess] = useState<string | null>(null);
 
-  // Contact form
+  // Application Status Lookup
+  const [statusSearchId, setStatusSearchId] = useState("");
+  const [statusSearchResult, setStatusSearchResult] = useState<{
+    id: string;
+    status: string;
+    date: string;
+    details: string;
+  } | null>(null);
+
+  // Contact Form State
   const [contactName, setContactName] = useState("");
   const [contactEmail, setContactEmail] = useState("");
   const [contactSubject, setContactSubject] = useState("");
@@ -189,21 +182,47 @@ export function Index() {
   const [contactSending, setContactSending] = useState(false);
   const [contactSuccess, setContactSuccess] = useState(false);
 
-  // Handle Customer Sign-In
-  const handleCustomerSignIn = (e: React.FormEvent) => {
+  // Handlers
+  const handleCountryChange = (newCode: string) => {
+    setCurrentCountryCode(newCode);
+    const newCountry = SUPPORTED_COUNTRIES[newCode];
+    if (newCountry) {
+      setAppRegion(newCountry.regions[0] || "");
+      setAppSelectedIdType(newCountry.idTypes[0]?.id || "");
+      // Switch to language if supported by country
+      if (newCountry.languages[0] && SUPPORTED_LANGUAGES[newCountry.languages[0]]) {
+        setCurrentLangCode(newCountry.languages[0]);
+      }
+    }
+  };
+
+  const handleCustomerLoginSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setCustomerAuthError("");
-    if (!customerLoginEmail.trim()) {
-      setCustomerAuthError("Please enter your email or username.");
-      return;
-    }
-    if (!customerLoginPassword.trim()) {
-      setCustomerAuthError("Please enter your account password.");
+    if (!customerLoginEmail.trim() || !customerLoginPassword.trim()) {
+      setCustomerAuthError("Please provide both email/username and password.");
       return;
     }
     setCustomerAuthLoading(true);
     setTimeout(() => {
       setCustomerAuthLoading(false);
+      // Trigger MFA Step
+      const randomCode = Math.floor(100000 + Math.random() * 900000).toString();
+      setGeneratedMfaCode(randomCode);
+      setMfaStep(true);
+    }, 600);
+  };
+
+  const handleMfaSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (mfaCode.trim() !== generatedMfaCode && mfaCode.trim() !== "849201" && mfaCode.length < 4) {
+      setCustomerAuthError("Invalid verification code. Please check the simulated OTP.");
+      return;
+    }
+    setCustomerAuthLoading(true);
+    setTimeout(() => {
+      setCustomerAuthLoading(false);
+      setMfaStep(false);
       setCustomerUser(
         customerLoginEmail.includes("@")
           ? customerLoginEmail.split("@")[0]
@@ -211,10 +230,10 @@ export function Index() {
       );
       setCustomerModalOpen(false);
       setCustomerLoginPassword("");
-    }, 700);
+      setMfaCode("");
+    }, 500);
   };
 
-  // Handle Customer Transfer
   const handleTransfer = (e: React.FormEvent) => {
     e.preventDefault();
     const amt = parseFloat(transferAmount);
@@ -230,47 +249,60 @@ export function Index() {
         date: "Just now",
         desc: `Transfer to ${transferRecipient || "External Account"}`,
         category: "Transfer",
-        amount: `-$${amt.toFixed(2)}`,
+        amount: `-${country.currency.symbol}${amt.toFixed(2)}`,
         positive: false,
       },
       ...prev,
     ]);
     setTransferSuccess(
-      `Successfully transferred $${amt.toFixed(2)} to ${transferRecipient || "Recipient"}`
+      `Transferred ${country.currency.symbol}${amt.toFixed(2)} to ${transferRecipient || "Recipient"}`
     );
     setTransferAmount("");
     setTransferRecipient("");
     setTimeout(() => setTransferSuccess(""), 4000);
   };
 
-  // Handle Staff Sign-In
   const handleStaffSignIn = (e: React.FormEvent) => {
     e.preventDefault();
     setStaffAuthError("");
-    if (!staffEmail.trim()) {
-      setStaffAuthError("Staff Email or Employee ID is required.");
-      return;
-    }
-    if (!staffPassword.trim()) {
-      setStaffAuthError("Staff authentication password is required.");
+    if (!staffEmail.trim() || !staffPassword.trim()) {
+      setStaffAuthError("Staff Email / ID and Password are required.");
       return;
     }
     setStaffAuthLoading(true);
     setTimeout(() => {
       setStaffAuthLoading(false);
       setStaffUser({
-        name: staffEmail.includes("@")
-          ? staffEmail.split("@")[0].toUpperCase()
-          : staffEmail.toUpperCase(),
+        name: staffEmail.includes("@") ? staffEmail.split("@")[0].toUpperCase() : staffEmail.toUpperCase(),
         role: `${staffDept} Officer`,
         id: `STF-${Math.floor(1000 + Math.random() * 9000)}`,
       });
       setStaffModalOpen(false);
       setStaffPassword("");
-    }, 750);
+    }, 700);
   };
 
-  // Handle Contact Form Submit
+  const handleApplicationSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!appFullName || !appEmail || !appPhone || !appIdNumber || !appPassword) {
+      alert("Please complete all required fields for identity verification.");
+      return;
+    }
+    const newId = `USB-${country.code}-${Math.floor(100000 + Math.random() * 900000)}`;
+    setAppSubmissionSuccess(newId);
+  };
+
+  const handleStatusSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!statusSearchId.trim()) return;
+    setStatusSearchResult({
+      id: statusSearchId.toUpperCase(),
+      status: "Under Compliance Review (Step 2 of 3)",
+      date: "Received Oct 19, 2026",
+      details: `Your application is undergoing standard ${country.name} regulatory screening. Verification of ${country.idTypes[0]?.label} is in progress.`,
+    });
+  };
+
   const handleContactSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!contactName || !contactEmail || !contactMessage) return;
@@ -285,9 +317,12 @@ export function Index() {
     }, 800);
   };
 
+  const currentIdConfig =
+    country.idTypes.find((it) => it.id === appSelectedIdType) || country.idTypes[0];
+
   return (
     <div id="top" className="min-h-screen bg-background font-sans text-foreground">
-      {/* Accessibility Skip Link */}
+      {/* Skip to Content */}
       <a
         href="#main"
         className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-50 focus:rounded-md focus:bg-primary focus:px-4 focus:py-3 focus:text-primary-foreground focus:shadow-lg focus:outline-none"
@@ -295,74 +330,155 @@ export function Index() {
         Skip to main content
       </a>
 
-      {/* Top Patriotic Accent Bar */}
+      {/* Flag Stripes Top Bar */}
       <div className="h-1.5 w-full bg-gradient-to-r from-primary via-accent to-primary" />
 
-      {/* Official Top Bar */}
+      {/* Global Regional & Multilingual Selector Utility Bar */}
       <div className="border-b border-border/80 bg-navy-deep text-primary-foreground">
-        <div className="mx-auto flex max-w-7xl items-center justify-between px-5 py-2 text-xs">
+        <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-3 px-5 py-2 text-xs">
+          {/* Left: Branding & Regulatory Disclaimer */}
           <div className="flex items-center gap-3">
-            <span className="flex items-center gap-1.5 font-medium">
-              <ShieldCheck className="h-3.5 w-3.5 text-accent" />
-              US Finance Bank • Official Online Banking Portal
+            <span className="flex items-center gap-1.5 font-bold tracking-wide">
+              <ShieldCheck className="h-4 w-4 text-accent shrink-0" />
+              US Finance Bank • Global Digital Portal
             </span>
-            <span className="hidden text-white/40 md:inline">|</span>
-            <span className="hidden items-center gap-1 text-white/90 md:inline-flex">
-              Contact Handle: <strong className="text-white">@infobank</strong>
+            <span className="hidden text-white/30 sm:inline">|</span>
+            <span className="hidden text-white/80 md:inline">
+              Official Channel: <strong className="text-white">@infobank</strong>
             </span>
           </div>
-          <div className="flex items-center gap-4">
-            {customerUser ? (
-              <span className="font-medium text-white">
-                Customer: <strong>{customerUser}</strong>
+
+          {/* Right: Country & Language Selectors */}
+          <div className="flex flex-wrap items-center gap-3">
+            {/* Country Selector */}
+            <div className="flex items-center gap-1 bg-white/10 px-2 py-1 rounded border border-white/15">
+              <span className="text-sm" aria-hidden="true">
+                {country.flag}
               </span>
-            ) : null}
+              <select
+                aria-label="Select Country"
+                value={currentCountryCode}
+                onChange={(e) => handleCountryChange(e.target.value)}
+                className="bg-transparent text-white text-xs font-semibold focus:outline-none cursor-pointer"
+              >
+                {Object.values(SUPPORTED_COUNTRIES).map((c) => (
+                  <option key={c.code} value={c.code} className="bg-navy-deep text-white">
+                    {c.flag} {c.name} ({c.currency.code})
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* Language Selector */}
+            <div className="flex items-center gap-1 bg-white/10 px-2 py-1 rounded border border-white/15">
+              <Globe2 className="h-3.5 w-3.5 text-accent shrink-0" />
+              <select
+                aria-label="Select Language"
+                value={currentLangCode}
+                onChange={(e) => setCurrentLangCode(e.target.value)}
+                className="bg-transparent text-white text-xs font-semibold focus:outline-none cursor-pointer"
+              >
+                {Object.values(SUPPORTED_LANGUAGES).map((l) => (
+                  <option key={l.code} value={l.code} className="bg-navy-deep text-white">
+                    {l.flag} {l.nativeName}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* Staff Sign-In Shortcut */}
             {staffUser ? (
-              <span className="rounded bg-accent/30 px-2 py-0.5 text-xs font-semibold text-white">
-                Staff ID: {staffUser.id}
+              <span className="rounded bg-accent/40 px-2 py-0.5 text-xs font-bold text-white">
+                ID: {staffUser.id}
               </span>
             ) : (
               <button
                 type="button"
                 onClick={() => setStaffModalOpen(true)}
-                className="flex items-center gap-1.5 font-semibold text-white/90 underline-offset-4 hover:text-white hover:underline focus:outline-none focus:ring-1 focus:ring-white"
+                className="flex items-center gap-1 font-semibold text-white/90 underline-offset-4 hover:text-white hover:underline focus:outline-none"
               >
                 <KeyRound className="h-3 w-3 text-accent" />
-                Staff Sign In
+                {t.staffPortal}
               </button>
             )}
           </div>
         </div>
       </div>
 
-      {/* Sticky Main Header */}
+      {/* Main Header / Navigation */}
       <header className="sticky top-0 z-40 border-b border-border/60 bg-white/95 shadow-xs backdrop-blur-md">
         <div className="mx-auto flex max-w-7xl items-center justify-between px-5 py-3.5">
-          <BrandLogo
-            onHomeClick={() => {
-              setCustomerModalOpen(false);
-              setStaffModalOpen(false);
-            }}
-          />
+          {/* Logo */}
+          <a
+            href="#top"
+            className="group flex min-w-0 items-center gap-3 rounded focus-visible:outline-2 focus-visible:outline-ring"
+            aria-label="US Finance Bank, Online Banking home"
+          >
+            <div className="relative flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-primary text-primary-foreground shadow-sm ring-2 ring-primary/20 transition-transform group-hover:scale-105">
+              <Landmark className="h-6 w-6 text-white" />
+              <span
+                className="absolute -bottom-0.5 -right-0.5 h-3.5 w-3.5 rounded-full border-2 border-white bg-accent"
+                aria-hidden="true"
+              />
+            </div>
+            <div className="min-w-0 leading-tight">
+              <span className="block text-base font-extrabold tracking-tight text-primary sm:text-lg">
+                US FINANCE BANK
+              </span>
+              <span className="block text-xs font-semibold uppercase tracking-wider text-accent sm:text-[0.72rem]">
+                {t.tagline} • {country.currency.code} ({country.currency.symbol})
+              </span>
+            </div>
+          </a>
 
-          {/* Desktop Navigation */}
+          {/* Desktop Nav Links */}
           <nav aria-label="Main navigation" className="hidden lg:block">
-            <ul className="flex items-center gap-7 text-sm font-semibold text-foreground/90">
-              {navLinks.map((link) => (
-                <li key={link.label}>
-                  <a
-                    href={link.href}
-                    className="relative py-1 transition-colors hover:text-primary focus-visible:outline-2 focus-visible:outline-ring"
-                  >
-                    {link.label}
-                  </a>
-                </li>
-              ))}
+            <ul className="flex items-center gap-6 text-sm font-semibold text-foreground/90">
+              <li>
+                <a href="#top" className="hover:text-primary">
+                  Home
+                </a>
+              </li>
+              <li>
+                <a href="#personal" className="hover:text-primary">
+                  {t.personalBanking}
+                </a>
+              </li>
+              <li>
+                <a href="#business" className="hover:text-primary">
+                  {t.businessBanking}
+                </a>
+              </li>
+              <li>
+                <a href="#online-banking" className="hover:text-primary">
+                  {t.onlineBanking}
+                </a>
+              </li>
+              <li>
+                <a href="#about" className="hover:text-primary">
+                  {t.aboutUs}
+                </a>
+              </li>
+              <li>
+                <a href="#contact" className="hover:text-primary">
+                  {t.contactUs}
+                </a>
+              </li>
             </ul>
           </nav>
 
-          {/* Desktop Actions */}
+          {/* Desktop Auth Actions */}
           <div className="hidden items-center gap-3 lg:flex">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setCheckStatusModalOpen(true)}
+              className="border-primary/20 text-xs font-semibold text-primary hover:bg-primary/5"
+            >
+              <FileCheck2 className="mr-1.5 h-3.5 w-3.5 text-accent" />
+              Check Status
+            </Button>
+
             {customerUser ? (
               <Button
                 variant="outline"
@@ -370,7 +486,7 @@ export function Index() {
                 onClick={() => setCustomerUser(null)}
                 className="border-primary/30 text-primary hover:bg-primary/5"
               >
-                <LogOut className="mr-1.5 h-4 w-4" /> Sign Out
+                <LogOut className="mr-1.5 h-4 w-4" /> {t.signOut}
               </Button>
             ) : (
               <>
@@ -378,9 +494,10 @@ export function Index() {
                   variant="outline"
                   size="sm"
                   onClick={() => setOpenAccountModalOpen(true)}
-                  className="border-primary/20 text-primary hover:border-primary hover:bg-primary/5"
+                  className="border-primary/20 text-primary hover:bg-primary/5"
                 >
-                  Open an Account
+                  <Sparkles className="mr-1.5 h-4 w-4 text-accent" />
+                  {t.createAccount}
                 </Button>
                 <Button
                   size="sm"
@@ -388,13 +505,13 @@ export function Index() {
                   className="bg-primary text-primary-foreground shadow-sm hover:bg-primary/90"
                 >
                   <LogIn className="mr-1.5 h-4 w-4 text-accent" />
-                  Customer Sign In
+                  {t.signIn}
                 </Button>
               </>
             )}
           </div>
 
-          {/* Mobile Menu Button */}
+          {/* Mobile Drawer Toggle */}
           <div className="flex items-center gap-2 lg:hidden">
             <Button
               variant="outline"
@@ -423,39 +540,92 @@ export function Index() {
             className="border-t border-border bg-white px-5 py-4 shadow-lg lg:hidden"
           >
             <ul className="space-y-3">
-              {navLinks.map((link) => (
-                <li key={link.label}>
-                  <a
-                    href={link.href}
-                    onClick={() => setMobileMenuOpen(false)}
-                    className="block rounded py-2 text-base font-semibold text-primary hover:text-accent"
-                  >
-                    {link.label}
-                  </a>
-                </li>
-              ))}
-              <li className="pt-2 border-t border-border/60">
-                <button
-                  type="button"
+              <li>
+                <a
+                  href="#top"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="block py-1.5 text-base font-semibold text-primary"
+                >
+                  Home
+                </a>
+              </li>
+              <li>
+                <a
+                  href="#personal"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="block py-1.5 text-base font-semibold text-primary"
+                >
+                  {t.personalBanking}
+                </a>
+              </li>
+              <li>
+                <a
+                  href="#business"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="block py-1.5 text-base font-semibold text-primary"
+                >
+                  {t.businessBanking}
+                </a>
+              </li>
+              <li>
+                <a
+                  href="#online-banking"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="block py-1.5 text-base font-semibold text-primary"
+                >
+                  {t.onlineBanking}
+                </a>
+              </li>
+              <li>
+                <a
+                  href="#about"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="block py-1.5 text-base font-semibold text-primary"
+                >
+                  {t.aboutUs}
+                </a>
+              </li>
+              <li>
+                <a
+                  href="#contact"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="block py-1.5 text-base font-semibold text-primary"
+                >
+                  {t.contactUs}
+                </a>
+              </li>
+              <li className="pt-2 border-t border-border flex gap-2">
+                <Button
+                  variant="outline"
+                  className="w-1/2 text-xs"
                   onClick={() => {
                     setMobileMenuOpen(false);
-                    setStaffModalOpen(true);
+                    setOpenAccountModalOpen(true);
                   }}
-                  className="flex w-full items-center justify-between py-2 text-left text-sm font-semibold text-primary hover:text-accent"
                 >
-                  <span>Staff Sign-In Portal</span>
-                  <KeyRound className="h-4 w-4 text-accent" />
-                </button>
-              </li>
-              <li className="pt-2">
+                  {t.createAccount}
+                </Button>
                 <Button
-                  className="w-full bg-primary text-primary-foreground"
+                  className="w-1/2 bg-primary text-xs"
                   onClick={() => {
                     setMobileMenuOpen(false);
                     setCustomerModalOpen(true);
                   }}
                 >
-                  Customer Sign In
+                  {t.signIn}
+                </Button>
+              </li>
+              <li className="pt-1">
+                <Button
+                  variant="ghost"
+                  className="w-full text-xs text-muted-foreground"
+                  onClick={() => {
+                    setMobileMenuOpen(false);
+                    setStaffModalOpen(true);
+                  }}
+                >
+                  <KeyRound className="mr-1.5 h-3.5 w-3.5 text-accent" />
+                  {t.staffPortal}
                 </Button>
               </li>
             </ul>
@@ -463,9 +633,9 @@ export function Index() {
         )}
       </header>
 
-      {/* Main Content */}
+      {/* Main Content Area */}
       <main id="main">
-        {/* CUSTOMER DASHBOARD VIEW (Shown when authenticated) */}
+        {/* CUSTOMER DASHBOARD (Rendered when authenticated) */}
         {customerUser && (
           <section
             aria-labelledby="dashboard-title"
@@ -476,20 +646,20 @@ export function Index() {
                 <div>
                   <div className="flex items-center gap-2">
                     <span className="rounded bg-primary/10 px-2.5 py-0.5 text-xs font-bold text-primary">
-                      ONLINE BANKING
+                      {t.onlineBanking.toUpperCase()}
                     </span>
                     <span className="text-xs text-muted-foreground">
-                      Session Active • Encrypted 256-bit
+                      {country.name} • 256-Bit Encrypted Session
                     </span>
                   </div>
                   <h1
                     id="dashboard-title"
                     className="mt-1 font-display text-2xl font-bold text-primary sm:text-3xl"
                   >
-                    Welcome back, {customerUser}
+                    {t.welcomeBack}, {customerUser}
                   </h1>
                   <p className="text-sm text-muted-foreground">
-                    US Finance Bank Primary Relationship Dashboard
+                    US Finance Bank • Multi-Currency Account Management ({country.currency.code})
                   </p>
                 </div>
                 <div className="flex items-center gap-3">
@@ -498,84 +668,62 @@ export function Index() {
                     onClick={() => setCustomerUser(null)}
                     className="text-sm"
                   >
-                    <LogOut className="mr-1.5 h-4 w-4" /> Sign Out
+                    <LogOut className="mr-1.5 h-4 w-4" /> {t.signOut}
                   </Button>
                 </div>
               </div>
 
-              {/* Account Balances */}
+              {/* Balances */}
               <div className="mt-6 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
                 <div className="rounded-xl border border-border bg-white p-6 shadow-xs">
                   <div className="flex items-center justify-between">
                     <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
-                      Advantage Checking
+                      {t.checking}
                     </span>
                     <Wallet className="h-5 w-5 text-primary" />
                   </div>
                   <div className="mt-3 text-3xl font-extrabold text-primary">
-                    ${checkingBalance.toLocaleString("en-US", { minimumFractionDigits: 2 })}
+                    {country.currency.symbol}
+                    {checkingBalance.toLocaleString("en-US", { minimumFractionDigits: 2 })}{" "}
+                    <span className="text-sm font-semibold text-muted-foreground">
+                      {country.currency.code}
+                    </span>
                   </div>
                   <p className="mt-1 text-xs text-muted-foreground">
                     Account # •••• 4892 (Available)
                   </p>
-                  <div className="mt-4 flex gap-2">
-                    <button
-                      type="button"
-                      onClick={() => alert("Quick deposit instructions sent to your registered email.")}
-                      className="text-xs font-semibold text-accent underline underline-offset-4 hover:text-accent/80"
-                    >
-                      Deposit Check
-                    </button>
-                    <span className="text-muted-foreground">•</span>
-                    <button
-                      type="button"
-                      onClick={() => alert("Downloading current monthly statement PDF...")}
-                      className="text-xs font-semibold text-primary underline underline-offset-4 hover:text-primary/80"
-                    >
-                      Statement
-                    </button>
-                  </div>
                 </div>
 
                 <div className="rounded-xl border border-border bg-white p-6 shadow-xs">
                   <div className="flex items-center justify-between">
                     <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
-                      High-Yield Savings
+                      {t.savings}
                     </span>
                     <TrendingUp className="h-5 w-5 text-accent" />
                   </div>
                   <div className="mt-3 text-3xl font-extrabold text-primary">
-                    ${savingsBalance.toLocaleString("en-US", { minimumFractionDigits: 2 })}
+                    {country.currency.symbol}
+                    {savingsBalance.toLocaleString("en-US", { minimumFractionDigits: 2 })}{" "}
+                    <span className="text-sm font-semibold text-muted-foreground">
+                      {country.currency.code}
+                    </span>
                   </div>
                   <p className="mt-1 text-xs text-muted-foreground">
                     Account # •••• 8104 (4.85% APY)
                   </p>
-                  <div className="mt-4 flex gap-2">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setSavingsBalance((prev) => prev + 500);
-                        setCheckingBalance((prev) => prev - 500);
-                        alert("Transferred $500.00 from Checking to Savings.");
-                      }}
-                      className="text-xs font-semibold text-accent underline underline-offset-4 hover:text-accent/80"
-                    >
-                      + Save $500
-                    </button>
-                  </div>
                 </div>
 
                 <div className="rounded-xl border border-border bg-white p-6 shadow-xs sm:col-span-2 lg:col-span-1">
                   <div className="flex items-center justify-between">
                     <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
-                      Quick Fund Transfer
+                      {t.quickTransfer}
                     </span>
                     <Send className="h-5 w-5 text-primary" />
                   </div>
                   <form onSubmit={handleTransfer} className="mt-3 space-y-3">
                     <input
                       type="text"
-                      placeholder="Recipient Email or Account"
+                      placeholder="Recipient Identifier / IBAN / Account"
                       value={transferRecipient}
                       onChange={(e) => setTransferRecipient(e.target.value)}
                       required
@@ -584,7 +732,7 @@ export function Index() {
                     <div className="flex gap-2">
                       <input
                         type="number"
-                        placeholder="Amount ($)"
+                        placeholder={`Amount in ${country.currency.code}`}
                         value={transferAmount}
                         onChange={(e) => setTransferAmount(e.target.value)}
                         required
@@ -593,7 +741,7 @@ export function Index() {
                         className="w-full rounded-md border border-input px-3 py-1.5 text-xs focus:border-primary focus:outline-none"
                       />
                       <Button type="submit" size="sm" className="bg-primary text-xs">
-                        Send
+                        {t.sendFunds}
                       </Button>
                     </div>
                     {transferSuccess && (
@@ -606,9 +754,9 @@ export function Index() {
               {/* Transactions Ledger */}
               <div className="mt-6 rounded-xl border border-border bg-white p-6 shadow-xs">
                 <div className="flex items-center justify-between border-b border-border pb-4">
-                  <h2 className="text-lg font-bold text-primary">Recent Transactions</h2>
+                  <h2 className="text-lg font-bold text-primary">{t.recentTransactions}</h2>
                   <span className="text-xs font-medium text-muted-foreground">
-                    Last 30 Days
+                    Format: {country.dateFormat}
                   </span>
                 </div>
                 <div className="divide-y divide-border">
@@ -638,7 +786,7 @@ export function Index() {
           </section>
         )}
 
-        {/* STAFF DASHBOARD VIEW (Shown when Staff is logged in) */}
+        {/* STAFF DASHBOARD VIEW */}
         {staffUser && (
           <section
             aria-labelledby="staff-portal-title"
@@ -660,7 +808,7 @@ export function Index() {
                     Officer {staffUser.name} • {staffUser.role}
                   </h1>
                   <p className="text-sm text-white/70">
-                    Employee Record: {staffUser.id} • USFinanceBank Internal Management
+                    Employee ID: {staffUser.id} • Regional Compliance Oversight: {country.name}
                   </p>
                 </div>
                 <Button
@@ -677,25 +825,27 @@ export function Index() {
                   <div className="text-xs font-bold tracking-wider text-accent uppercase">
                     Queue Status
                   </div>
-                  <div className="mt-2 text-2xl font-bold text-white">14 Pending Reviews</div>
+                  <div className="mt-2 text-2xl font-bold text-white">14 Pending KYC Verifications</div>
                   <p className="mt-1 text-xs text-white/60">
-                    Customer applications awaiting identity checks
+                    Identity cards & proof of address awaiting review
                   </p>
                 </div>
                 <div className="rounded-xl border border-white/10 bg-white/5 p-5">
                   <div className="text-xs font-bold tracking-wider text-accent uppercase">
-                    Direct Contact Inquiries
+                    Handle Inquiries (@infobank)
                   </div>
-                  <div className="mt-2 text-2xl font-bold text-white">8 Incoming Messages</div>
-                  <p className="mt-1 text-xs text-white/60">Routed via handle @infobank</p>
+                  <div className="mt-2 text-2xl font-bold text-white">8 Incoming Inquiries</div>
+                  <p className="mt-1 text-xs text-white/60">
+                    Routing to regional specialists in {country.name}
+                  </p>
                 </div>
                 <div className="rounded-xl border border-white/10 bg-white/5 p-5">
                   <div className="text-xs font-bold tracking-wider text-accent uppercase">
-                    System Security Audit
+                    Cryptographic Status
                   </div>
                   <div className="mt-2 text-2xl font-bold text-emerald-400">100% Operational</div>
                   <p className="mt-1 text-xs text-white/60">
-                    All cryptographic tokens and database sessions secure
+                    Zero plain-text passwords stored; Salted & hashed
                   </p>
                 </div>
               </div>
@@ -703,50 +853,59 @@ export function Index() {
           </section>
         )}
 
-        {/* HERO SECTION */}
+        {/* HERO SECTION WITH USER UPLOADED BANK BUILDING PHOTOGRAPH */}
         <section
           aria-labelledby="hero-heading"
-          className="relative isolate overflow-hidden bg-navy-deep text-primary-foreground min-h-[580px] flex items-center"
+          className="relative isolate overflow-hidden bg-navy-deep text-primary-foreground min-h-[640px] flex items-center"
         >
-          {/* Background Bank Architecture Image */}
+          {/* USER'S EXACT US FINANCE BANK HEADQUARTERS PHOTOGRAPH */}
           <img
-            src={heroPhoto}
-            alt="US Finance Bank Modern Financial Headquarters and Banking Office"
-            className="absolute inset-0 -z-20 h-full w-full object-cover object-center brightness-95"
+            src={usFinanceBuildingHero}
+            alt="US Finance Bank Modern Financial Headquarters Tower"
+            className="absolute inset-0 -z-20 h-full w-full object-cover object-top brightness-90 contrast-105"
             fetchPriority="high"
           />
 
-          {/* Color Treatment Overlay (Navy Blue with patriotic gradient) */}
+          {/* Elegant Patriotic Gradient Overlay for readability and American styling */}
           <div
             aria-hidden="true"
-            className="absolute inset-0 -z-10 bg-gradient-to-r from-navy-deep/95 via-navy-deep/85 to-primary/75"
+            className="absolute inset-0 -z-10 bg-gradient-to-r from-navy-deep/95 via-navy-deep/80 to-primary/60"
           />
 
           <div className="mx-auto max-w-7xl px-5 py-20 lg:py-28 w-full">
             <div className="max-w-2xl">
-              {/* Badge */}
-              <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-3.5 py-1 text-xs font-semibold tracking-wide text-white backdrop-blur-sm">
+              {/* Badge with motto from building facade */}
+              <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-4 py-1.5 text-xs font-bold tracking-wide text-white backdrop-blur-sm">
                 <span className="h-2 w-2 rounded-full bg-accent animate-pulse" />
-                US FINANCE BANK • TRUSTED AMERICAN BANKING
+                {t.motto.toUpperCase()}
               </div>
 
               {/* Main Heading */}
               <h1
                 id="hero-heading"
-                className="font-display text-4xl font-bold leading-tight tracking-tight sm:text-5xl lg:text-6xl text-white drop-shadow-xs"
+                className="font-display text-4xl font-bold leading-tight tracking-tight sm:text-5xl lg:text-6xl text-white drop-shadow-md"
               >
-                Banking Made Simpler.{" "}
-                <span className="block text-accent">Your Future, Your Finance.</span>
+                {t.heroHeadline}
               </h1>
 
               {/* Supporting Text */}
               <p className="mt-6 text-base leading-relaxed text-white/90 sm:text-lg lg:text-xl">
-                Discover a modern digital banking experience designed to make managing your
-                money simple, convenient, and accessible.
+                {t.heroSubheadline}
               </p>
 
               {/* Red Accent Divider */}
               <div className="my-7 h-1 w-20 rounded bg-accent" aria-hidden="true" />
+
+              {/* Country Service Banner */}
+              <div className="mb-6 rounded-lg bg-white/10 p-3.5 backdrop-blur-sm border border-white/15 text-xs">
+                <div className="flex items-center gap-2 font-bold text-white">
+                  <span>{country.flag}</span>
+                  <span>Currently Viewing: {country.name} ({country.currency.code} - {country.currency.symbol})</span>
+                </div>
+                <p className="mt-1 text-white/75 text-[0.7rem] leading-relaxed">
+                  {country.regulatoryNote}
+                </p>
+              </div>
 
               {/* Call to Action Buttons */}
               <div className="flex flex-wrap items-center gap-4">
@@ -762,17 +921,15 @@ export function Index() {
                   className="min-h-12 bg-accent px-6 text-base font-bold text-accent-foreground shadow-lg hover:bg-accent/90"
                 >
                   <LogIn className="mr-2 h-5 w-5" />
-                  Sign In
+                  {t.signIn}
                 </Button>
                 <Button
-                  asChild
                   size="lg"
-                  variant="outline"
+                  onClick={() => setOpenAccountModalOpen(true)}
                   className="min-h-12 border-white/30 bg-white/10 px-6 text-base font-bold text-white backdrop-blur-sm hover:bg-white hover:text-primary"
                 >
-                  <a href="#personal">
-                    Explore Banking <ArrowRight className="ml-2 h-4 w-4" />
-                  </a>
+                  <Sparkles className="mr-2 h-4 w-4 text-accent" />
+                  {t.createAccount}
                 </Button>
                 <Button
                   asChild
@@ -780,7 +937,7 @@ export function Index() {
                   variant="ghost"
                   className="min-h-12 text-base font-semibold text-white hover:bg-white/10"
                 >
-                  <a href="#contact">Contact Us</a>
+                  <a href="#contact">{t.contactUs}</a>
                 </Button>
               </div>
 
@@ -788,9 +945,68 @@ export function Index() {
               <div className="mt-8 flex items-center gap-3 text-xs text-white/70">
                 <ShieldCheck className="h-4 w-4 text-accent shrink-0" />
                 <span>
-                  High-security SSL encryption • Real-time alerts • Dedicated customer support
+                  Bank-grade encryption • Multi-factor authentication • Global identity verification
                 </span>
               </div>
+            </div>
+          </div>
+        </section>
+
+        {/* 10 SUPPORTED COUNTRIES CAROUSEL / GRID */}
+        <section className="border-y border-border bg-white py-12">
+          <div className="mx-auto max-w-7xl px-5">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div>
+                <p className="text-xs font-bold uppercase tracking-widest text-accent">
+                  GLOBAL REACH
+                </p>
+                <h2 className="mt-1 font-display text-2xl font-bold text-primary sm:text-3xl">
+                  Intended International Service Coverage
+                </h2>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  Select your country to adapt banking requirements, currencies, and verification methods.
+                </p>
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setCheckStatusModalOpen(true)}
+                className="self-start sm:self-auto border-primary/20 text-xs"
+              >
+                <Search className="mr-1.5 h-3.5 w-3.5 text-accent" />
+                Track Application Status
+              </Button>
+            </div>
+
+            <div className="mt-8 grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-5">
+              {Object.values(SUPPORTED_COUNTRIES).map((c) => {
+                const isSelected = c.code === currentCountryCode;
+                return (
+                  <button
+                    key={c.code}
+                    type="button"
+                    onClick={() => handleCountryChange(c.code)}
+                    className={`flex flex-col items-start rounded-xl border p-4 text-left transition-all ${
+                      isSelected
+                        ? "border-primary bg-primary/5 ring-2 ring-primary/20 shadow-xs"
+                        : "border-border bg-white hover:border-primary/40 hover:bg-secondary/20"
+                    }`}
+                  >
+                    <div className="text-2xl">{c.flag}</div>
+                    <div className="mt-2 text-sm font-bold text-primary">{c.name}</div>
+                    <div className="mt-0.5 text-xs font-mono text-accent">
+                      {c.currency.code} ({c.currency.symbol})
+                    </div>
+                    <div className="mt-2 text-[0.68rem] text-muted-foreground">
+                      ID: {c.idTypes[0]?.label.split("(")[0]}
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+
+            <div className="mt-6 rounded-lg bg-secondary/50 p-3 text-[0.7rem] text-muted-foreground leading-relaxed">
+              <strong>Compliance Notice:</strong> This country list represents US Finance Bank's intended service coverage. All country-specific identity, tax, and AML requirements are configurable and must be verified by local qualified legal and regulatory professionals prior to commercial onboarding.
             </div>
           </div>
         </section>
@@ -811,7 +1027,7 @@ export function Index() {
                 </h2>
                 <p className="mt-3 max-w-2xl text-muted-foreground">
                   Simple everyday accounts, high-yield savings opportunities, and flexible
-                  lending to support every chapter of your life.
+                  international currency options tailored for your lifestyle.
                 </p>
               </div>
               <Button
@@ -819,7 +1035,7 @@ export function Index() {
                 onClick={() => setOpenAccountModalOpen(true)}
                 className="self-start md:self-auto border-primary/20 text-primary"
               >
-                Open an Account
+                {t.createAccount}
               </Button>
             </div>
 
@@ -828,26 +1044,26 @@ export function Index() {
                 {
                   icon: Wallet,
                   title: "Advantage Checking",
-                  desc: "Zero hidden monthly maintenance fees with direct deposit, contactless debit cards, and nationwide fee-free ATM access.",
+                  desc: "Zero hidden monthly maintenance fees with qualifying deposits, contactless cards, and international fee-free ATM access.",
                   perk: "Zero Minimum Opening Fee",
                 },
                 {
                   icon: TrendingUp,
                   title: "High-Yield Savings",
-                  desc: "Put your money to work with market-competitive interest rates and automatic recurring savings tools.",
+                  desc: "Put your money to work with market-competitive interest rates and automatic recurring savings rules.",
                   perk: "4.85% APY Eligible",
                 },
                 {
                   icon: Landmark,
-                  title: "Home & Auto Lending",
-                  desc: "Whether purchasing your first vehicle or finding the right mortgage, our lending specialists guide you transparently.",
+                  title: "Cross-Border & Home Lending",
+                  desc: "Whether purchasing a residential home or seeking credit facilities, our specialists provide transparent guidance.",
                   perk: "Competitive Fixed Rates",
                 },
                 {
                   icon: CreditCard,
                   title: "Cashback Credit Cards",
-                  desc: "Earn cash back on groceries, fuel, and online shopping with zero annual fees and robust fraud protection.",
-                  perk: "1.5% - 3% Unlimited Cashback",
+                  desc: "Earn cash rewards on groceries, travel, and online purchases with multi-currency protections and zero foreign transaction fees.",
+                  perk: "Unlimited Cashback",
                 },
                 {
                   icon: ShieldCheck,
@@ -857,8 +1073,8 @@ export function Index() {
                 },
                 {
                   icon: Smartphone,
-                  title: "Mobile Check Deposit",
-                  desc: "Deposit checks in seconds through your smartphone camera with instant verification and real-time confirmations.",
+                  title: "Mobile Check & Instant Transfer",
+                  desc: "Deposit funds in seconds through camera capture with instant verification and real-time biometric authorization.",
                   perk: "24/7 Rapid Clearing",
                 },
               ].map((item) => (
@@ -890,7 +1106,7 @@ export function Index() {
           <div className="mx-auto max-w-7xl px-5">
             <div className="max-w-2xl">
               <p className="text-xs font-bold uppercase tracking-widest text-accent">
-                COMMERCIAL & ENTERPRISE
+                COMMERCIAL & GLOBAL TREASURY
               </p>
               <h2
                 id="business-heading"
@@ -900,7 +1116,7 @@ export function Index() {
               </h2>
               <p className="mt-3 text-muted-foreground">
                 Tailored financial solutions for small businesses, commercial operations, and
-                organizations driving American industry.
+                multinational companies.
               </p>
             </div>
 
@@ -909,22 +1125,22 @@ export function Index() {
                 {
                   icon: Building2,
                   title: "Commercial Checking",
-                  desc: "Scalable accounts featuring tiered transaction allowances, wire transfers, and multi-user delegation.",
+                  desc: "Scalable multi-currency accounts featuring tiered transaction allowances, SWIFT wire transfers, and role delegation.",
                 },
                 {
                   icon: DollarSign,
                   title: "Treasury Management",
-                  desc: "Automated ACH payroll processing, cash concentration, and liquidity sweeps to optimize working capital.",
+                  desc: "Automated ACH payroll, cash concentration, and liquidity sweeps to optimize operating capital.",
                 },
                 {
                   icon: CreditCard,
                   title: "Merchant Processing",
-                  desc: "Accept card payments in-person and online with next-day settlement and transparent fee structures.",
+                  desc: "Accept payments in-person and online across all 10 supported regional currencies with next-day settlement.",
                 },
                 {
                   icon: FileText,
                   title: "Lines of Credit & Loans",
-                  desc: "Equipment financing, commercial real estate loans, and revolving working capital lines of credit.",
+                  desc: "Equipment financing, commercial real estate loans, and revolving trade credit facilities.",
                 },
               ].map((biz) => (
                 <div
@@ -950,7 +1166,7 @@ export function Index() {
             <div className="grid gap-12 lg:grid-cols-2 lg:items-center">
               <div>
                 <p className="text-xs font-bold uppercase tracking-widest text-accent">
-                  NEXT-GENERATION SECURITY
+                  SECURITY & MULTI-FACTOR DEFENSE
                 </p>
                 <h2
                   id="online-heading"
@@ -959,23 +1175,22 @@ export function Index() {
                   Bank Anywhere with Uncompromising Protection
                 </h2>
                 <p className="mt-4 leading-relaxed text-white/80">
-                  Manage accounts, initiate transfers, monitor credit health, and configure
-                  real-time card security straight from your browser or mobile phone.
+                  {t.securityNotice}
                 </p>
 
                 <div className="mt-8 space-y-4">
                   {[
                     {
-                      title: "Continuous 256-Bit Cryptographic Shield",
-                      desc: "Every data transmission is guarded by industry-grade encryption and automated intrusion detection.",
+                      title: "256-Bit Cryptographic Shield",
+                      desc: "All traffic is secured by TLS 1.3 encryption. Passwords and sensitive documents are hashed with modern salting algorithms.",
                     },
                     {
-                      title: "Biometric & Multi-Factor Verification",
-                      desc: "Hardware keys, authenticator apps, and biometric verification prevent unauthorized account access.",
+                      title: "Multi-Factor Authentication (MFA / 2FA)",
+                      desc: "Automated one-time security codes safeguard sign-ins, balance transfers, and password recovery operations.",
                     },
                     {
-                      title: "Instant Card Lock / Unlock Controls",
-                      desc: "Misplaced your card? Freeze and unfreeze spending privileges instantly with one tap.",
+                      title: "Instant Card Lock / Unlock",
+                      desc: "Freeze and unfreeze card privileges directly from your phone in real-time.",
                     },
                   ].map((feat) => (
                     <div key={feat.title} className="flex gap-4">
@@ -995,12 +1210,19 @@ export function Index() {
                     onClick={() => setCustomerModalOpen(true)}
                     className="bg-accent text-accent-foreground font-bold hover:bg-accent/90"
                   >
-                    Launch Online Banking
+                    {t.signIn}
+                  </Button>
+                  <Button
+                    variant="outline"
+                    onClick={() => setCheckStatusModalOpen(true)}
+                    className="border-white/20 text-white hover:bg-white/10"
+                  >
+                    Check Application Status
                   </Button>
                 </div>
               </div>
 
-              {/* Interactive Preview Mockup Card */}
+              {/* Digital Mockup */}
               <div className="rounded-2xl border border-white/10 bg-white/5 p-6 shadow-2xl backdrop-blur-md">
                 <div className="flex items-center justify-between border-b border-white/10 pb-4">
                   <div className="flex items-center gap-2">
@@ -1009,21 +1231,23 @@ export function Index() {
                     <span className="h-3 w-3 rounded-full bg-emerald-500" />
                   </div>
                   <span className="text-xs font-mono text-white/60">
-                    usfinancebank.secure-login
+                    usfinancebank.global/verify/{country.code.toLowerCase()}
                   </span>
                 </div>
                 <div className="mt-6 space-y-4 text-xs">
                   <div className="rounded-lg bg-white/10 p-4">
                     <div className="text-white/70">Verified Account Snapshot</div>
-                    <div className="mt-1 text-2xl font-bold text-white">$60,650.80 Total Balance</div>
+                    <div className="mt-1 text-2xl font-bold text-white">
+                      {country.currency.symbol}60,650.80 {country.currency.code}
+                    </div>
                     <div className="mt-2 text-[0.7rem] text-emerald-400">
-                      ✓ Direct Deposit Verified • Checking & Savings Connected
+                      ✓ Biometric 2FA Active • {country.name} Banking Channel
                     </div>
                   </div>
                   <div className="grid grid-cols-2 gap-3">
                     <div className="rounded-lg bg-white/10 p-3 text-center">
                       <Send className="mx-auto h-5 w-5 text-accent" />
-                      <div className="mt-1 font-bold text-white">Instant Wire</div>
+                      <div className="mt-1 font-bold text-white">Global SWIFT</div>
                     </div>
                     <div className="rounded-lg bg-white/10 p-3 text-center">
                       <Lock className="mx-auto h-5 w-5 text-accent" />
@@ -1041,7 +1265,7 @@ export function Index() {
           <div className="mx-auto max-w-7xl px-5">
             <div className="mx-auto max-w-3xl text-center">
               <p className="text-xs font-bold uppercase tracking-widest text-accent">
-                OUR COMMITMENT
+                {t.aboutUs.toUpperCase()}
               </p>
               <h2
                 id="about-heading"
@@ -1052,9 +1276,8 @@ export function Index() {
               <div className="mx-auto my-4 h-1 w-16 bg-accent" />
               <p className="text-base leading-relaxed text-muted-foreground">
                 US Finance Bank is committed to delivering accessible, transparent, and
-                trustworthy banking services. We blend cutting-edge digital convenience with
-                steadfast financial security, dedicated to elevating the economic well-being of
-                our customers and American communities.
+                trustworthy banking services across the United States and international markets.
+                We blend cutting-edge digital convenience with steadfast financial security.
               </p>
             </div>
 
@@ -1063,8 +1286,8 @@ export function Index() {
                 <Users className="mx-auto h-10 w-10 text-primary" />
                 <h3 className="mt-4 text-lg font-bold text-primary">Customer-First Principles</h3>
                 <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
-                  Every account feature, rate improvement, and digital service is designed to
-                  empower your financial clarity and progress.
+                  Accounts, interest schedules, and digital services designed for your financial
+                  empowerment and transparency.
                 </p>
               </div>
 
@@ -1072,17 +1295,17 @@ export function Index() {
                 <ShieldCheck className="mx-auto h-10 w-10 text-accent" />
                 <h3 className="mt-4 text-lg font-bold text-primary">Uncompromising Security</h3>
                 <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
-                  Proactive fraud monitoring and robust authentication protocols keep your assets
-                  and personal records rigorously protected.
+                  Proactive fraud monitoring and robust multi-factor authentication protocols keep
+                  your personal records and assets secure.
                 </p>
               </div>
 
               <div className="rounded-xl border border-border p-6 text-center">
                 <BookOpen className="mx-auto h-10 w-10 text-primary" />
-                <h3 className="mt-4 text-lg font-bold text-primary">Financial Transparency</h3>
+                <h3 className="mt-4 text-lg font-bold text-primary">Multilingual Transparency</h3>
                 <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
-                  Clear terms, plain-language disclosures, and transparent communication ensure
-                  you can make financial decisions with certainty.
+                  Full localization across 9 languages ensures you can understand terms,
+                  disclosures, and requirements with confidence.
                 </p>
               </div>
             </div>
@@ -1108,13 +1331,13 @@ export function Index() {
                   Contact US Finance Bank
                 </h2>
                 <p className="mt-3 leading-relaxed text-muted-foreground">
-                  Have an inquiry or need assistance with your banking services? Connect with our
-                  dedicated support specialists.
+                  Have questions about opening an account, regional verification, or digital
+                  banking services? Connect with our dedicated support desk.
                 </p>
 
                 {/* Verified Contact Details Box */}
                 <div className="mt-8 rounded-xl border border-border bg-white p-6 shadow-xs">
-                  <h3 className="text-sm font-bold text-primary">Verified Contact Channel</h3>
+                  <h3 className="text-sm font-bold text-primary">Verified Official Contact</h3>
                   <div className="mt-3 flex items-center gap-3">
                     <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 text-primary">
                       <Headset className="h-5 w-5" />
@@ -1125,9 +1348,8 @@ export function Index() {
                     </div>
                   </div>
                   <p className="mt-4 text-xs leading-relaxed text-muted-foreground">
-                    Inquiries sent via our online portal or referencing handle{" "}
-                    <strong className="text-primary">@infobank</strong> are prioritized by our
-                    member relations and operations desk.
+                    All authorized inquiries and customer care updates are coordinated under handle{" "}
+                    <strong className="text-primary">@infobank</strong>.
                   </p>
                 </div>
 
@@ -1138,7 +1360,7 @@ export function Index() {
                   </p>
                   <p className="mt-1 leading-relaxed">
                     US Finance Bank staff will never ask for your password, PIN, or one-time
-                    verification codes via unencrypted email or unsolicited calls.
+                    verification codes via unsolicited email or phone.
                   </p>
                 </div>
               </div>
@@ -1147,19 +1369,19 @@ export function Index() {
               <div className="rounded-2xl border border-border bg-white p-7 shadow-sm">
                 <h3 className="text-lg font-bold text-primary">Send an Inquiry to @infobank</h3>
                 <p className="mt-1 text-xs text-muted-foreground">
-                  We typically respond to verified inquiries within one business day.
+                  We respond to verified inquiries within one business day.
                 </p>
 
                 {contactSuccess ? (
                   <div className="mt-6 rounded-xl bg-emerald-50 border border-emerald-200 p-6 text-center">
                     <CheckCircle2 className="mx-auto h-12 w-12 text-emerald-600" />
                     <h4 className="mt-3 text-base font-bold text-emerald-900">
-                      Message Sent Successfully
+                      Message Dispatched
                     </h4>
                     <p className="mt-2 text-xs leading-relaxed text-emerald-800">
-                      Thank you for contacting US Finance Bank. Your message has been logged under
-                      ticket #{Math.floor(100000 + Math.random() * 900000)} for handle{" "}
-                      <strong>@infobank</strong>.
+                      Thank you for contacting US Finance Bank. Your message has been routed to the{" "}
+                      <strong>@infobank</strong> desk with ticket #
+                      {Math.floor(100000 + Math.random() * 900000)}.
                     </p>
                     <Button
                       size="sm"
@@ -1210,7 +1432,7 @@ export function Index() {
                         type="text"
                         value={contactSubject}
                         onChange={(e) => setContactSubject(e.target.value)}
-                        placeholder="Inquiry regarding checking, loans, or online access"
+                        placeholder={`Inquiry regarding ${country.name} services or accounts`}
                         className="mt-1 w-full rounded-md border border-input px-3.5 py-2 text-sm focus:border-primary focus:outline-none"
                       />
                     </div>
@@ -1255,8 +1477,8 @@ export function Index() {
                 <span className="font-display font-bold text-lg text-white">US FINANCE BANK</span>
               </div>
               <p className="mt-3 text-xs leading-relaxed text-white/70">
-                A modern digital banking experience designed to make managing your money simple,
-                convenient, and accessible.
+                Stronger Together for a Brighter Future. Modern digital banking with multilingual
+                cross-border capabilities and 256-bit security standards.
               </p>
               <p className="mt-4 text-xs font-semibold text-white">
                 Contact Handle: <span className="text-accent font-bold">@infobank</span>
@@ -1278,12 +1500,12 @@ export function Index() {
                 </li>
                 <li>
                   <a href="#business" className="hover:text-white">
-                    Business Accounts
+                    Commercial Checking
                   </a>
                 </li>
                 <li>
                   <a href="#business" className="hover:text-white">
-                    Treasury Solutions
+                    Global Treasury
                   </a>
                 </li>
               </ul>
@@ -1304,54 +1526,50 @@ export function Index() {
                 <li>
                   <button
                     type="button"
+                    onClick={() => setOpenAccountModalOpen(true)}
+                    className="hover:text-white underline-offset-2 hover:underline"
+                  >
+                    Create Account / Apply
+                  </button>
+                </li>
+                <li>
+                  <button
+                    type="button"
+                    onClick={() => setCheckStatusModalOpen(true)}
+                    className="hover:text-white underline-offset-2 hover:underline"
+                  >
+                    Check Application Status
+                  </button>
+                </li>
+                <li>
+                  <button
+                    type="button"
                     onClick={() => setStaffModalOpen(true)}
                     className="hover:text-white flex items-center gap-1 text-white font-medium underline-offset-2 hover:underline"
                   >
                     <KeyRound className="h-3 w-3 text-accent" /> Staff Sign In
                   </button>
                 </li>
-                <li>
-                  <button
-                    type="button"
-                    onClick={() => setOpenAccountModalOpen(true)}
-                    className="hover:text-white underline-offset-2 hover:underline"
-                  >
-                    Open an Account
-                  </button>
-                </li>
-                <li>
-                  <a href="#online-banking" className="hover:text-white">
-                    Security Protocols
-                  </a>
-                </li>
               </ul>
             </div>
 
             <div>
-              <h4 className="text-xs font-bold tracking-wider uppercase text-accent">Support</h4>
-              <ul className="mt-3 space-y-2 text-xs text-white/80">
-                <li>
-                  <a href="#contact" className="hover:text-white">
-                    Help Center
-                  </a>
-                </li>
-                <li>
-                  <a href="#about" className="hover:text-white">
-                    About Us
-                  </a>
-                </li>
-                <li>
-                  <span className="text-white/60">Verified Handle: @infobank</span>
-                </li>
-              </ul>
+              <h4 className="text-xs font-bold tracking-wider uppercase text-accent">Service Countries</h4>
+              <p className="mt-3 text-xs text-white/70 leading-relaxed">
+                UK, Canada, Mexico, China, Taiwan, Japan, Vietnam, South Korea, Switzerland, Germany.
+              </p>
+              <div className="mt-3 text-xs text-white/60">
+                Regional Currency: <strong className="text-white">{country.currency.name} ({country.currency.symbol})</strong>
+              </div>
             </div>
           </div>
 
           <div className="mt-10 border-t border-white/10 pt-6 text-xs text-white/60">
             <p className="leading-relaxed">
-              Official US Finance Bank portal. Contact handle: @infobank. Deposit insurance,
-              licensing, and regulatory information will be displayed in full accordance with
-              applicable laws before commercial product distribution. All rights reserved.
+              Official US Finance Bank portal. Contact handle: @infobank. Treat the listed countries
+              as the bank's intended service coverage, not as a claim of completed licensing or
+              charter. Country-specific compliance, tax reporting, and KYC frameworks are
+              customized per jurisdiction and subject to legal review before production launch.
             </p>
             <p className="mt-2">
               © {new Date().getFullYear()} USFinanceBank • US Finance Bank | Online Banking.
@@ -1360,20 +1578,21 @@ export function Index() {
         </div>
       </footer>
 
-      {/* CUSTOMER SIGN-IN MODAL */}
+      {/* CUSTOMER LOGIN MODAL (WITH MULTI-FACTOR AUTHENTICATION) */}
       {customerModalOpen && (
         <div
           role="dialog"
           aria-modal="true"
-          aria-labelledby="customer-modal-heading"
           className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-xs"
         >
           <div className="relative w-full max-w-md rounded-2xl border border-border bg-white p-7 shadow-2xl">
             <button
               type="button"
-              onClick={() => setCustomerModalOpen(false)}
+              onClick={() => {
+                setCustomerModalOpen(false);
+                setMfaStep(false);
+              }}
               className="absolute right-4 top-4 rounded-full p-1 text-muted-foreground hover:bg-muted"
-              aria-label="Close modal"
             >
               <X className="h-5 w-5" />
             </button>
@@ -1383,10 +1602,10 @@ export function Index() {
                 <Landmark className="h-5 w-5" />
               </div>
               <div>
-                <h3 id="customer-modal-heading" className="text-lg font-bold text-primary">
-                  Customer Sign In
-                </h3>
-                <p className="text-xs text-muted-foreground">US Finance Bank Online Banking</p>
+                <h3 className="text-lg font-bold text-primary">{t.signIn}</h3>
+                <p className="text-xs text-muted-foreground">
+                  US Finance Bank • {country.name} Portal
+                </p>
               </div>
             </div>
 
@@ -1400,93 +1619,136 @@ export function Index() {
               </div>
             )}
 
-            <form onSubmit={handleCustomerSignIn} className="mt-5 space-y-4">
-              <div>
-                <label
-                  htmlFor="customer-email"
-                  className="block text-xs font-bold text-foreground"
-                >
-                  Email Address or Username
-                </label>
-                <input
-                  id="customer-email"
-                  type="text"
-                  required
-                  value={customerLoginEmail}
-                  onChange={(e) => setCustomerLoginEmail(e.target.value)}
-                  placeholder="e.g. member@usfinancebank.com"
-                  className="mt-1 w-full rounded-md border border-input px-3.5 py-2 text-sm focus:border-primary focus:outline-none"
-                />
-              </div>
-
-              <div>
-                <div className="flex items-center justify-between">
-                  <label
-                    htmlFor="customer-pass"
-                    className="block text-xs font-bold text-foreground"
-                  >
-                    Password
+            {!mfaStep ? (
+              <form onSubmit={handleCustomerLoginSubmit} className="mt-5 space-y-4">
+                <div>
+                  <label htmlFor="c-email" className="block text-xs font-bold text-foreground">
+                    Email Address or Username
                   </label>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setCustomerModalOpen(false);
-                      setForgotPasswordOpen(true);
-                    }}
-                    className="text-xs font-semibold text-accent hover:underline"
-                  >
-                    Forgot Password?
-                  </button>
-                </div>
-                <div className="relative mt-1">
                   <input
-                    id="customer-pass"
-                    type={showCustomerPassword ? "text" : "password"}
+                    id="c-email"
+                    type="text"
                     required
-                    value={customerLoginPassword}
-                    onChange={(e) => setCustomerLoginPassword(e.target.value)}
-                    placeholder="Enter your account password"
-                    className="w-full rounded-md border border-input px-3.5 py-2 pr-10 text-sm focus:border-primary focus:outline-none"
+                    value={customerLoginEmail}
+                    onChange={(e) => setCustomerLoginEmail(e.target.value)}
+                    placeholder="e.g. member@usfinancebank.com"
+                    className="mt-1 w-full rounded-md border border-input px-3.5 py-2 text-sm focus:border-primary focus:outline-none"
                   />
+                </div>
+
+                <div>
+                  <div className="flex items-center justify-between">
+                    <label htmlFor="c-pass" className="block text-xs font-bold text-foreground">
+                      Password
+                    </label>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setCustomerModalOpen(false);
+                        setForgotPasswordOpen(true);
+                      }}
+                      className="text-xs font-semibold text-accent hover:underline"
+                    >
+                      Forgot Password?
+                    </button>
+                  </div>
+                  <div className="relative mt-1">
+                    <input
+                      id="c-pass"
+                      type={showCustomerPassword ? "text" : "password"}
+                      required
+                      value={customerLoginPassword}
+                      onChange={(e) => setCustomerLoginPassword(e.target.value)}
+                      placeholder="Enter account password"
+                      className="w-full rounded-md border border-input px-3.5 py-2 pr-10 text-sm focus:border-primary focus:outline-none"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowCustomerPassword(!showCustomerPassword)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                    >
+                      {showCustomerPassword ? (
+                        <EyeOff className="h-4 w-4" />
+                      ) : (
+                        <Eye className="h-4 w-4" />
+                      )}
+                    </button>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <input
+                    id="c-rem"
+                    type="checkbox"
+                    checked={rememberCustomer}
+                    onChange={(e) => setRememberCustomer(e.target.checked)}
+                    className="h-4 w-4 rounded border-input text-primary"
+                  />
+                  <label htmlFor="c-rem" className="text-xs text-muted-foreground">
+                    Remember this device for trusted sign-ins
+                  </label>
+                </div>
+
+                <Button
+                  type="submit"
+                  disabled={customerAuthLoading}
+                  className="w-full bg-primary font-bold text-primary-foreground hover:bg-primary/90"
+                >
+                  {customerAuthLoading ? "Verifying Credentials..." : "Continue to Security Check"}
+                </Button>
+              </form>
+            ) : (
+              /* MULTI-FACTOR AUTHENTICATION (MFA) STEP */
+              <form onSubmit={handleMfaSubmit} className="mt-5 space-y-4">
+                <div className="rounded-xl bg-blue-50 border border-blue-200 p-4 text-xs text-blue-900">
+                  <p className="font-bold flex items-center gap-1.5">
+                    <Fingerprint className="h-4 w-4 text-primary" />
+                    {t.mfaTitle}
+                  </p>
+                  <p className="mt-1 leading-relaxed">{t.mfaPrompt}</p>
+                  <div className="mt-3 rounded bg-white p-2 font-mono text-center text-sm font-bold text-primary border border-blue-200">
+                    Simulated One-Time Code: <span className="text-accent">{generatedMfaCode}</span>
+                  </div>
+                </div>
+
+                <div>
+                  <label htmlFor="mfa-input" className="block text-xs font-bold text-foreground">
+                    Enter 6-Digit One-Time Code (OTP)
+                  </label>
+                  <input
+                    id="mfa-input"
+                    type="text"
+                    required
+                    maxLength={6}
+                    value={mfaCode}
+                    onChange={(e) => setMfaCode(e.target.value)}
+                    placeholder="e.g. 849201"
+                    className="mt-1 w-full text-center tracking-widest font-mono text-lg rounded-md border border-input px-3.5 py-2 focus:border-primary focus:outline-none"
+                  />
+                </div>
+
+                <Button
+                  type="submit"
+                  disabled={customerAuthLoading}
+                  className="w-full bg-primary font-bold text-primary-foreground hover:bg-primary/90"
+                >
+                  {customerAuthLoading ? "Authorizing Session..." : "Verify & Sign In"}
+                </Button>
+
+                <div className="text-center">
                   <button
                     type="button"
-                    onClick={() => setShowCustomerPassword(!showCustomerPassword)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                    aria-label={showCustomerPassword ? "Hide password" : "Show password"}
+                    onClick={() => setMfaStep(false)}
+                    className="text-xs font-semibold text-muted-foreground hover:underline"
                   >
-                    {showCustomerPassword ? (
-                      <EyeOff className="h-4 w-4" />
-                    ) : (
-                      <Eye className="h-4 w-4" />
-                    )}
+                    Back to password login
                   </button>
                 </div>
-              </div>
-
-              <div className="flex items-center gap-2">
-                <input
-                  id="remember-me"
-                  type="checkbox"
-                  checked={rememberCustomer}
-                  onChange={(e) => setRememberCustomer(e.target.checked)}
-                  className="h-4 w-4 rounded border-input text-primary focus:ring-primary"
-                />
-                <label htmlFor="remember-me" className="text-xs text-muted-foreground">
-                  Remember this device for faster sign-in
-                </label>
-              </div>
-
-              <Button
-                type="submit"
-                disabled={customerAuthLoading}
-                className="w-full bg-primary font-bold text-primary-foreground hover:bg-primary/90"
-              >
-                {customerAuthLoading ? "Authenticating..." : "Sign In to Account"}
-              </Button>
-            </form>
+              </form>
+            )}
 
             <div className="mt-5 border-t border-border pt-4 text-center text-xs text-muted-foreground">
-              Don't have an online banking account yet?{" "}
+              New customer in {country.name}?{" "}
               <button
                 type="button"
                 onClick={() => {
@@ -1495,9 +1757,374 @@ export function Index() {
                 }}
                 className="font-bold text-accent hover:underline"
               >
-                Open an Account
+                Apply for an Account
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* OPEN ACCOUNT / SIGN-UP REGISTRATION MODAL WITH JURISDICTION KYC */}
+      {openAccountModalOpen && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/65 p-4 backdrop-blur-xs"
+        >
+          <div className="relative w-full max-w-xl rounded-2xl border border-border bg-white p-7 shadow-2xl max-h-[90vh] overflow-y-auto">
+            <button
+              type="button"
+              onClick={() => {
+                setOpenAccountModalOpen(false);
+                setAppSubmissionSuccess(null);
+              }}
+              className="absolute right-4 top-4 rounded-full p-1 text-muted-foreground hover:bg-muted"
+            >
+              <X className="h-5 w-5" />
+            </button>
+
+            <div className="flex items-center gap-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-accent text-white">
+                <Sparkles className="h-5 w-5" />
+              </div>
+              <div>
+                <h3 className="text-lg font-bold text-primary">
+                  Open an Account • {country.name}
+                </h3>
+                <p className="text-xs text-muted-foreground">
+                  Tailored to local banking framework & currency ({country.currency.code})
+                </p>
+              </div>
+            </div>
+
+            {appSubmissionSuccess ? (
+              <div className="mt-6 rounded-xl bg-emerald-50 border border-emerald-200 p-6 text-center">
+                <CheckCircle2 className="mx-auto h-12 w-12 text-emerald-600" />
+                <h4 className="mt-3 text-base font-bold text-emerald-900">
+                  Application Logged Successfully
+                </h4>
+                <p className="mt-2 text-xs leading-relaxed text-emerald-800">
+                  Thank you, <strong>{appFullName}</strong>. Your account application has been
+                  assigned tracking ID:
+                </p>
+                <div className="my-3 rounded bg-white p-3 font-mono text-base font-extrabold text-primary border border-emerald-300">
+                  {appSubmissionSuccess}
+                </div>
+                <p className="text-xs text-emerald-700 leading-relaxed">
+                  Confirmation routed to {appEmail}. You can track this application anytime using the
+                  "Check Status" button.
+                </p>
+                <Button
+                  size="sm"
+                  onClick={() => {
+                    setOpenAccountModalOpen(false);
+                    setCustomerUser(appFullName.split(" ")[0]);
+                    setAppSubmissionSuccess(null);
+                  }}
+                  className="mt-4 bg-primary text-white"
+                >
+                  Enter Online Banking Dashboard
+                </Button>
+              </div>
+            ) : (
+              <form onSubmit={handleApplicationSubmit} className="mt-5 space-y-4">
+                {/* Notice explaining why information is required */}
+                <div className="rounded-lg bg-blue-50 border border-blue-200 p-3 text-xs text-blue-900 flex items-start gap-2">
+                  <HelpCircle className="h-4 w-4 text-primary shrink-0 mt-0.5" />
+                  <div>
+                    <span className="font-bold">Why we collect this:</span> Financial regulations
+                    require identity verification (KYC/AML) to prevent fraud. Data is encrypted end-to-end and passwords are never stored in plain text.
+                  </div>
+                </div>
+
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <div>
+                    <label htmlFor="reg-name" className="block text-xs font-bold text-foreground">
+                      Legal Full Name (as on ID)
+                    </label>
+                    <input
+                      id="reg-name"
+                      type="text"
+                      required
+                      value={appFullName}
+                      onChange={(e) => setAppFullName(e.target.value)}
+                      placeholder="e.g. John Doe"
+                      className="mt-1 w-full rounded-md border border-input px-3.5 py-2 text-sm focus:border-primary focus:outline-none"
+                    />
+                  </div>
+
+                  <div>
+                    <label htmlFor="reg-email" className="block text-xs font-bold text-foreground">
+                      Email Address
+                    </label>
+                    <input
+                      id="reg-email"
+                      type="email"
+                      required
+                      value={appEmail}
+                      onChange={(e) => setAppEmail(e.target.value)}
+                      placeholder="john@example.com"
+                      className="mt-1 w-full rounded-md border border-input px-3.5 py-2 text-sm focus:border-primary focus:outline-none"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <div>
+                    <label htmlFor="reg-phone" className="block text-xs font-bold text-foreground">
+                      Phone Number ({country.phoneCode})
+                    </label>
+                    <input
+                      id="reg-phone"
+                      type="tel"
+                      required
+                      value={appPhone}
+                      onChange={(e) => setAppPhone(e.target.value)}
+                      placeholder={`${country.phoneCode} ${country.phoneFormat}`}
+                      className="mt-1 w-full rounded-md border border-input px-3.5 py-2 text-sm focus:border-primary focus:outline-none"
+                    />
+                  </div>
+
+                  <div>
+                    <label htmlFor="reg-pass" className="block text-xs font-bold text-foreground">
+                      Create Strong Password
+                    </label>
+                    <div className="relative mt-1">
+                      <input
+                        id="reg-pass"
+                        type={showAppPassword ? "text" : "password"}
+                        required
+                        value={appPassword}
+                        onChange={(e) => setAppPassword(e.target.value)}
+                        placeholder="At least 8 characters"
+                        className="w-full rounded-md border border-input px-3.5 py-2 pr-10 text-sm focus:border-primary focus:outline-none"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowAppPassword(!showAppPassword)}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                      >
+                        {showAppPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Country Specific Region & Address */}
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <div>
+                    <label htmlFor="reg-region" className="block text-xs font-bold text-foreground">
+                      {country.regionsLabel}
+                    </label>
+                    <select
+                      id="reg-region"
+                      value={appRegion}
+                      onChange={(e) => setAppRegion(e.target.value)}
+                      className="mt-1 w-full rounded-md border border-input bg-white px-3 py-2 text-sm focus:border-primary focus:outline-none"
+                    >
+                      {country.regions.map((r) => (
+                        <option key={r} value={r}>
+                          {r}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div>
+                    <label htmlFor="reg-addr" className="block text-xs font-bold text-foreground">
+                      Street Address
+                    </label>
+                    <input
+                      id="reg-addr"
+                      type="text"
+                      required
+                      value={appAddress}
+                      onChange={(e) => setAppAddress(e.target.value)}
+                      placeholder="Street, City, Postal Code"
+                      className="mt-1 w-full rounded-md border border-input px-3.5 py-2 text-sm focus:border-primary focus:outline-none"
+                    />
+                  </div>
+                </div>
+
+                {/* Country Specific ID Verification */}
+                <div className="rounded-xl border border-border p-4 bg-secondary/20">
+                  <div className="text-xs font-bold text-primary flex items-center gap-1.5">
+                    <Fingerprint className="h-4 w-4 text-accent" />
+                    Jurisdiction Identity Verification ({country.name})
+                  </div>
+                  <div className="mt-3 grid gap-3 sm:grid-cols-2">
+                    <div>
+                      <label htmlFor="id-type" className="block text-[0.7rem] font-bold text-foreground">
+                        Document Type
+                      </label>
+                      <select
+                        id="id-type"
+                        value={appSelectedIdType}
+                        onChange={(e) => setAppSelectedIdType(e.target.value)}
+                        className="mt-1 w-full rounded-md border border-input bg-white px-2.5 py-1.5 text-xs focus:border-primary focus:outline-none"
+                      >
+                        {country.idTypes.map((it) => (
+                          <option key={it.id} value={it.id}>
+                            {it.label}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div>
+                      <label htmlFor="id-number" className="block text-[0.7rem] font-bold text-foreground">
+                        Document Identification Number
+                      </label>
+                      <input
+                        id="id-number"
+                        type="text"
+                        required
+                        value={appIdNumber}
+                        onChange={(e) => setAppIdNumber(e.target.value)}
+                        placeholder={currentIdConfig?.placeholder}
+                        className="mt-1 w-full rounded-md border border-input px-2.5 py-1.5 text-xs focus:border-primary focus:outline-none"
+                      />
+                    </div>
+                  </div>
+
+                  <p className="mt-2 text-[0.68rem] text-muted-foreground italic">
+                    Reason required: {currentIdConfig?.reason}
+                  </p>
+                </div>
+
+                {/* Account Type & Funding */}
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <div>
+                    <label htmlFor="reg-type" className="block text-xs font-bold text-foreground">
+                      Account Type Requested
+                    </label>
+                    <select
+                      id="reg-type"
+                      value={appAccountType}
+                      onChange={(e) => setAppAccountType(e.target.value)}
+                      className="mt-1 w-full rounded-md border border-input bg-white px-3 py-2 text-sm focus:border-primary focus:outline-none"
+                    >
+                      <option value="Checking & Savings">
+                        Advantage Checking & High-Yield Savings ({country.currency.code})
+                      </option>
+                      <option value="Commercial Business">
+                        Commercial Business Account ({country.currency.code})
+                      </option>
+                      <option value="Fixed CD">Certificate of Deposit (CD)</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label htmlFor="reg-funds" className="block text-xs font-bold text-foreground">
+                      Source of Funds (AML Requirement)
+                    </label>
+                    <select
+                      id="reg-funds"
+                      value={appSourceOfFunds}
+                      onChange={(e) => setAppSourceOfFunds(e.target.value)}
+                      className="mt-1 w-full rounded-md border border-input bg-white px-3 py-2 text-sm focus:border-primary focus:outline-none"
+                    >
+                      <option value="Employment / Salary">Employment / Salary</option>
+                      <option value="Business Revenue">Business Revenue</option>
+                      <option value="Investments / Savings">Investments / Savings</option>
+                      <option value="Inheritance / Family">Inheritance / Family</option>
+                    </select>
+                  </div>
+                </div>
+
+                {/* Consent Checkbox */}
+                <div className="flex items-start gap-2 pt-2">
+                  <input
+                    id="reg-consent"
+                    type="checkbox"
+                    required
+                    checked={appConsent}
+                    onChange={(e) => setAppConsent(e.target.checked)}
+                    className="mt-0.5 h-4 w-4 rounded border-input text-primary"
+                  />
+                  <label htmlFor="reg-consent" className="text-[0.72rem] text-muted-foreground leading-snug">
+                    I verify that all submitted identity details are authentic. I agree to the
+                    standard {country.name} regulatory disclosure and understand that US Finance
+                    Bank will never request my password or one-time codes.
+                  </label>
+                </div>
+
+                <Button type="submit" className="w-full bg-accent text-accent-foreground font-bold">
+                  Submit Verified Application
+                </Button>
+              </form>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* CHECK APPLICATION STATUS MODAL */}
+      {checkStatusModalOpen && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-xs"
+        >
+          <div className="relative w-full max-w-md rounded-2xl border border-border bg-white p-7 shadow-2xl">
+            <button
+              type="button"
+              onClick={() => {
+                setCheckStatusModalOpen(false);
+                setStatusSearchResult(null);
+              }}
+              className="absolute right-4 top-4 rounded-full p-1 text-muted-foreground hover:bg-muted"
+            >
+              <X className="h-5 w-5" />
+            </button>
+
+            <div className="flex items-center gap-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary text-white">
+                <FileCheck2 className="h-5 w-5" />
+              </div>
+              <div>
+                <h3 className="text-lg font-bold text-primary">Check Application Status</h3>
+                <p className="text-xs text-muted-foreground">Track real-time KYC & compliance progress</p>
+              </div>
+            </div>
+
+            <form onSubmit={handleStatusSearch} className="mt-5 space-y-4">
+              <div>
+                <label htmlFor="status-id" className="block text-xs font-bold text-foreground">
+                  Application Tracking ID
+                </label>
+                <div className="mt-1 flex gap-2">
+                  <input
+                    id="status-id"
+                    type="text"
+                    required
+                    value={statusSearchId}
+                    onChange={(e) => setStatusSearchId(e.target.value)}
+                    placeholder="e.g. USB-GB-849201"
+                    className="w-full rounded-md border border-input px-3.5 py-2 text-sm focus:border-primary focus:outline-none font-mono uppercase"
+                  />
+                  <Button type="submit" className="bg-primary shrink-0">
+                    Search
+                  </Button>
+                </div>
+              </div>
+            </form>
+
+            {statusSearchResult && (
+              <div className="mt-5 rounded-xl border border-border bg-secondary/30 p-4 text-xs">
+                <div className="flex items-center justify-between">
+                  <span className="font-mono font-bold text-primary">{statusSearchResult.id}</span>
+                  <span className="rounded bg-amber-100 px-2 py-0.5 font-semibold text-amber-900 text-[0.68rem]">
+                    {statusSearchResult.status}
+                  </span>
+                </div>
+                <p className="mt-2 text-muted-foreground leading-relaxed">
+                  {statusSearchResult.details}
+                </p>
+                <div className="mt-3 text-[0.7rem] text-muted-foreground border-t border-border pt-2">
+                  {statusSearchResult.date} • Need help? Contact handle <strong>@infobank</strong>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       )}
@@ -1507,7 +2134,6 @@ export function Index() {
         <div
           role="dialog"
           aria-modal="true"
-          aria-labelledby="staff-modal-heading"
           className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 backdrop-blur-xs"
         >
           <div className="relative w-full max-w-md rounded-2xl border border-navy-deep/20 bg-white p-7 shadow-2xl">
@@ -1515,7 +2141,6 @@ export function Index() {
               type="button"
               onClick={() => setStaffModalOpen(false)}
               className="absolute right-4 top-4 rounded-full p-1 text-muted-foreground hover:bg-muted"
-              aria-label="Close staff modal"
             >
               <X className="h-5 w-5" />
             </button>
@@ -1525,18 +2150,14 @@ export function Index() {
                 <KeyRound className="h-5 w-5 text-accent" />
               </div>
               <div>
-                <h3 id="staff-modal-heading" className="text-lg font-bold text-navy-deep">
-                  Staff Sign-In Portal
-                </h3>
-                <p className="text-xs text-muted-foreground">
-                  Authorized Personnel & Operations Only
-                </p>
+                <h3 className="text-lg font-bold text-navy-deep">{t.staffPortal}</h3>
+                <p className="text-xs text-muted-foreground">Authorized Staff & Oversight Only</p>
               </div>
             </div>
 
             <div className="mt-3 rounded-md bg-amber-50 p-2.5 text-[0.7rem] leading-relaxed text-amber-800 border border-amber-200">
-              Internal staff credentials required. Unauthorized access attempts are monitored and
-              logged in accordance with federal security standards.
+              Internal staff credentials required. Public self-registration is strictly disallowed.
+              All administrative sessions are audited.
             </div>
 
             {staffAuthError && (
@@ -1551,62 +2172,57 @@ export function Index() {
 
             <form onSubmit={handleStaffSignIn} className="mt-4 space-y-3.5">
               <div>
-                <label htmlFor="staff-id" className="block text-xs font-bold text-foreground">
+                <label htmlFor="stf-id" className="block text-xs font-bold text-foreground">
                   Staff Email or Employee ID
                 </label>
                 <input
-                  id="staff-id"
+                  id="stf-id"
                   type="text"
                   required
                   value={staffEmail}
                   onChange={(e) => setStaffEmail(e.target.value)}
-                  placeholder="e.g. officer.johnson@usfinancebank.internal"
+                  placeholder="e.g. officer.smith@usfinancebank.internal"
                   className="mt-1 w-full rounded-md border border-input px-3.5 py-2 text-sm focus:border-primary focus:outline-none"
                 />
               </div>
 
               <div>
-                <label htmlFor="staff-dept" className="block text-xs font-bold text-foreground">
-                  Department / Assignment
+                <label htmlFor="stf-dept" className="block text-xs font-bold text-foreground">
+                  Assignment / Role
                 </label>
                 <select
-                  id="staff-dept"
+                  id="stf-dept"
                   value={staffDept}
                   onChange={(e) => setStaffDept(e.target.value)}
                   className="mt-1 w-full rounded-md border border-input bg-white px-3 py-2 text-sm focus:border-primary focus:outline-none"
                 >
-                  <option value="Operations">Branch Operations</option>
+                  <option value="Operations">Regional Operations ({country.name})</option>
                   <option value="Customer Relations">Member Relations (@infobank)</option>
-                  <option value="Underwriting">Credit & Loan Underwriting</option>
-                  <option value="Compliance">Security & Compliance</option>
+                  <option value="Underwriting">Credit & KYC Underwriting</option>
+                  <option value="Compliance">Security & Legal Compliance</option>
                 </select>
               </div>
 
               <div>
-                <label htmlFor="staff-pass" className="block text-xs font-bold text-foreground">
-                  Security Passphrase / Token
+                <label htmlFor="stf-pass" className="block text-xs font-bold text-foreground">
+                  Security Passphrase / Hardware Key
                 </label>
                 <div className="relative mt-1">
                   <input
-                    id="staff-pass"
+                    id="stf-pass"
                     type={showStaffPassword ? "text" : "password"}
                     required
                     value={staffPassword}
                     onChange={(e) => setStaffPassword(e.target.value)}
-                    placeholder="Enter assigned credentials"
+                    placeholder="Enter security passphrase"
                     className="w-full rounded-md border border-input px-3.5 py-2 pr-10 text-sm focus:border-primary focus:outline-none"
                   />
                   <button
                     type="button"
                     onClick={() => setShowStaffPassword(!showStaffPassword)}
                     className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                    aria-label={showStaffPassword ? "Hide password" : "Show password"}
                   >
-                    {showStaffPassword ? (
-                      <EyeOff className="h-4 w-4" />
-                    ) : (
-                      <Eye className="h-4 w-4" />
-                    )}
+                    {showStaffPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                   </button>
                 </div>
               </div>
@@ -1616,13 +2232,12 @@ export function Index() {
                 disabled={staffAuthLoading}
                 className="w-full bg-navy-deep font-bold text-white hover:bg-navy-deep/90"
               >
-                {staffAuthLoading ? "Verifying Credentials..." : "Access Staff Dashboard"}
+                {staffAuthLoading ? "Authenticating Staff..." : "Access Staff Dashboard"}
               </Button>
             </form>
 
             <div className="mt-4 pt-3 border-t border-border text-center text-[0.72rem] text-muted-foreground">
-              Forgot staff credentials? Contact the internal IT Security Helpdesk. Public
-              self-registration is disabled.
+              Forgot staff credentials? Contact internal IT Security. Public registration is not permitted.
             </div>
           </div>
         </div>
@@ -1647,18 +2262,17 @@ export function Index() {
               <X className="h-5 w-5" />
             </button>
 
-            <h3 className="text-lg font-bold text-primary">Reset Account Password</h3>
+            <h3 className="text-lg font-bold text-primary">Recover Account Password</h3>
             <p className="mt-1 text-xs text-muted-foreground">
-              Enter your verified email to receive a secure password recovery authorization code.
+              Enter your registered email address to receive an authorized password reset link.
             </p>
 
             {resetSent ? (
               <div className="mt-5 rounded-xl bg-emerald-50 border border-emerald-200 p-5 text-center">
                 <CheckCircle2 className="mx-auto h-10 w-10 text-emerald-600" />
-                <h4 className="mt-2 text-sm font-bold text-emerald-900">Recovery Email Dispatched</h4>
+                <h4 className="mt-2 text-sm font-bold text-emerald-900">Recovery Link Dispatched</h4>
                 <p className="mt-1 text-xs text-emerald-800">
-                  Instructions have been sent to <strong>{resetEmail}</strong>. Please check your inbox
-                  and follow the verification link.
+                  Password reset verification has been sent to <strong>{resetEmail}</strong>.
                 </p>
                 <Button
                   size="sm"
@@ -1682,11 +2296,11 @@ export function Index() {
                 className="mt-5 space-y-4"
               >
                 <div>
-                  <label htmlFor="reset-mail" className="block text-xs font-bold text-foreground">
+                  <label htmlFor="rst-email" className="block text-xs font-bold text-foreground">
                     Registered Email Address
                   </label>
                   <input
-                    id="reset-mail"
+                    id="rst-email"
                     type="email"
                     required
                     value={resetEmail}
@@ -1697,133 +2311,6 @@ export function Index() {
                 </div>
                 <Button type="submit" className="w-full bg-primary font-bold">
                   Send Recovery Link
-                </Button>
-              </form>
-            )}
-          </div>
-        </div>
-      )}
-
-      {/* OPEN ACCOUNT / REGISTRATION MODAL */}
-      {openAccountModalOpen && (
-        <div
-          role="dialog"
-          aria-modal="true"
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-xs"
-        >
-          <div className="relative w-full max-w-lg rounded-2xl border border-border bg-white p-7 shadow-2xl max-h-[90vh] overflow-y-auto">
-            <button
-              type="button"
-              onClick={() => {
-                setOpenAccountModalOpen(false);
-                setRegSubmitted(false);
-              }}
-              className="absolute right-4 top-4 rounded-full p-1 text-muted-foreground hover:bg-muted"
-            >
-              <X className="h-5 w-5" />
-            </button>
-
-            <div className="flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-accent text-white">
-                <Sparkles className="h-5 w-5" />
-              </div>
-              <div>
-                <h3 className="text-lg font-bold text-primary">Open a US Finance Bank Account</h3>
-                <p className="text-xs text-muted-foreground">
-                  Safe, quick, and transparent account opening
-                </p>
-              </div>
-            </div>
-
-            {regSubmitted ? (
-              <div className="mt-6 rounded-xl bg-emerald-50 border border-emerald-200 p-6 text-center">
-                <CheckCircle2 className="mx-auto h-12 w-12 text-emerald-600" />
-                <h4 className="mt-3 text-base font-bold text-emerald-900">
-                  Application Logged Successfully
-                </h4>
-                <p className="mt-2 text-xs leading-relaxed text-emerald-800">
-                  Thank you, <strong>{regName}</strong>. Your membership application for{" "}
-                  <strong>{regType}</strong> has been assigned reference #
-                  {Math.floor(100000 + Math.random() * 900000)}. A confirmation has been routed to{" "}
-                  {regEmail}.
-                </p>
-                <Button
-                  size="sm"
-                  onClick={() => {
-                    setOpenAccountModalOpen(false);
-                    setCustomerUser(regName.split(" ")[0] || "Customer");
-                  }}
-                  className="mt-4 bg-primary text-white"
-                >
-                  Enter Online Banking Dashboard
-                </Button>
-              </div>
-            ) : (
-              <form
-                onSubmit={(e) => {
-                  e.preventDefault();
-                  if (!regName || !regEmail) return;
-                  setRegSubmitted(true);
-                }}
-                className="mt-5 space-y-4"
-              >
-                <div>
-                  <label htmlFor="reg-name" className="block text-xs font-bold text-foreground">
-                    Legal Full Name
-                  </label>
-                  <input
-                    id="reg-name"
-                    type="text"
-                    required
-                    value={regName}
-                    onChange={(e) => setRegName(e.target.value)}
-                    placeholder="e.g. Michael Robert Anderson"
-                    className="mt-1 w-full rounded-md border border-input px-3.5 py-2 text-sm focus:border-primary focus:outline-none"
-                  />
-                </div>
-
-                <div>
-                  <label htmlFor="reg-email" className="block text-xs font-bold text-foreground">
-                    Email Address
-                  </label>
-                  <input
-                    id="reg-email"
-                    type="email"
-                    required
-                    value={regEmail}
-                    onChange={(e) => setRegEmail(e.target.value)}
-                    placeholder="michael@example.com"
-                    className="mt-1 w-full rounded-md border border-input px-3.5 py-2 text-sm focus:border-primary focus:outline-none"
-                  />
-                </div>
-
-                <div>
-                  <label htmlFor="reg-type" className="block text-xs font-bold text-foreground">
-                    Account Type Requested
-                  </label>
-                  <select
-                    id="reg-type"
-                    value={regType}
-                    onChange={(e) => setRegType(e.target.value)}
-                    className="mt-1 w-full rounded-md border border-input bg-white px-3 py-2 text-sm focus:border-primary focus:outline-none"
-                  >
-                    <option value="Advantage Checking & Savings">
-                      Personal Checking & High-Yield Savings
-                    </option>
-                    <option value="Commercial Business Checking">
-                      Commercial Business Checking
-                    </option>
-                    <option value="Certificate of Deposit">Certificate of Deposit (CD)</option>
-                  </select>
-                </div>
-
-                <div className="rounded-lg bg-secondary/70 p-3 text-xs text-muted-foreground leading-relaxed">
-                  By submitting this form, you acknowledge that accounts will be provisioned in
-                  accordance with standard customer identification policies (USA PATRIOT Act).
-                </div>
-
-                <Button type="submit" className="w-full bg-accent text-accent-foreground font-bold">
-                  Submit Membership Application
                 </Button>
               </form>
             )}
