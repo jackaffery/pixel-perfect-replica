@@ -35,6 +35,11 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import usFinanceBuildingHero from "@/assets/us-finance-bank-building.jpg";
+import branchCanadaImg from "@/assets/branch-canada.jpg";
+import branchUkImg from "@/assets/branch-uk.jpg";
+import branchMexicoImg from "@/assets/branch-mexico.jpg";
+import mobileCardBankingImg from "@/assets/mobile-card-banking.jpg";
+import officerSupportImg from "@/assets/officer-support.jpg";
 import {
   SUPPORTED_COUNTRIES,
   SUPPORTED_LANGUAGES,
@@ -947,6 +952,98 @@ export function Index() {
                 <span>
                   Bank-grade encryption • Multi-factor authentication • Global identity verification
                 </span>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* STEP BY STEP BRANCHES & DIGITAL GALLERY (No write-up, clean Step 1 to 5) */}
+        <section aria-label="Our Branches & Operations" className="border-b border-border bg-slate-50/70 py-16">
+          <div className="mx-auto max-w-7xl px-5">
+            <div className="mb-10 text-center">
+              <span className="text-xs font-bold uppercase tracking-widest text-accent">
+                GLOBAL PRESENCE & OPERATIONS
+              </span>
+              <h2 className="mt-2 font-display text-3xl font-bold text-primary sm:text-4xl">
+                Our Branches & Digital Banking
+              </h2>
+              <div className="mx-auto mt-3 h-1 w-16 bg-accent" />
+            </div>
+
+            <div className="flex flex-wrap justify-center gap-6 sm:gap-8">
+              {/* Step 1: Canada Branch */}
+              <div className="w-full sm:w-[calc(50%-1rem)] lg:w-[calc(33.333%-1.5rem)] max-w-sm overflow-hidden rounded-2xl border border-border/80 bg-white shadow-xs transition-transform hover:-translate-y-1 hover:shadow-md">
+                <div className="relative aspect-[4/3] w-full overflow-hidden bg-slate-100">
+                  <img
+                    src={branchCanadaImg}
+                    alt="Step 1: US Finance Bank Canada Branch"
+                    className="h-full w-full object-cover object-center"
+                    loading="lazy"
+                  />
+                  <div className="absolute top-3 left-3 rounded-md bg-navy-deep/90 px-3 py-1 text-xs font-extrabold uppercase tracking-wider text-white shadow-sm backdrop-blur-xs">
+                    Step 1
+                  </div>
+                </div>
+              </div>
+
+              {/* Step 2: United Kingdom Branch */}
+              <div className="w-full sm:w-[calc(50%-1rem)] lg:w-[calc(33.333%-1.5rem)] max-w-sm overflow-hidden rounded-2xl border border-border/80 bg-white shadow-xs transition-transform hover:-translate-y-1 hover:shadow-md">
+                <div className="relative aspect-[4/3] w-full overflow-hidden bg-slate-100">
+                  <img
+                    src={branchUkImg}
+                    alt="Step 2: US Finance Bank United Kingdom Branch"
+                    className="h-full w-full object-cover object-center"
+                    loading="lazy"
+                  />
+                  <div className="absolute top-3 left-3 rounded-md bg-navy-deep/90 px-3 py-1 text-xs font-extrabold uppercase tracking-wider text-white shadow-sm backdrop-blur-xs">
+                    Step 2
+                  </div>
+                </div>
+              </div>
+
+              {/* Step 3: Mexico Branch */}
+              <div className="w-full sm:w-[calc(50%-1rem)] lg:w-[calc(33.333%-1.5rem)] max-w-sm overflow-hidden rounded-2xl border border-border/80 bg-white shadow-xs transition-transform hover:-translate-y-1 hover:shadow-md">
+                <div className="relative aspect-[4/3] w-full overflow-hidden bg-slate-100">
+                  <img
+                    src={branchMexicoImg}
+                    alt="Step 3: USA Finance Bank Mexico Branch"
+                    className="h-full w-full object-cover object-center"
+                    loading="lazy"
+                  />
+                  <div className="absolute top-3 left-3 rounded-md bg-navy-deep/90 px-3 py-1 text-xs font-extrabold uppercase tracking-wider text-white shadow-sm backdrop-blur-xs">
+                    Step 3
+                  </div>
+                </div>
+              </div>
+
+              {/* Step 4: Digital Card & Mobile Banking */}
+              <div className="w-full sm:w-[calc(50%-1rem)] lg:w-[calc(33.333%-1.5rem)] max-w-sm overflow-hidden rounded-2xl border border-border/80 bg-white shadow-xs transition-transform hover:-translate-y-1 hover:shadow-md">
+                <div className="relative aspect-[4/3] w-full overflow-hidden bg-slate-100">
+                  <img
+                    src={mobileCardBankingImg}
+                    alt="Step 4: Mobile Banking and Debit Card"
+                    className="h-full w-full object-cover object-center"
+                    loading="lazy"
+                  />
+                  <div className="absolute top-3 left-3 rounded-md bg-navy-deep/90 px-3 py-1 text-xs font-extrabold uppercase tracking-wider text-white shadow-sm backdrop-blur-xs">
+                    Step 4
+                  </div>
+                </div>
+              </div>
+
+              {/* Step 5: Officer Customer Support */}
+              <div className="w-full sm:w-[calc(50%-1rem)] lg:w-[calc(33.333%-1.5rem)] max-w-sm overflow-hidden rounded-2xl border border-border/80 bg-white shadow-xs transition-transform hover:-translate-y-1 hover:shadow-md">
+                <div className="relative aspect-[4/3] w-full overflow-hidden bg-slate-100">
+                  <img
+                    src={officerSupportImg}
+                    alt="Step 5: Banking Officer Support Desk"
+                    className="h-full w-full object-cover object-center"
+                    loading="lazy"
+                  />
+                  <div className="absolute top-3 left-3 rounded-md bg-navy-deep/90 px-3 py-1 text-xs font-extrabold uppercase tracking-wider text-white shadow-sm backdrop-blur-xs">
+                    Step 5
+                  </div>
+                </div>
               </div>
             </div>
           </div>
