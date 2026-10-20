@@ -177,7 +177,7 @@ export function SoloAdminDashboard({
       actor: "Staff Admin",
       section,
       action,
-      targetId,
+      targetId: targetId ?? "",
       details,
       ipAddress: "127.0.0.1 (Secure Console)",
     };
@@ -2705,7 +2705,7 @@ export function SoloAdminDashboard({
                     <div className="flex items-center gap-3 shrink-0">
                       <span
                         className={`rounded-full px-2.5 py-0.5 text-xs font-bold ${
-                          rev.status === "Approved" || rev.status === "Cleared"
+                          rev.status === "Approved"
                             ? "bg-emerald-500/20 text-emerald-300"
                             : rev.status === "Pending Review"
                             ? "bg-amber-500/20 text-amber-300"
