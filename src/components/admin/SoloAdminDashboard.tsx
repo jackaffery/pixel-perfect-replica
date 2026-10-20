@@ -942,14 +942,14 @@ export function SoloAdminDashboard({
           {activeSection === "overview" && (
             <div className="space-y-6 max-w-7xl mx-auto">
               {/* Top Banner Header: Red background with Welcome heading & quick links matching screenshot */}
-              <div className="rounded-2xl bg-red-600 p-6 sm:p-8 text-white shadow-md relative overflow-hidden">
+              <div className="rounded-t-2xl bg-red-600 p-6 sm:p-8 text-white shadow-md relative overflow-hidden pb-12">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                   <div>
                     <h1 className="font-display text-2xl sm:text-3xl font-extrabold tracking-tight">
                       Dashboard
                     </h1>
                     <p className="text-sm text-red-100 mt-1">
-                      Welcome, {adminUsername === "Solo Master Administrator" ? "admin admin" : adminUsername}!
+                      Welcome, admin admin!
                     </p>
                   </div>
 
@@ -981,7 +981,7 @@ export function SoloAdminDashboard({
               </div>
 
               {/* SUMMARY CARDS GRID matching the 7 summary cards in screenshot */}
-              <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+              <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm -mt-8 relative z-10 mx-2 sm:mx-4">
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
                   {/* Card 1: Total Deposit */}
                   <div

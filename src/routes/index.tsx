@@ -60,6 +60,7 @@ import {
   TRANSLATIONS,
   type CountryConfig,
 } from "@/lib/international-banking";
+import { SoloAdminDashboard } from "@/components/admin/SoloAdminDashboard";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -686,14 +687,14 @@ export function Index() {
     setTimeout(() => {
       setAdminAuthLoading(false);
       setSoloAdminUser({
-        username: "Authorized Super Administrator",
-        role: "Supreme Bank Controller",
+        username: "admin admin",
+        role: "Admin",
         authenticatedAt: "Today, " + new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
       });
       setAdminModalOpen(false);
       setAdminPassword("");
-      setAdminActionNotice("Super Administrator authenticated. Centralized dashboard active.");
-      logAdminAction("Admin Authenticated", "Security & Access", "Solo Super Administrator session started with master clearance.");
+      setAdminActionNotice("Staff Sign-In Admin authenticated.");
+      logAdminAction("Admin Authenticated", "Security & Access", "Staff Admin session started.");
       setTimeout(() => setAdminActionNotice(""), 6000);
     }, 500);
   };
@@ -1121,6 +1122,16 @@ export function Index() {
 
   const currentIdConfig =
     country.idTypes.find((it) => it.id === appSelectedIdType) || country.idTypes[0];
+
+  // If authenticated as Staff Sign-In Admin, render the full dedicated dashboard interface matching the reference layout
+  if (soloAdminUser) {
+    return (
+      <SoloAdminDashboard
+        onSignOut={() => setSoloAdminUser(null)}
+        adminUsername={soloAdminUser.username}
+      />
+    );
+  }
 
   return (
     <div id="top" className="min-h-screen bg-background font-sans text-foreground">
