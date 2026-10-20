@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Menu,
   X,
@@ -388,11 +388,43 @@ export function Index() {
   // Modals & Panels
   const [customerModalOpen, setCustomerModalOpen] = useState(false);
   const [adminModalOpen, setAdminModalOpen] = useState(false);
+  const [copiedAdminLink, setCopiedAdminLink] = useState(false);
   const [forgotPasswordOpen, setForgotPasswordOpen] = useState(false);
   const [openAccountModalOpen, setOpenAccountModalOpen] = useState(false);
   const [checkStatusModalOpen, setCheckStatusModalOpen] = useState(false);
   const [adjustBalanceUser, setAdjustBalanceUser] = useState<AdminControlledUser | null>(null);
   const [newUserModalOpen, setNewUserModalOpen] = useState(false);
+
+  // Dedicated Admin Direct Link (Distinct from public home page)
+  const adminDedicatedUrl = typeof window !== "undefined"
+    ? `${window.location.origin}/?portal=admin`
+    : "https://usfinancebank.online/?portal=admin";
+
+  // Check URL on mount: Automatically open Staff Admin Sign-In if visiting dedicated admin link
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const params = new URLSearchParams(window.location.search);
+      const hash = window.location.hash.toLowerCase();
+      if (
+        params.get("portal") === "admin" ||
+        params.get("admin") === "portal" ||
+        params.get("admin") === "true" ||
+        params.get("admin") === "signin" ||
+        params.get("staff") === "admin" ||
+        hash.includes("admin")
+      ) {
+        setAdminModalOpen(true);
+      }
+    }
+  }, []);
+
+  const handleCopyAdminLink = () => {
+    if (typeof navigator !== "undefined" && navigator.clipboard) {
+      navigator.clipboard.writeText(adminDedicatedUrl);
+      setCopiedAdminLink(true);
+      setTimeout(() => setCopiedAdminLink(false), 3000);
+    }
+  };
 
   // Customer Authentication & Multi-Factor Authentication (MFA)
   const [customerUser, setCustomerUser] = useState<string | null>(null);
@@ -2989,7 +3021,7 @@ export function Index() {
           aria-modal="true"
           className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-4 backdrop-blur-sm"
         >
-          <div className="relative w-full max-w-md rounded-2xl border border-slate-700 bg-slate-900 p-7 text-white shadow-2xl">
+          <div className="relative w-full max-w-lg rounded-2xl border border-slate-700 bg-slate-900 p-6 sm:p-7 text-white shadow-2xl">
             <button
               type="button"
               onClick={() => setAdminModalOpen(false)}
@@ -2999,17 +3031,75 @@ export function Index() {
             </button>
 
             <div className="flex items-center gap-3">
-              <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-accent text-white shadow-lg">
+              <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-red-600 text-white shadow-lg shadow-red-600/30">
                 <SlidersHorizontal className="h-6 w-6" />
               </div>
               <div>
-                <h3 className="text-base font-bold text-white sm:text-lg">Staff Sign-In Admin Dashboard</h3>
-                <p className="text-xs text-white/60">Unified Master System • Control All Users, Applications & Inquiries</p>
+                <div className="flex items-center gap-2">
+                  <h3 className="text-base font-bold text-white sm:text-lg">Staff → Sign In Admin</h3>
+                  <span className="rounded bg-red-600/30 border border-red-500/40 px-2 py-0.5 text-[0.68rem] font-bold text-red-300">
+                    Staff Portal
+                  </span>
+                </div>
+                <p className="text-xs text-white/60">Dedicated Administration Access • US Finance Bank</p>
               </div>
             </div>
 
-            <div className="mt-4 rounded-lg bg-white/5 border border-white/10 p-3 text-xs text-white/80 leading-relaxed">
-              Master administrative credentials grant complete control over customer accounts, KYC approvals, balances, and global security flags.
+            {/* SEPARATE ADMIN WEB LINK BOX (Distinct from public home page) */}
+            <div className="mt-4 rounded-xl border border-red-500/40 bg-red-950/40 p-3.5 text-xs text-white">
+              <div className="flex items-center justify-between mb-1.5">
+                <span className="font-bold text-red-200 flex items-center gap-1.5">
+                  <Globe2 className="h-3.5 w-3.5 text-red-400" />
+                  Separate Admin Web Link
+                </span>
+                <span className="text-[0.65rem] bg-red-500/20 text-red-200 px-2 py-0.5 rounded font-mono">
+                  Distinct from Public Home Page
+                </span>
+              </div>
+              <p className="text-[0.7rem] text-slate-300 mb-2.5">
+                Bookmark or share this direct administrative web link to open the admin terminal directly:
+              </p>
+              <div className="flex items-center gap-2">
+                <div className="flex-1 overflow-hidden rounded-lg border border-slate-700 bg-slate-950 px-3 py-1.5 font-mono text-[0.72rem] text-red-200 select-all truncate">
+                  {adminDedicatedUrl}
+                </div>
+                <button
+                  type="button"
+                  onClick={handleCopyAdminLink}
+                  className="flex items-center gap-1 rounded-lg bg-red-600 hover:bg-red-700 px-3 py-1.5 text-xs font-bold text-white transition-colors shrink-0 shadow-sm"
+                  title="Copy Admin Link"
+                >
+                  {copiedAdminLink ? (
+                    <>
+                      <Check className="h-3.5 w-3.5 text-emerald-300" />
+                      Copied!
+                    </>
+                  ) : (
+                    <>
+                      <ClipboardList className="h-3.5 w-3.5" />
+                      Copy Link
+                    </>
+                  )}
+                </button>
+                <a
+                  href={adminDedicatedUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="flex items-center gap-1 rounded-lg border border-slate-600 bg-slate-800 hover:bg-slate-700 px-2.5 py-1.5 text-xs font-bold text-white transition-colors shrink-0"
+                  title="Open Admin Link in New Tab"
+                >
+                  <ArrowRight className="h-3.5 w-3.5" />
+                  Open
+                </a>
+              </div>
+            </div>
+
+            {/* Clearly Labeled Admin Sign-In Option Banner */}
+            <div className="mt-4 rounded-lg bg-white/5 border border-white/10 p-2.5 text-xs text-white/80 leading-relaxed flex items-center justify-between">
+              <div>
+                <span className="font-bold text-white">Admin Sign-In Option:</span>
+                <span className="ml-1 text-white/60">Separate from public customer sign-in.</span>
+              </div>
             </div>
 
             {/* Quick Auto-Fill Helper */}
@@ -3020,9 +3110,9 @@ export function Index() {
                   setAdminUsername("admin");
                   setAdminPassword("admin");
                 }}
-                className="w-full rounded-md border border-accent/40 bg-accent/15 px-3 py-1.5 text-xs font-bold text-accent hover:bg-accent/25 transition-colors"
+                className="w-full rounded-md border border-red-500/40 bg-red-600/15 px-3 py-1.5 text-xs font-bold text-red-300 hover:bg-red-600/25 transition-colors"
               >
-                ⚡ Quick Auto-Fill Staff Sign In Admin Credentials (admin / admin)
+                ⚡ Quick Auto-Fill Admin Credentials (admin / admin)
               </button>
             </div>
 
@@ -3039,7 +3129,7 @@ export function Index() {
             <form onSubmit={handleSoloAdminSignIn} className="mt-4 space-y-4">
               <div>
                 <label htmlFor="adm-id" className="block text-xs font-bold text-white/90">
-                  Staff Sign In Admin Identifier
+                  Admin Identifier
                 </label>
                 <input
                   id="adm-id"
@@ -3048,13 +3138,13 @@ export function Index() {
                   value={adminUsername}
                   onChange={(e) => setAdminUsername(e.target.value)}
                   placeholder="e.g. admin or admin@usfinancebank.com"
-                  className="mt-1 w-full rounded-md border border-white/20 bg-slate-800 px-3.5 py-2 text-sm text-white placeholder-white/40 focus:border-accent focus:outline-none"
+                  className="mt-1 w-full rounded-md border border-white/20 bg-slate-800 px-3.5 py-2 text-sm text-white placeholder-white/40 focus:border-red-500 focus:outline-none"
                 />
               </div>
 
               <div>
                 <label htmlFor="adm-pass" className="block text-xs font-bold text-white/90">
-                  Master Security Passphrase
+                  Admin Master Passphrase
                 </label>
                 <div className="relative mt-1">
                   <input
@@ -3064,7 +3154,7 @@ export function Index() {
                     value={adminPassword}
                     onChange={(e) => setAdminPassword(e.target.value)}
                     placeholder="Enter admin passphrase"
-                    className="w-full rounded-md border border-white/20 bg-slate-800 px-3.5 py-2 pr-10 text-sm text-white placeholder-white/40 focus:border-accent focus:outline-none"
+                    className="w-full rounded-md border border-white/20 bg-slate-800 px-3.5 py-2 pr-10 text-sm text-white placeholder-white/40 focus:border-red-500 focus:outline-none"
                   />
                   <button
                     type="button"
@@ -3079,14 +3169,14 @@ export function Index() {
               <Button
                 type="submit"
                 disabled={adminAuthLoading}
-                className="w-full bg-accent font-bold text-accent-foreground hover:bg-accent/90"
+                className="w-full bg-red-600 hover:bg-red-700 font-bold text-white shadow-md shadow-red-600/20 py-2.5"
               >
-                {adminAuthLoading ? "Verifying Master Authority..." : "Access Staff Sign In Admin Control Center"}
+                {adminAuthLoading ? "Authenticating Admin Authority..." : "Admin Sign In"}
               </Button>
             </form>
 
             <div className="mt-4 pt-3 border-t border-white/10 text-center text-[0.7rem] text-white/50">
-              Only one solo administrator session is authorized per organization.
+              Only authorized staff credentials can access this administrative console.
             </div>
           </div>
         </div>

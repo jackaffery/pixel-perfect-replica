@@ -135,6 +135,16 @@ export function SoloAdminDashboard({
   const [selectedCase, setSelectedCase] = useState<SupportCase | null>(null);
 
   // Action / Confirmation States
+  const [createUserModalOpen, setCreateUserModalOpen] = useState(false);
+  const [newUserData, setNewUserData] = useState({
+    name: "",
+    email: "",
+    phone: "",
+    country: "United States",
+    accountType: "Advantage Checking & Savings",
+    initialBalance: "5000",
+    mailingAddress: "",
+  });
   const [confirmActionModal, setConfirmActionModal] = useState<{
     title: string;
     description: string;
@@ -457,6 +467,91 @@ export function SoloAdminDashboard({
     setNewAdminNoteText("");
   };
 
+  // Safe User Provisioning with Audit Trail
+  const handleCreateUser = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newUserData.name.trim() || !newUserData.email.trim()) return;
+
+    const newId = `USB-USR-${Math.floor(100000 + Math.random() * 900000)}`;
+    const linkedCustId = `CUST-${Math.floor(1000 + Math.random() * 9000)}`;
+    const newRecord: AdminUserRecord = {
+      id: newId,
+      name: newUserData.name.trim(),
+      email: newUserData.email.trim(),
+      phone: newUserData.phone.trim() || "+1 (555) 000-0000",
+      mailingAddress: newUserData.mailingAddress.trim() || "100 Financial Way, Suite 400, New York, NY 10005",
+      linkedCustomerId: linkedCustId,
+      onlineAccessStatus: "Active",
+      kycVerificationStatus: "Verified",
+      displayDateJoined: "Today, " + new Date().toLocaleDateString([], { month: "short", day: "numeric", year: "numeric" }),
+      security: {
+        twoFactorEnabled: false,
+        activeSessionsCount: 1,
+        forcePasswordResetNextLogin: false,
+        lastPasswordChange: "Initial credential set",
+      },
+      communicationPreferences: {
+        emailAlerts: true,
+        smsNotifications: true,
+        paperlessStatements: true,
+        marketingUpdates: false,
+      },
+      adminNotes: [
+        `[${new Date().toLocaleDateString([], { month: "short", day: "numeric", year: "numeric" })} - Staff Admin]: Account registered through Staff Admin dashboard.`
+      ],
+      accessChangeHistory: [
+        {
+          id: `HIS-${Date.now().toString().slice(-4)}`,
+          timestamp: "Today, " + new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+          actor: "Staff Admin",
+          action: "Provisioned New User Account",
+          previousState: "None",
+          newState: "Active Online Access",
+          reason: "Direct administrative registration",
+        }
+      ],
+    };
+
+    setAdminUsers((prev) => [newRecord, ...prev]);
+    appendAuditLog(
+      "Users",
+      "Created User Record",
+      `Administrator safely provisioned new user record for ${newRecord.name} (${newRecord.email}) with initial status Active.`,
+      newId
+    );
+    setCreateUserModalOpen(false);
+    setSelectedUser(newRecord);
+    setActiveSection("users");
+    setActionNotification(`User record for ${newRecord.name} created successfully.`);
+    setTimeout(() => setActionNotification(""), 5000);
+    setNewUserData({
+      name: "",
+      email: "",
+      phone: "",
+      country: "United States",
+      accountType: "Advantage Checking & Savings",
+      initialBalance: "5000",
+      mailingAddress: "",
+    });
+  };
+
+  // Safe User Deletion with Audit Trail
+  const handleDeleteUser = (userId: string, reason: string) => {
+    const userToDelete = adminUsers.find((u) => u.id === userId);
+    if (!userToDelete) return;
+
+    setAdminUsers((prev) => prev.filter((u) => u.id !== userId));
+    appendAuditLog(
+      "Users",
+      "Deleted User Record",
+      `Administrator permanently deleted user record for ${userToDelete.name} (${userToDelete.email}). Justification: ${reason || "Administrative user deletion policy"}`,
+      userId
+    );
+    setSelectedUser(null);
+    setActionNotification(`User record for ${userToDelete.name} successfully deleted.`);
+    setTimeout(() => setActionNotification(""), 5000);
+  };
+
   // Safe Customer Status Changer
   const handleUpdateCustomerStatus = (
     customerId: string,
@@ -716,26 +811,14 @@ export function SoloAdminDashboard({
             { id: "history", label: "Transaction History", icon: History, hasSubmenu: true },
           ].map((item) => {
             const Icon = item.icon;
-            const isActive = activeSection === item.id || (item.id === "create-user" && userEditModalOpen) || (item.id === "history" && activeSection === "transactions");
+            const isActive = activeSection === item.id || (item.id === "create-user" && createUserModalOpen) || (item.id === "history" && activeSection === "transactions");
             return (
               <button
                 key={item.id}
                 type="button"
                 onClick={() => {
                   if (item.id === "create-user") {
-                    setSelectedUser(null);
-                    setUserEditForm({
-                      name: "",
-                      phone: "+1 (555) 000-0000",
-                      mailingAddress: "New Registered Address",
-                      communicationPreferences: {
-                        emailAlerts: true,
-                        smsNotifications: true,
-                        paperlessStatements: true,
-                        marketingUpdates: false,
-                      },
-                    });
-                    setUserEditModalOpen(true);
+                    setCreateUserModalOpen(true);
                   } else if (item.id === "history") {
                     setActiveSection("transactions");
                     appendAuditLog("Overview", "Navigated to Transaction History", "Administrator accessed transaction history.");
@@ -1714,6 +1797,39 @@ export function SoloAdminDashboard({
                           <KeyRound className="mr-1.5 h-3.5 w-3.5 text-red-600" />
                           Require Password Reset
                         </Button>
+
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => {
+                            appendAuditLog("Users", "Sent Password Reset Link", `Sent password reset email link to ${selectedUser.email}.`, selectedUser.id);
+                            setActionNotification(`Password reset link safely dispatched to ${selectedUser.email}.`);
+                            setTimeout(() => setActionNotification(""), 4000);
+                          }}
+                          className="border-slate-200 bg-white text-slate-700 hover:bg-slate-50 text-xs font-bold shadow-xs"
+                        >
+                          <Mail className="mr-1.5 h-3.5 w-3.5 text-blue-500" />
+                          Send Password Reset Link
+                        </Button>
+
+                        <Button
+                          size="sm"
+                          variant="destructive"
+                          onClick={() =>
+                            setConfirmActionModal({
+                              title: `Permanently Delete User ${selectedUser.name}?`,
+                              description: "This will remove the user's online credentials and record from the system. This action cannot be undone.",
+                              confirmLabel: "Delete User",
+                              danger: true,
+                              requiresReauth: true,
+                              onConfirm: () => handleDeleteUser(selectedUser.id, actionReason),
+                            })
+                          }
+                          className="bg-red-700 hover:bg-red-800 text-xs font-bold text-white shadow-xs ml-auto"
+                        >
+                          <UserX className="mr-1.5 h-3.5 w-3.5" />
+                          Delete User
+                        </Button>
                       </div>
                     </div>
 
@@ -1808,7 +1924,153 @@ export function SoloAdminDashboard({
                 </div>
               )}
 
-              {/* MODAL: EDIT PERMITTED PROFILE FIELDS */}
+              {/* MODAL: CREATE NEW USER */}
+              {createUserModalOpen && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4">
+                  <div className="w-full max-w-lg rounded-3xl border border-slate-200 bg-white p-6 shadow-2xl text-slate-800 animate-fadeIn">
+                    <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <h3 className="font-bold text-slate-900 text-base">Create New User Record</h3>
+                          <span className="rounded bg-red-100 px-2 py-0.5 text-[0.65rem] font-bold text-red-700">
+                            Staff Authority
+                          </span>
+                        </div>
+                        <p className="text-xs text-slate-500 mt-0.5">
+                          Provision new user credentials & linked digital banking profile
+                        </p>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setCreateUserModalOpen(false)}
+                        className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-800"
+                      >
+                        ✕
+                      </button>
+                    </div>
+
+                    <form onSubmit={handleCreateUser} className="mt-4 space-y-4">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div>
+                          <label className="block text-xs font-bold text-slate-700 mb-1">
+                            Full Legal Name <span className="text-red-500">*</span>
+                          </label>
+                          <input
+                            type="text"
+                            required
+                            value={newUserData.name}
+                            onChange={(e) => setNewUserData({ ...newUserData, name: e.target.value })}
+                            placeholder="e.g. Alexander Vance"
+                            className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs text-slate-800 focus:border-red-500 focus:outline-none"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="block text-xs font-bold text-slate-700 mb-1">
+                            Email Address <span className="text-red-500">*</span>
+                          </label>
+                          <input
+                            type="email"
+                            required
+                            value={newUserData.email}
+                            onChange={(e) => setNewUserData({ ...newUserData, email: e.target.value })}
+                            placeholder="e.g. alexander.vance@example.com"
+                            className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs text-slate-800 focus:border-red-500 focus:outline-none"
+                          />
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div>
+                          <label className="block text-xs font-bold text-slate-700 mb-1">Phone Number</label>
+                          <input
+                            type="text"
+                            value={newUserData.phone}
+                            onChange={(e) => setNewUserData({ ...newUserData, phone: e.target.value })}
+                            placeholder="+1 (555) 019-2831"
+                            className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs text-slate-800 focus:border-red-500 focus:outline-none"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="block text-xs font-bold text-slate-700 mb-1">Country Jurisdiction</label>
+                          <select
+                            value={newUserData.country}
+                            onChange={(e) => setNewUserData({ ...newUserData, country: e.target.value })}
+                            className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs text-slate-800 focus:border-red-500 focus:outline-none"
+                          >
+                            <option value="United States">United States (USD)</option>
+                            <option value="United Kingdom">United Kingdom (GBP)</option>
+                            <option value="Canada">Canada (CAD)</option>
+                            <option value="Germany">Germany (EUR)</option>
+                            <option value="Mexico">Mexico (MXN)</option>
+                            <option value="Japan">Japan (JPY)</option>
+                          </select>
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div>
+                          <label className="block text-xs font-bold text-slate-700 mb-1">Account Product</label>
+                          <select
+                            value={newUserData.accountType}
+                            onChange={(e) => setNewUserData({ ...newUserData, accountType: e.target.value })}
+                            className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs text-slate-800 focus:border-red-500 focus:outline-none"
+                          >
+                            <option value="Advantage Checking & Savings">Advantage Checking & Savings</option>
+                            <option value="High-Yield Savings">High-Yield Savings</option>
+                            <option value="Commercial Treasury">Commercial Treasury</option>
+                          </select>
+                        </div>
+
+                        <div>
+                          <label className="block text-xs font-bold text-slate-700 mb-1">Initial Opening Balance ($)</label>
+                          <input
+                            type="number"
+                            value={newUserData.initialBalance}
+                            onChange={(e) => setNewUserData({ ...newUserData, initialBalance: e.target.value })}
+                            placeholder="5000"
+                            className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs text-slate-800 focus:border-red-500 focus:outline-none"
+                          />
+                        </div>
+                      </div>
+
+                      <div>
+                        <label className="block text-xs font-bold text-slate-700 mb-1">Mailing Address</label>
+                        <textarea
+                          rows={2}
+                          value={newUserData.mailingAddress}
+                          onChange={(e) => setNewUserData({ ...newUserData, mailingAddress: e.target.value })}
+                          placeholder="e.g. 742 Evergreen Terrace, Springfield, OR 97477"
+                          className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs text-slate-800 focus:border-red-500 focus:outline-none"
+                        />
+                      </div>
+
+                      <div className="rounded-xl border border-red-100 bg-red-50/50 p-3 text-[0.72rem] text-slate-600 leading-relaxed">
+                        <strong className="text-red-700 block mb-0.5">Administrative Safeguard:</strong>
+                        System will generate secure, randomly seeded credentials and send a verifiable activation link. The administrator cannot view or enter passwords.
+                      </div>
+
+                      <div className="mt-6 flex items-center justify-end gap-2 border-t border-slate-100 pt-3">
+                        <Button
+                          type="button"
+                          variant="outline"
+                          onClick={() => setCreateUserModalOpen(false)}
+                          className="border-slate-200 text-xs text-slate-700 hover:bg-slate-100"
+                        >
+                          Cancel
+                        </Button>
+                        <Button
+                          type="submit"
+                          className="bg-red-600 hover:bg-red-700 text-xs font-bold text-white shadow-xs"
+                        >
+                          Create User Record
+                        </Button>
+                      </div>
+                    </form>
+                  </div>
+                </div>
+              )}
               {userEditModalOpen && selectedUser && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4">
                   <div className="w-full max-w-lg rounded-3xl border border-slate-200 bg-white p-6 shadow-2xl text-slate-800">
@@ -2470,17 +2732,22 @@ export function SoloAdminDashboard({
             <div className="space-y-6 max-w-7xl mx-auto">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div>
-                  <h2 className="font-display text-2xl font-black text-white">Transactions Oversight</h2>
-                  <p className="text-xs text-slate-400">
-                    Oversight and review queue. No actions to initiate, alter, or reverse real financial transactions.
+                  <div className="flex items-center gap-2">
+                    <h2 className="font-display text-2xl font-black text-slate-800">Transfer Transactions</h2>
+                    <span className="rounded-full bg-red-100 px-2.5 py-0.5 text-xs font-bold text-red-700 border border-red-200">
+                      Oversight Ledger
+                    </span>
+                  </div>
+                  <p className="text-xs text-slate-500 mt-1">
+                    Administrative oversight and transaction history ledger. Real-time bank transfer records.
                   </p>
                 </div>
                 <div className="flex items-center gap-2">
-                  <span className="text-xs text-slate-400 font-bold">Status Filter:</span>
+                  <span className="text-xs text-slate-600 font-bold">Status Filter:</span>
                   <select
                     value={txFilterStatus}
                     onChange={(e) => setTxFilterStatus(e.target.value)}
-                    className="rounded-xl border border-slate-800 bg-slate-900 px-3 py-1.5 text-xs text-slate-200 focus:border-teal-400 focus:outline-none"
+                    className="rounded-xl border border-slate-200 bg-white px-3 py-1.5 text-xs text-slate-700 focus:border-red-500 focus:outline-none shadow-xs"
                   >
                     <option value="all">All Transactions ({transactions.length})</option>
                     <option value="completed">Completed</option>
@@ -2492,10 +2759,10 @@ export function SoloAdminDashboard({
               </div>
 
               {/* Transactions Table */}
-              <div className="overflow-hidden rounded-2xl border border-slate-800 bg-slate-900/60 shadow-xl">
+              <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-xs">
                 <div className="overflow-x-auto">
-                  <table className="w-full text-left text-xs text-slate-300">
-                    <thead className="border-b border-slate-800 bg-slate-900/90 text-[0.7rem] uppercase tracking-wider text-slate-400 font-bold">
+                  <table className="w-full text-left text-xs text-slate-700">
+                    <thead className="border-b border-slate-200 bg-slate-50 text-[0.7rem] uppercase tracking-wider text-slate-500 font-bold">
                       <tr>
                         <th className="px-5 py-3.5">Transaction ID & Date</th>
                         <th className="px-5 py-3.5">Customer & Account</th>
@@ -2506,24 +2773,24 @@ export function SoloAdminDashboard({
                         <th className="px-5 py-3.5 text-right">Action</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-slate-800/80">
+                    <tbody className="divide-y divide-slate-100">
                       {filteredTransactions.map((tx) => (
-                        <tr key={tx.id} className="hover:bg-slate-800/40 transition-colors font-mono">
+                        <tr key={tx.id} className="hover:bg-slate-50/80 transition-colors">
                           <td className="px-5 py-3.5">
-                            <div className="font-bold text-white">{tx.id}</div>
+                            <div className="font-bold text-slate-900 font-mono">{tx.id}</div>
                             <div className="text-[0.68rem] text-slate-500 font-sans">{tx.timestamp}</div>
                           </td>
                           <td className="px-5 py-3.5 font-sans">
-                            <span className="font-semibold text-slate-200">{tx.customerName}</span>
+                            <span className="font-semibold text-slate-800">{tx.customerName}</span>
                             <div className="text-[0.68rem] text-slate-500 font-mono">{tx.accountMasked}</div>
                           </td>
                           <td className="px-5 py-3.5 font-sans">
-                            <span className="font-medium text-slate-300">{tx.type}</span>
+                            <span className="font-medium text-slate-700">{tx.type}</span>
                           </td>
-                          <td className="px-5 py-3.5 font-sans text-slate-400 truncate max-w-xs">{tx.counterparty}</td>
+                          <td className="px-5 py-3.5 font-sans text-slate-600 truncate max-w-xs">{tx.counterparty}</td>
                           <td
-                            className={`px-5 py-3.5 text-right font-bold ${
-                              tx.direction === "credit" ? "text-emerald-400" : "text-slate-200"
+                            className={`px-5 py-3.5 text-right font-bold font-mono ${
+                              tx.direction === "credit" ? "text-emerald-600" : "text-slate-800"
                             }`}
                           >
                             {tx.direction === "credit" ? "+" : "-"}
@@ -2533,12 +2800,12 @@ export function SoloAdminDashboard({
                             <span
                               className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[0.65rem] font-bold ${
                                 tx.status === "Completed"
-                                  ? "bg-emerald-500/20 text-emerald-300"
+                                  ? "bg-emerald-100 text-emerald-800 border border-emerald-200"
                                   : tx.status === "Flagged"
-                                  ? "bg-rose-500/20 text-rose-300 border border-rose-500/40 animate-pulse"
+                                  ? "bg-red-100 text-red-800 border border-red-200 animate-pulse"
                                   : tx.status === "Resolved"
-                                  ? "bg-teal-500/20 text-teal-300"
-                                  : "bg-amber-500/20 text-amber-300"
+                                  ? "bg-blue-100 text-blue-800 border border-blue-200"
+                                  : "bg-amber-100 text-amber-800 border border-amber-200"
                               }`}
                             >
                               {tx.status}
@@ -2552,7 +2819,7 @@ export function SoloAdminDashboard({
                                 setSelectedTransaction(tx);
                                 appendAuditLog("Transactions", "Inspected Transaction", `Viewed TX ${tx.id} for ${tx.customerName}`, tx.id);
                               }}
-                              className="border-slate-700 text-xs text-teal-300 hover:bg-teal-500/20"
+                              className="border-slate-200 text-xs text-red-600 hover:bg-red-50 hover:border-red-300 font-bold shadow-xs"
                             >
                               Review →
                             </Button>
@@ -2667,17 +2934,22 @@ export function SoloAdminDashboard({
             <div className="space-y-6 max-w-7xl mx-auto">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div>
-                  <h2 className="font-display text-2xl font-black text-white">Reviews & Compliance Queue</h2>
-                  <p className="text-xs text-slate-400">
-                    Prioritized queue for pending identity checks, AML alerts, and audit decisions.
+                  <div className="flex items-center gap-2">
+                    <h2 className="font-display text-2xl font-black text-slate-800">Grant Applications & Verification</h2>
+                    <span className="rounded-full bg-red-100 px-2.5 py-0.5 text-xs font-bold text-red-700 border border-red-200">
+                      Compliance Queue
+                    </span>
+                  </div>
+                  <p className="text-xs text-slate-500 mt-1">
+                    Prioritized queue for grant applications, identity verification, AML alerts, and onboarding decisions.
                   </p>
                 </div>
                 <div className="flex items-center gap-2">
-                  <span className="text-xs text-slate-400 font-bold">Urgency Priority:</span>
+                  <span className="text-xs text-slate-600 font-bold">Urgency Priority:</span>
                   <select
                     value={reviewFilterPriority}
                     onChange={(e) => setReviewFilterPriority(e.target.value)}
-                    className="rounded-xl border border-slate-800 bg-slate-900 px-3 py-1.5 text-xs text-slate-200 focus:border-teal-400 focus:outline-none"
+                    className="rounded-xl border border-slate-200 bg-white px-3 py-1.5 text-xs text-slate-700 focus:border-red-500 focus:outline-none shadow-xs"
                   >
                     <option value="all">All Priorities ({complianceReviews.length})</option>
                     <option value="urgent">Urgent</option>
@@ -2693,38 +2965,38 @@ export function SoloAdminDashboard({
                 {filteredReviews.map((rev) => (
                   <div
                     key={rev.id}
-                    className="rounded-2xl border border-slate-800 bg-slate-900/60 p-5 flex flex-col md:flex-row md:items-center justify-between gap-4 hover:border-slate-700 transition-all"
+                    className="rounded-2xl border border-slate-200 bg-white p-5 flex flex-col md:flex-row md:items-center justify-between gap-4 hover:border-red-200 hover:bg-red-50/10 transition-all shadow-xs"
                   >
                     <div className="space-y-1">
                       <div className="flex items-center gap-2">
                         <span
-                          className={`rounded px-2 py-0.5 text-[0.65rem] font-black uppercase ${
+                          className={`rounded px-2 py-0.5 text-[0.65rem] font-bold uppercase ${
                             rev.priority === "Urgent"
-                              ? "bg-rose-500 text-white animate-pulse"
+                              ? "bg-red-100 text-red-700 border border-red-200 animate-pulse"
                               : rev.priority === "High"
-                              ? "bg-amber-500 text-slate-950 font-bold"
-                              : "bg-slate-800 text-slate-300"
+                              ? "bg-amber-100 text-amber-800 border border-amber-200"
+                              : "bg-slate-100 text-slate-600"
                           }`}
                         >
                           {rev.priority} Priority
                         </span>
-                        <span className="rounded bg-slate-800 px-2 py-0.5 text-[0.65rem] font-mono text-slate-400">
+                        <span className="rounded bg-slate-100 px-2 py-0.5 text-[0.65rem] font-mono text-slate-600">
                           {rev.targetType}
                         </span>
-                        <span className="text-[0.7rem] text-slate-500">{rev.submittedAt}</span>
+                        <span className="text-[0.7rem] text-slate-400">{rev.submittedAt}</span>
                       </div>
-                      <h3 className="font-bold text-white text-sm">{rev.targetName}</h3>
-                      <p className="text-xs text-slate-400">{rev.summary}</p>
+                      <h3 className="font-bold text-slate-900 text-sm">{rev.targetName}</h3>
+                      <p className="text-xs text-slate-500">{rev.summary}</p>
                     </div>
 
                     <div className="flex items-center gap-3 shrink-0">
                       <span
                         className={`rounded-full px-2.5 py-0.5 text-xs font-bold ${
                           rev.status === "Approved"
-                            ? "bg-emerald-500/20 text-emerald-300"
+                            ? "bg-emerald-100 text-emerald-800 border border-emerald-200"
                             : rev.status === "Pending Review"
-                            ? "bg-amber-500/20 text-amber-300"
-                            : "bg-slate-800 text-slate-400"
+                            ? "bg-amber-100 text-amber-800 border border-amber-200"
+                            : "bg-slate-100 text-slate-600"
                         }`}
                       >
                         {rev.status}
@@ -2732,7 +3004,7 @@ export function SoloAdminDashboard({
                       <Button
                         size="sm"
                         onClick={() => setSelectedReview(rev)}
-                        className="bg-blue-600 hover:bg-blue-700 text-xs font-bold text-white cursor-pointer"
+                        className="bg-red-600 hover:bg-red-700 text-xs font-bold text-white shadow-xs cursor-pointer"
                       >
                         Execute Review →
                       </Button>
