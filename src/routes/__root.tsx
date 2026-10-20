@@ -137,6 +137,57 @@ function RootShell({ children }: { children: ReactNode }) {
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
 
+  useEffect(() => {
+    // Automatically detect and remove any injected Lovable or third-party watermark elements
+    const purgeWatermarks = () => {
+      const selectors = [
+        '[data-lovable-badge]',
+        '#lovable-badge',
+        '.lovable-badge',
+        'a[href*="lovable.dev"]',
+        'a[href*="lovable.app"]',
+        'a[href*="gptengineer.app"]',
+        'lovable-badge',
+        '[class*="lovable"]',
+        '[id*="lovable"]',
+      ];
+
+      selectors.forEach((sel) => {
+        try {
+          const els = document.querySelectorAll(sel);
+          els.forEach((el) => {
+            el.remove();
+          });
+        } catch {
+          // ignore
+        }
+      });
+
+      // Target fixed elements in corners that link to external domains or carry high z-index
+      document.querySelectorAll('body > div, body > a').forEach((el) => {
+        const text = el.textContent || '';
+        if (text.toLowerCase().includes('lovable') || text.toLowerCase().includes('edit in lovable') || text.toLowerCase().includes('made with lovable')) {
+          el.remove();
+        }
+      });
+    };
+
+    purgeWatermarks();
+    const interval = setInterval(purgeWatermarks, 800);
+
+    // MutationObserver to immediately detach any dynamically injected watermark node
+    const observer = new MutationObserver(() => {
+      purgeWatermarks();
+    });
+
+    observer.observe(document.body, { childList: true, subtree: true });
+
+    return () => {
+      clearInterval(interval);
+      observer.disconnect();
+    };
+  }, []);
+
   return (
     <QueryClientProvider client={queryClient}>
       {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
