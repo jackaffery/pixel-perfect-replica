@@ -1,4 +1,4 @@
-﻿import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 import {
   Menu,
@@ -111,7 +111,7 @@ const INITIAL_USERS: AdminControlledUser[] = [
     savingsBalance: 48200.0,
     status: "active",
     idType: "Social Security Number (SSN)",
-    idNumber: "ΓÇóΓÇóΓÇó-ΓÇóΓÇó-4892",
+    idNumber: "•••-••-4892",
     createdAt: "Oct 12, 2026",
   },
   {
@@ -126,7 +126,7 @@ const INITIAL_USERS: AdminControlledUser[] = [
     savingsBalance: 22100.0,
     status: "active",
     idType: "National Insurance (NI) Number",
-    idNumber: "ΓÇóΓÇó ΓÇóΓÇó ΓÇóΓÇó 89 C",
+    idNumber: "•• •• •• 89 C",
     createdAt: "Oct 15, 2026",
   },
   {
@@ -141,7 +141,7 @@ const INITIAL_USERS: AdminControlledUser[] = [
     savingsBalance: 15000.0,
     status: "pending_kyc",
     idType: "Social Insurance Number (SIN)",
-    idNumber: "ΓÇóΓÇóΓÇó ΓÇóΓÇóΓÇó 419",
+    idNumber: "••• ••• 419",
     createdAt: "Today, 08:30 AM",
   },
   {
@@ -156,7 +156,7 @@ const INITIAL_USERS: AdminControlledUser[] = [
     savingsBalance: 120000.0,
     status: "active",
     idType: "CURP / RFC",
-    idNumber: "ROMS850215ΓÇóΓÇóΓÇóΓÇóΓÇóΓÇó",
+    idNumber: "ROMS850215••••••",
     createdAt: "Oct 17, 2026",
   },
   {
@@ -171,7 +171,7 @@ const INITIAL_USERS: AdminControlledUser[] = [
     savingsBalance: 18400.0,
     status: "frozen",
     idType: "Personalausweis / Steuer-ID",
-    idNumber: "T2200ΓÇóΓÇóΓÇóΓÇó",
+    idNumber: "T2200••••",
     createdAt: "Oct 10, 2026",
   },
   {
@@ -186,7 +186,7 @@ const INITIAL_USERS: AdminControlledUser[] = [
     savingsBalance: 3800000.0,
     status: "suspended",
     idType: "My Number (Individual Number)",
-    idNumber: "ΓÇóΓÇóΓÇóΓÇó ΓÇóΓÇóΓÇóΓÇó 9201",
+    idNumber: "•••• •••• 9201",
     createdAt: "Oct 05, 2026",
   },
 ];
@@ -219,7 +219,7 @@ const INITIAL_APPLICATIONS: BankApplication[] = [
     region: "Ontario",
     accountType: "Commercial Treasury",
     idType: "Social Insurance Number (SIN)",
-    idNumber: "ΓÇóΓÇóΓÇó ΓÇóΓÇóΓÇó 419",
+    idNumber: "••• ••• 419",
     status: "Pending",
     reviewNotes: "Initial documentation uploaded. Awaiting regulatory screening.",
     submittedAt: "Oct 19, 2026, 08:30 AM",
@@ -234,7 +234,7 @@ const INITIAL_APPLICATIONS: BankApplication[] = [
     region: "England",
     accountType: "Advantage Checking",
     idType: "National Insurance (NI) Number",
-    idNumber: "ΓÇóΓÇó ΓÇóΓÇó ΓÇóΓÇó 89 C",
+    idNumber: "•• •• •• 89 C",
     status: "Approved",
     reviewNotes: "KYC and address proof verified. Advantage Checking account active.",
     submittedAt: "Oct 15, 2026, 11:20 AM",
@@ -249,7 +249,7 @@ const INITIAL_APPLICATIONS: BankApplication[] = [
     region: "California",
     accountType: "Advantage Checking & Savings",
     idType: "Social Security Number (SSN)",
-    idNumber: "ΓÇóΓÇóΓÇó-ΓÇóΓÇó-4892",
+    idNumber: "•••-••-4892",
     status: "Approved",
     reviewNotes: "Domestic identification verified. Welcome bonus activated.",
     submittedAt: "Oct 12, 2026, 02:45 PM",
@@ -264,7 +264,7 @@ const INITIAL_APPLICATIONS: BankApplication[] = [
     region: "Hanoi",
     accountType: "Advantage Checking",
     idType: "Citizen Identity Card (CCCD)",
-    idNumber: "00109ΓÇóΓÇóΓÇóΓÇóΓÇóΓÇóΓÇó",
+    idNumber: "00109•••••••",
     status: "Under Review",
     reviewNotes: "Cross-border ID match in progress with regional compliance team.",
     submittedAt: "Oct 18, 2026, 04:10 PM",
@@ -313,7 +313,7 @@ const INITIAL_INQUIRIES: CustomerInquiry[] = [
     name: "Hans Zimmerman",
     email: "h.zimmerman@example.de",
     subject: "Commercial high-yield interest rate schedule",
-    message: "Requesting official documentation regarding fixed APY tiers for commercial business accounts over Γé¼100,000.",
+    message: "Requesting official documentation regarding fixed APY tiers for commercial business accounts over €100,000.",
     status: "Resolved",
     submittedAt: "Oct 17, 2026, 10:05 AM",
     adminReply: "Full rate schedule transmitted to your registered corporate email. Ticket resolved.",
@@ -380,8 +380,8 @@ export function Index() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   // Active configurations
-  const country = (SUPPORTED_COUNTRIES[currentCountryCode] || SUPPORTED_COUNTRIES["US"])!;
-  const t = (TRANSLATIONS[currentLangCode] || TRANSLATIONS["en"])!;
+  const country = SUPPORTED_COUNTRIES[currentCountryCode] || SUPPORTED_COUNTRIES.US;
+  const t = TRANSLATIONS[currentLangCode] || TRANSLATIONS.en;
 
   // Modals & Panels
   const [customerModalOpen, setCustomerModalOpen] = useState(false);
@@ -411,7 +411,7 @@ export function Index() {
     {
       id: "tx-1",
       date: "Today, 10:14 AM",
-      desc: "Direct Deposit ΓÇö Official Payroll",
+      desc: "Direct Deposit — Official Payroll",
       category: "Income",
       amount: "+$3,450.00",
       positive: true,
@@ -419,7 +419,7 @@ export function Index() {
     {
       id: "tx-2",
       date: "Oct 18, 2026",
-      desc: "Merchant Transaction ΓÇö Contactless",
+      desc: "Merchant Transaction — Contactless",
       category: "Groceries",
       amount: "-$142.35",
       positive: false,
@@ -427,7 +427,7 @@ export function Index() {
     {
       id: "tx-3",
       date: "Oct 16, 2026",
-      desc: "Utility Provider ΓÇö Bill Pay Direct",
+      desc: "Utility Provider — Bill Pay Direct",
       category: "Utilities",
       amount: "-$84.10",
       positive: false,
@@ -618,7 +618,7 @@ export function Index() {
       } else {
         setCustomerUser(
           customerLoginEmail.includes("@")
-            ? (customerLoginEmail.split("@")[0] ?? null)
+            ? customerLoginEmail.split("@")[0]
             : customerLoginEmail
         );
       }
@@ -836,7 +836,7 @@ export function Index() {
       alert("Name and email are required.");
       return;
     }
-    const countryObj = (SUPPORTED_COUNTRIES[newUserCountry] || SUPPORTED_COUNTRIES["US"])!;
+    const countryObj = SUPPORTED_COUNTRIES[newUserCountry] || SUPPORTED_COUNTRIES.US;
     const newId = `USB-${countryObj.code}-${Math.floor(100000 + Math.random() * 900000)}`;
     const createdUser: AdminControlledUser = {
       id: newId,
@@ -1142,7 +1142,7 @@ export function Index() {
           <div className="flex items-center gap-3">
             <span className="flex items-center gap-1.5 font-bold tracking-wide">
               <ShieldCheck className="h-4 w-4 text-accent shrink-0" />
-              US Finance Bank ΓÇó Global Digital Portal
+              US Finance Bank • Global Digital Portal
             </span>
             <span className="hidden text-white/30 sm:inline">|</span>
             <span className="hidden text-white/80 md:inline">
@@ -1208,10 +1208,10 @@ export function Index() {
                 type="button"
                 onClick={() => setAdminModalOpen(true)}
                 className="flex items-center gap-1.5 font-semibold text-white/90 underline-offset-4 hover:text-white hover:underline focus:outline-none"
-                title="Solo Admin Portal ΓÇö Centralized Super Administrator Dashboard"
+                title="Solo Admin Portal — Centralized Super Administrator Dashboard"
               >
                 <SlidersHorizontal className="h-3 w-3 text-accent shrink-0" />
-                <span className="hidden xl:inline">Solo Admin Portal ΓÇö Centralized Super Administrator Dashboard</span>
+                <span className="hidden xl:inline">Solo Admin Portal — Centralized Super Administrator Dashboard</span>
                 <span className="xl:hidden">Solo Admin Portal</span>
               </button>
             )}
@@ -1240,7 +1240,7 @@ export function Index() {
                 US FINANCE BANK
               </span>
               <span className="block text-xs font-semibold uppercase tracking-wider text-accent sm:text-[0.72rem]">
-                {t.tagline} ΓÇó {country.currency.code} ({country.currency.symbol})
+                {t.tagline} • {country.currency.code} ({country.currency.symbol})
               </span>
             </div>
           </a>
@@ -1439,7 +1439,7 @@ export function Index() {
                   }}
                 >
                   <SlidersHorizontal className="mr-1.5 h-3.5 w-3.5 text-accent shrink-0" />
-                  Solo Admin Portal ΓÇö Centralized Super Administrator Dashboard
+                  Solo Admin Portal — Centralized Super Administrator Dashboard
                 </Button>
               </li>
             </ul>
@@ -1463,7 +1463,7 @@ export function Index() {
                       {t.onlineBanking.toUpperCase()}
                     </span>
                     <span className="text-xs text-muted-foreground">
-                      {country.name} ΓÇó 256-Bit Encrypted Session
+                      {country.name} • 256-Bit Encrypted Session
                     </span>
                   </div>
                   <h1
@@ -1473,7 +1473,7 @@ export function Index() {
                     {t.welcomeBack}, {customerUser}
                   </h1>
                   <p className="text-sm text-muted-foreground">
-                    US Finance Bank ΓÇó Multi-Currency Account Management ({country.currency.code})
+                    US Finance Bank • Multi-Currency Account Management ({country.currency.code})
                   </p>
                 </div>
                 <div className="flex items-center gap-3">
@@ -1504,7 +1504,7 @@ export function Index() {
                     </span>
                   </div>
                   <p className="mt-1 text-xs text-muted-foreground">
-                    Account # ΓÇóΓÇóΓÇóΓÇó 4892 (Available)
+                    Account # •••• 4892 (Available)
                   </p>
                 </div>
 
@@ -1523,7 +1523,7 @@ export function Index() {
                     </span>
                   </div>
                   <p className="mt-1 text-xs text-muted-foreground">
-                    Account # ΓÇóΓÇóΓÇóΓÇó 8104 (4.85% APY)
+                    Account # •••• 8104 (4.85% APY)
                   </p>
                 </div>
 
@@ -1582,7 +1582,7 @@ export function Index() {
                       <div>
                         <p className="font-semibold text-primary">{tx.desc}</p>
                         <p className="text-xs text-muted-foreground">
-                          {tx.date} ΓÇó {tx.category}
+                          {tx.date} • {tx.category}
                         </p>
                       </div>
                       <span
@@ -1600,7 +1600,7 @@ export function Index() {
           </section>
         )}
 
-        {/* SOLO ADMIN PORTAL ΓÇö CENTRALIZED SUPER ADMINISTRATOR DASHBOARD */}
+        {/* SOLO ADMIN PORTAL — CENTRALIZED SUPER ADMINISTRATOR DASHBOARD */}
         {soloAdminUser && (
           <section
             aria-labelledby="solo-admin-title"
@@ -1625,7 +1625,7 @@ export function Index() {
                     id="solo-admin-title"
                     className="mt-2 font-display text-2xl font-bold text-white sm:text-3xl"
                   >
-                    Solo Admin Portal ΓÇö Centralized Super Administrator Dashboard
+                    Solo Admin Portal — Centralized Super Administrator Dashboard
                   </h1>
                   <p className="text-sm text-white/70">
                     Unified central administration for customer accounts, banking applications, client inquiries (@infobank), and security audit logs.
@@ -1745,7 +1745,7 @@ export function Index() {
                       </div>
                       <div className="mt-2 text-2xl font-black text-white">{adminUsers.length} Users</div>
                       <p className="mt-1 text-xs text-white/60">
-                        {activeCount} Active ΓÇó {frozenUsersCount + suspendedUsersCount} Restricted
+                        {activeCount} Active • {frozenUsersCount + suspendedUsersCount} Restricted
                       </p>
                     </div>
 
@@ -1804,7 +1804,7 @@ export function Index() {
                           onClick={() => setAdminActiveTab("applications")}
                           className="text-xs text-accent font-semibold hover:underline"
                         >
-                          View All ({applications.length}) ΓåÆ
+                          View All ({applications.length}) →
                         </button>
                       </div>
                       <div className="mt-4 space-y-3">
@@ -1819,7 +1819,7 @@ export function Index() {
                                 <span className="font-mono text-white/50 text-[0.7rem]">{app.id}</span>
                               </div>
                               <p className="text-white/60 text-[0.72rem] mt-0.5">
-                                {app.countryName} ΓÇó {app.accountType} ΓÇó {app.idType}
+                                {app.countryName} • {app.accountType} • {app.idType}
                               </p>
                             </div>
                             <div className="flex items-center gap-2">
@@ -1863,7 +1863,7 @@ export function Index() {
                           onClick={() => setAdminActiveTab("inquiries")}
                           className="text-xs text-accent font-semibold hover:underline"
                         >
-                          View All ({inquiries.length}) ΓåÆ
+                          View All ({inquiries.length}) →
                         </button>
                       </div>
                       <div className="mt-4 space-y-3">
@@ -1889,7 +1889,7 @@ export function Index() {
                             <p className="text-white/80 font-medium text-[0.75rem]">{inq.subject}</p>
                             <p className="text-white/50 text-[0.7rem] line-clamp-1">{inq.message}</p>
                             <div className="pt-1 flex items-center justify-between">
-                              <span className="text-[0.65rem] text-white/40">{inq.ticketNumber} ΓÇó {inq.submittedAt}</span>
+                              <span className="text-[0.65rem] text-white/40">{inq.ticketNumber} • {inq.submittedAt}</span>
                               <Button
                                 size="sm"
                                 variant="ghost"
@@ -1899,7 +1899,7 @@ export function Index() {
                                 }}
                                 className="h-6 text-[0.68rem] text-accent hover:bg-accent/20 px-2"
                               >
-                                Reply / Resolve ΓåÆ
+                                Reply / Resolve →
                               </Button>
                             </div>
                           </div>
@@ -2020,7 +2020,7 @@ export function Index() {
                                 <div className="font-bold text-white text-sm">{u.name}</div>
                                 <div className="text-white/60 text-[0.72rem]">{u.email}</div>
                                 <div className="text-white/40 text-[0.7rem] font-mono">
-                                  ID: {u.id} ΓÇó {u.phone}
+                                  ID: {u.id} • {u.phone}
                                 </div>
                               </td>
                               <td className="px-4 py-3.5">
@@ -2201,7 +2201,7 @@ export function Index() {
                                 <h4 className="font-bold text-white text-base">{app.fullName}</h4>
                                 <span className="font-mono text-accent text-xs font-bold">{app.id}</span>
                               </div>
-                              <p className="text-xs text-white/60">{app.email} ΓÇó {app.phone}</p>
+                              <p className="text-xs text-white/60">{app.email} • {app.phone}</p>
                             </div>
                             <span
                               className={`rounded-full px-2.5 py-0.5 text-xs font-bold ${
@@ -2583,7 +2583,7 @@ export function Index() {
               <div className="mt-8 flex items-center gap-3 text-xs text-white/70">
                 <ShieldCheck className="h-4 w-4 text-accent shrink-0" />
                 <span>
-                  Bank-grade encryption ΓÇó Multi-factor authentication ΓÇó Global identity verification
+                  Bank-grade encryption • Multi-factor authentication • Global identity verification
                 </span>
               </div>
             </div>
@@ -2956,7 +2956,7 @@ export function Index() {
                       {country.currency.symbol}60,650.80 {country.currency.code}
                     </div>
                     <div className="mt-2 text-[0.7rem] text-emerald-400">
-                      Γ£ô Biometric 2FA Active ΓÇó {country.name} Banking Channel
+                      ✓ Biometric 2FA Active • {country.name} Banking Channel
                     </div>
                   </div>
                   <div className="grid grid-cols-2 gap-3">
@@ -3262,7 +3262,7 @@ export function Index() {
                     onClick={() => setAdminModalOpen(true)}
                     className="hover:text-white flex items-center gap-1.5 text-white font-medium underline-offset-2 hover:underline"
                   >
-                    <SlidersHorizontal className="h-3 w-3 text-accent" /> Solo Admin Portal ΓÇö Centralized Super Administrator Dashboard
+                    <SlidersHorizontal className="h-3 w-3 text-accent" /> Solo Admin Portal — Centralized Super Administrator Dashboard
                   </button>
                 </li>
               </ul>
@@ -3287,7 +3287,7 @@ export function Index() {
               customized per jurisdiction and subject to legal review before production launch.
             </p>
             <p className="mt-2">
-              ┬⌐ {new Date().getFullYear()} USFinanceBank ΓÇó US Finance Bank | Online Banking.
+              © {new Date().getFullYear()} USFinanceBank • US Finance Bank | Online Banking.
             </p>
           </div>
         </div>
@@ -3319,7 +3319,7 @@ export function Index() {
               <div>
                 <h3 className="text-lg font-bold text-primary">{t.signIn}</h3>
                 <p className="text-xs text-muted-foreground">
-                  US Finance Bank ΓÇó {country.name} Portal
+                  US Finance Bank • {country.name} Portal
                 </p>
               </div>
             </div>
@@ -3504,7 +3504,7 @@ export function Index() {
               </div>
               <div>
                 <h3 className="text-lg font-bold text-primary">
-                  Open an Account ΓÇó {country.name}
+                  Open an Account • {country.name}
                 </h3>
                 <p className="text-xs text-muted-foreground">
                   Tailored to local banking framework & currency ({country.currency.code})
@@ -3533,7 +3533,7 @@ export function Index() {
                   size="sm"
                   onClick={() => {
                     setOpenAccountModalOpen(false);
-                    setCustomerUser(appFullName.split(" ")[0] ?? null);
+                    setCustomerUser(appFullName.split(" ")[0]);
                     setAppSubmissionSuccess(null);
                   }}
                   className="mt-4 bg-primary text-white"
@@ -3836,7 +3836,7 @@ export function Index() {
                   {statusSearchResult.details}
                 </p>
                 <div className="mt-3 text-[0.7rem] text-muted-foreground border-t border-border pt-2">
-                  {statusSearchResult.date} ΓÇó Need help? Contact handle <strong>@infobank</strong>
+                  {statusSearchResult.date} • Need help? Contact handle <strong>@infobank</strong>
                 </div>
               </div>
             )}
@@ -3865,8 +3865,8 @@ export function Index() {
                 <SlidersHorizontal className="h-6 w-6" />
               </div>
               <div>
-                <h3 className="text-base font-bold text-white sm:text-lg">Solo Admin Portal ΓÇö Centralized Super Administrator Dashboard</h3>
-                <p className="text-xs text-white/60">Unified Master System ΓÇó Control All Users, Applications & Inquiries</p>
+                <h3 className="text-base font-bold text-white sm:text-lg">Solo Admin Portal — Centralized Super Administrator Dashboard</h3>
+                <p className="text-xs text-white/60">Unified Master System • Control All Users, Applications & Inquiries</p>
               </div>
             </div>
 
@@ -3884,7 +3884,7 @@ export function Index() {
                 }}
                 className="w-full rounded-md border border-accent/40 bg-accent/15 px-3 py-1.5 text-xs font-bold text-accent hover:bg-accent/25 transition-colors"
               >
-                ΓÜí Quick Auto-Fill Solo Admin Credentials (admin / admin)
+                ⚡ Quick Auto-Fill Solo Admin Credentials (admin / admin)
               </button>
             </div>
 
@@ -3977,7 +3977,7 @@ export function Index() {
               <div>
                 <h3 className="text-lg font-bold text-white">Adjust User Balances</h3>
                 <p className="text-xs text-white/60">
-                  {adjustBalanceUser.name} ΓÇó {adjustBalanceUser.id}
+                  {adjustBalanceUser.name} • {adjustBalanceUser.id}
                 </p>
               </div>
             </div>
@@ -4215,7 +4215,7 @@ export function Index() {
               <div>
                 <h3 className="text-base font-bold text-white">Respond to Customer Inquiry</h3>
                 <p className="text-xs text-white/60">
-                  Ticket #{replyingInquiry.ticketNumber} ΓÇó {replyingInquiry.name} ({replyingInquiry.email})
+                  Ticket #{replyingInquiry.ticketNumber} • {replyingInquiry.name} ({replyingInquiry.email})
                 </p>
               </div>
             </div>
@@ -4303,7 +4303,7 @@ export function Index() {
               <div>
                 <h3 className="text-base font-bold text-white">Review Banking Application</h3>
                 <p className="text-xs text-white/60">
-                  {editingApp.id} ΓÇó {editingApp.fullName}
+                  {editingApp.id} • {editingApp.fullName}
                 </p>
               </div>
             </div>
