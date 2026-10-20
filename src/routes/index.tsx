@@ -380,8 +380,8 @@ export function Index() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   // Active configurations
-  const country = SUPPORTED_COUNTRIES[currentCountryCode] || SUPPORTED_COUNTRIES.US;
-  const t = TRANSLATIONS[currentLangCode] || TRANSLATIONS.en;
+  const country = (SUPPORTED_COUNTRIES[currentCountryCode] || SUPPORTED_COUNTRIES["US"])!;
+  const t = (TRANSLATIONS[currentLangCode] || TRANSLATIONS["en"])!;
 
   // Modals & Panels
   const [customerModalOpen, setCustomerModalOpen] = useState(false);
@@ -836,7 +836,7 @@ export function Index() {
       alert("Name and email are required.");
       return;
     }
-    const countryObj = SUPPORTED_COUNTRIES[newUserCountry] || SUPPORTED_COUNTRIES.US;
+    const countryObj = (SUPPORTED_COUNTRIES[newUserCountry] || SUPPORTED_COUNTRIES["US"])!;
     const newId = `USB-${countryObj.code}-${Math.floor(100000 + Math.random() * 900000)}`;
     const createdUser: AdminControlledUser = {
       id: newId,
@@ -3533,7 +3533,7 @@ export function Index() {
                   size="sm"
                   onClick={() => {
                     setOpenAccountModalOpen(false);
-                    setCustomerUser(appFullName.split(" ")[0]);
+                    setCustomerUser(appFullName.split(" ")[0] ?? null);
                     setAppSubmissionSuccess(null);
                   }}
                   className="mt-4 bg-primary text-white"
