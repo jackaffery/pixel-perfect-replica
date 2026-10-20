@@ -1619,7 +1619,7 @@ export function Index() {
               </select>
             </div>
 
-            {/* Staff Sign In Admin Shortcut */}
+            {/* Staff Sign In Admin Active Indicator (Only rendered when staff session is active) */}
             {soloAdminUser ? (
               <div className="flex items-center gap-2">
                 <span className="rounded bg-accent px-2 py-0.5 text-xs font-bold text-white shadow-xs flex items-center gap-1">
@@ -1634,17 +1634,7 @@ export function Index() {
                   Exit Session
                 </button>
               </div>
-            ) : (
-              <button
-                type="button"
-                onClick={() => setAdminModalOpen(true)}
-                className="flex items-center gap-1.5 rounded-md bg-white/10 hover:bg-white/20 border border-white/20 px-2.5 py-1 text-xs font-bold text-white transition-all shadow-xs"
-                title="Staff Sign-In Admin Dashboard"
-              >
-                <SlidersHorizontal className="h-3.5 w-3.5 text-accent shrink-0" />
-                <span>Staff Sign-In Admin</span>
-              </button>
-            )}
+            ) : null}
           </div>
         </div>
       </div>
@@ -1857,19 +1847,6 @@ export function Index() {
                   }}
                 >
                   {t.signIn}
-                </Button>
-              </li>
-              <li className="pt-1">
-                <Button
-                  variant="ghost"
-                  className="w-full text-xs text-muted-foreground justify-start"
-                  onClick={() => {
-                    setMobileMenuOpen(false);
-                    setAdminModalOpen(true);
-                  }}
-                >
-                  <SlidersHorizontal className="mr-1.5 h-3.5 w-3.5 text-accent shrink-0" />
-                  Staff Sign-In Admin Dashboard
                 </Button>
               </li>
             </ul>
@@ -2983,15 +2960,6 @@ export function Index() {
                     Check Application Status
                   </button>
                 </li>
-                <li>
-                  <button
-                    type="button"
-                    onClick={() => setAdminModalOpen(true)}
-                    className="hover:text-white flex items-center gap-1.5 text-white font-medium underline-offset-2 hover:underline"
-                  >
-                    <SlidersHorizontal className="h-3 w-3 text-accent" /> Staff Sign-In Admin Dashboard
-                  </button>
-                </li>
               </ul>
             </div>
 
@@ -3201,21 +3169,6 @@ export function Index() {
                   className="font-bold text-accent hover:underline"
                 >
                   Apply for an Account
-                </button>
-              </div>
-
-              {/* Staff Sign-In Admin Direct Link inside Sign In dialog */}
-              <div className="pt-2 border-t border-dashed border-border/80">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setCustomerModalOpen(false);
-                    setAdminModalOpen(true);
-                  }}
-                  className="inline-flex items-center gap-1.5 font-bold text-red-600 hover:text-red-700 hover:underline bg-red-50 hover:bg-red-100 px-3 py-1.5 rounded-lg border border-red-200 transition-colors"
-                >
-                  <SlidersHorizontal className="h-3.5 w-3.5" />
-                  Staff Sign-In Admin Dashboard
                 </button>
               </div>
             </div>
