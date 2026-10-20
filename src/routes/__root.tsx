@@ -86,8 +86,6 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { name: "twitter:card", content: "summary_large_image" },
       { name: "twitter:title", content: "US Finance Bank | Online Banking" },
       { name: "twitter:description", content: "Banking Made Simpler. Your Future, Your Finance." },
-      { property: "og:image", content: "/us-finance-bank-building.jpg" },
-      { name: "twitter:image", content: "/us-finance-bank-building.jpg" },
     ],
     scripts: [
       {
