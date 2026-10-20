@@ -1556,67 +1556,84 @@ export function Index() {
           </div>
 
           {/* Right: Country & Language Selectors */}
-          <div className="flex flex-wrap items-center gap-3">
-            {/* Country & Currency Selector with appropriate small flag beside every country */}
-            <div className="relative">
-              <button
-                type="button"
-                onClick={() => setCountryDropdownOpen(!countryDropdownOpen)}
-                aria-label="Select Country and Currency"
-                aria-expanded={countryDropdownOpen}
-                className="flex items-center gap-2 bg-white/10 hover:bg-white/15 px-2.5 py-1.5 rounded border border-white/15 text-white text-xs font-semibold focus:outline-none transition-colors cursor-pointer"
-              >
-                <CountryFlagIcon code={currentCountryCode} className="h-3.5 w-5 rounded-[2px] shadow-xs inline-block shrink-0 object-cover" />
-                <span className="truncate max-w-[150px] sm:max-w-none">{country.name} ({country.currency.code})</span>
-                <ChevronDown className={`h-3 w-3 text-white/70 transition-transform ${countryDropdownOpen ? "rotate-180" : ""}`} />
-              </button>
+          <div className="flex flex-wrap items-center gap-2.5 sm:gap-3.5">
+            {/* Currency Spot with explicit specification label */}
+            <div className="flex items-center gap-1.5">
+              <span className="text-[11px] font-bold text-white/90 uppercase tracking-wider shrink-0 flex items-center gap-1">
+                <DollarSign className="h-3 w-3 text-accent shrink-0" />
+                <span>Currency:</span>
+              </span>
+              <div className="relative">
+                <button
+                  type="button"
+                  onClick={() => setCountryDropdownOpen(!countryDropdownOpen)}
+                  aria-label="Specify Country and Currency"
+                  aria-expanded={countryDropdownOpen}
+                  className="flex items-center gap-2 bg-white/10 hover:bg-white/15 px-2.5 py-1.5 rounded border border-white/20 text-white text-xs font-semibold focus:outline-none transition-colors cursor-pointer shadow-xs"
+                >
+                  <CountryFlagIcon code={currentCountryCode} className="h-3.5 w-5 rounded-[2px] shadow-xs inline-block shrink-0 object-cover" />
+                  <span className="truncate max-w-[140px] sm:max-w-none">{country.name} ({country.currency.code})</span>
+                  <ChevronDown className={`h-3 w-3 text-white/70 transition-transform ${countryDropdownOpen ? "rotate-180" : ""}`} />
+                </button>
 
-              {countryDropdownOpen && (
-                <>
-                  <div
-                    className="fixed inset-0 z-40"
-                    onClick={() => setCountryDropdownOpen(false)}
-                    aria-hidden="true"
-                  />
-                  <div className="absolute right-0 top-full mt-1.5 w-72 rounded-lg border border-white/20 bg-[#0a192f] p-1.5 shadow-2xl z-50 text-white animate-fadeIn max-h-80 overflow-y-auto">
-                    {Object.values(SUPPORTED_COUNTRIES).map((c) => (
-                      <button
-                        key={c.code}
-                        type="button"
-                        onClick={() => {
-                          handleCountryChange(c.code);
-                          setCountryDropdownOpen(false);
-                        }}
-                        className={`w-full flex items-center gap-2.5 px-3 py-2 text-xs rounded-md text-left transition-colors ${
-                          c.code === currentCountryCode
-                            ? "bg-blue-600 text-white font-bold"
-                            : "text-white/90 hover:bg-white/10 hover:text-white"
-                        }`}
-                      >
-                        <CountryFlagIcon code={c.code} className="h-3.5 w-5 rounded-[2px] shadow-xs shrink-0 object-cover" />
-                        <span className="truncate">{c.name} ({c.currency.code})</span>
-                      </button>
-                    ))}
-                  </div>
-                </>
-              )}
+                {countryDropdownOpen && (
+                  <>
+                    <div
+                      className="fixed inset-0 z-40"
+                      onClick={() => setCountryDropdownOpen(false)}
+                      aria-hidden="true"
+                    />
+                    <div className="absolute right-0 top-full mt-1.5 w-72 rounded-lg border border-white/20 bg-[#0a192f] p-1.5 shadow-2xl z-50 text-white animate-fadeIn max-h-80 overflow-y-auto">
+                      <div className="px-3 py-1.5 border-b border-white/10 text-[10px] font-bold uppercase tracking-wider text-accent flex items-center justify-between">
+                        <span>Specify Currency & Region</span>
+                        <span className="text-white/50 text-[9px]">{Object.keys(SUPPORTED_COUNTRIES).length} Options</span>
+                      </div>
+                      <div className="mt-1 space-y-0.5">
+                        {Object.values(SUPPORTED_COUNTRIES).map((c) => (
+                          <button
+                            key={c.code}
+                            type="button"
+                            onClick={() => {
+                              handleCountryChange(c.code);
+                              setCountryDropdownOpen(false);
+                            }}
+                            className={`w-full flex items-center gap-2.5 px-3 py-2 text-xs rounded-md text-left transition-colors ${
+                              c.code === currentCountryCode
+                                ? "bg-blue-600 text-white font-bold"
+                                : "text-white/90 hover:bg-white/10 hover:text-white"
+                            }`}
+                          >
+                            <CountryFlagIcon code={c.code} className="h-3.5 w-5 rounded-[2px] shadow-xs shrink-0 object-cover" />
+                            <span className="truncate">{c.name} ({c.currency.code})</span>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  </>
+                )}
+              </div>
             </div>
 
-            {/* Language Selector */}
-            <div className="flex items-center gap-1 bg-white/10 px-2 py-1 rounded border border-white/15">
-              <Globe2 className="h-3.5 w-3.5 text-accent shrink-0" />
-              <select
-                aria-label="Select Language"
-                value={currentLangCode}
-                onChange={(e) => setCurrentLangCode(e.target.value)}
-                className="bg-transparent text-white text-xs font-semibold focus:outline-none cursor-pointer"
-              >
-                {Object.values(SUPPORTED_LANGUAGES).map((l) => (
-                  <option key={l.code} value={l.code} className="bg-navy-deep text-white">
-                    {l.flag} {l.nativeName}
-                  </option>
-                ))}
-              </select>
+            {/* Language Spot with explicit specification label */}
+            <div className="flex items-center gap-1.5">
+              <span className="text-[11px] font-bold text-white/90 uppercase tracking-wider shrink-0 flex items-center gap-1">
+                <Globe2 className="h-3 w-3 text-accent shrink-0" />
+                <span>Language:</span>
+              </span>
+              <div className="flex items-center gap-1.5 bg-white/10 hover:bg-white/15 px-2.5 py-1.5 rounded border border-white/20 transition-colors shadow-xs">
+                <select
+                  aria-label="Specify Language"
+                  value={currentLangCode}
+                  onChange={(e) => setCurrentLangCode(e.target.value)}
+                  className="bg-transparent text-white text-xs font-semibold focus:outline-none cursor-pointer"
+                >
+                  {Object.values(SUPPORTED_LANGUAGES).map((l) => (
+                    <option key={l.code} value={l.code} className="bg-navy-deep text-white">
+                      {l.flag} {l.nativeName}
+                    </option>
+                  ))}
+                </select>
+              </div>
             </div>
 
             {/* Staff Sign In Admin Active Indicator (Only rendered when staff session is active) */}
@@ -1848,6 +1865,53 @@ export function Index() {
                 >
                   {t.signIn}
                 </Button>
+              </li>
+
+              {/* Mobile Dedicated Currency & Language Selection */}
+              <li className="pt-3 border-t border-border/80">
+                <div className="space-y-3 bg-slate-50 dark:bg-slate-900/50 p-3 rounded-lg border border-border/60">
+                  <div>
+                    <span className="block text-[11px] font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-1 flex items-center gap-1">
+                      <DollarSign className="h-3.5 w-3.5 text-accent" />
+                      Specify Currency:
+                    </span>
+                    <select
+                      aria-label="Specify Currency"
+                      value={currentCountryCode}
+                      onChange={(e) => {
+                        handleCountryChange(e.target.value);
+                      }}
+                      className="w-full bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 text-xs font-semibold py-2 px-3 rounded-md border border-input focus:outline-none shadow-xs"
+                    >
+                      {Object.values(SUPPORTED_COUNTRIES).map((c) => (
+                        <option key={c.code} value={c.code}>
+                          {c.name} ({c.currency.code} - {c.currency.symbol})
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div>
+                    <span className="block text-[11px] font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-1 flex items-center gap-1">
+                      <Globe2 className="h-3.5 w-3.5 text-accent" />
+                      Specify Language:
+                    </span>
+                    <select
+                      aria-label="Specify Language"
+                      value={currentLangCode}
+                      onChange={(e) => {
+                        setCurrentLangCode(e.target.value);
+                      }}
+                      className="w-full bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 text-xs font-semibold py-2 px-3 rounded-md border border-input focus:outline-none shadow-xs"
+                    >
+                      {Object.values(SUPPORTED_LANGUAGES).map((l) => (
+                        <option key={l.code} value={l.code}>
+                          {l.flag} {l.nativeName} ({l.name})
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
               </li>
             </ul>
           </nav>

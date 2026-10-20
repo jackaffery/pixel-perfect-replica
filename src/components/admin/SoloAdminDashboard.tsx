@@ -1032,9 +1032,19 @@ export function SoloAdminDashboard({
       {/* ============================================================ */}
       {/* 1. COLLAPSIBLE LEFT SIDEBAR (White clean with red accents) */}
       {/* ============================================================ */}
+      {/* Mobile Backdrop when sidebar is expanded on small screens */}
+      {!sidebarCollapsed && (
+        <div
+          className="fixed inset-0 z-25 bg-black/50 md:hidden"
+          onClick={() => setSidebarCollapsed(true)}
+          aria-hidden="true"
+        />
+      )}
       <aside
-        className={`flex flex-col border-r border-slate-200 bg-white transition-all duration-300 z-30 shadow-xs ${
-          sidebarCollapsed ? "w-20" : "w-64"
+        className={`flex flex-col border-r border-slate-200 bg-white transition-all duration-300 shadow-xs ${
+          sidebarCollapsed
+            ? "hidden md:flex md:w-20 z-30"
+            : "fixed inset-y-0 left-0 z-30 w-64 md:relative md:flex md:w-64"
         }`}
       >
         {/* Admin Profile Area in Left Sidebar matching visual reference */}
@@ -1149,7 +1159,7 @@ export function SoloAdminDashboard({
           </div>
 
           {/* Center: Search Field matching screenshot */}
-          <div className="relative w-72 md:w-96 mx-4">
+          <div className="relative hidden sm:block w-48 md:w-80 lg:w-96 mx-2 sm:mx-4">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
             <input
               type="text"
