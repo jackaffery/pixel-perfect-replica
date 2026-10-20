@@ -16,6 +16,8 @@ import {
   EyeOff,
   CreditCard,
   Send,
+  Mail,
+  Phone,
   CheckCircle2,
   AlertCircle,
   Building2,
@@ -1059,7 +1061,7 @@ export function Index() {
         id: query,
         status: "Application Not Found",
         date: "N/A",
-        details: "No application matches this reference ID in the central system. Please ensure your ID starts with USB- or contact handle @infobank.",
+        details: "No application matches this reference ID in the central system. Please ensure your ID starts with USB- or contact usfinanceassistance@usfinancebank.online (+1-567-US).",
       });
     }
   };
@@ -1189,8 +1191,18 @@ export function Index() {
               US Finance Bank • Global Digital Portal
             </span>
             <span className="hidden text-white/30 sm:inline">|</span>
-            <span className="hidden text-white/80 md:inline">
-              Official Channel: <strong className="text-white">@infobank</strong>
+            <span className="hidden text-white/80 md:inline items-center gap-1.5">
+              <Mail className="h-3 w-3 text-accent inline mr-1" />
+              <a href="mailto:usfinanceassistance@usfinancebank.online" className="text-white hover:underline">
+                usfinanceassistance@usfinancebank.online
+              </a>
+            </span>
+            <span className="hidden text-white/30 lg:inline">|</span>
+            <span className="hidden text-white/80 lg:inline items-center gap-1.5">
+              <Phone className="h-3 w-3 text-accent inline mr-1" />
+              <a href="tel:+1-567-US" className="text-white font-bold hover:underline">
+                +1-567-US
+              </a>
             </span>
           </div>
 
@@ -2206,18 +2218,56 @@ export function Index() {
                 {/* Verified Contact Details Box */}
                 <div className="mt-8 rounded-xl border border-border bg-white p-6 shadow-xs">
                   <h3 className="text-sm font-bold text-primary">Verified Official Contact</h3>
-                  <div className="mt-3 flex items-center gap-3">
-                    <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 text-primary">
-                      <Headset className="h-5 w-5" />
-                    </span>
-                    <div>
-                      <p className="text-xs text-muted-foreground">Official Communications Handle</p>
-                      <p className="text-base font-extrabold text-accent">@infobank</p>
+
+                  <div className="mt-4 space-y-3.5">
+                    {/* Official Email */}
+                    <div className="flex items-center gap-3">
+                      <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                        <Mail className="h-5 w-5" />
+                      </span>
+                      <div className="min-w-0">
+                        <p className="text-xs text-muted-foreground">Official Assistance Email</p>
+                        <a
+                          href="mailto:usfinanceassistance@usfinancebank.online"
+                          className="text-sm font-extrabold text-accent hover:underline break-all"
+                        >
+                          usfinanceassistance@usfinancebank.online
+                        </a>
+                      </div>
+                    </div>
+
+                    {/* Official Phone Number */}
+                    <div className="flex items-center gap-3">
+                      <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                        <Phone className="h-5 w-5" />
+                      </span>
+                      <div>
+                        <p className="text-xs text-muted-foreground">Official Support Telephone</p>
+                        <a
+                          href="tel:+1-567-US"
+                          className="text-base font-extrabold text-primary hover:text-accent hover:underline"
+                        >
+                          +1-567-US
+                        </a>
+                      </div>
+                    </div>
+
+                    {/* Channel Handle */}
+                    <div className="flex items-center gap-3">
+                      <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                        <Headset className="h-5 w-5" />
+                      </span>
+                      <div>
+                        <p className="text-xs text-muted-foreground">Official Communications Handle</p>
+                        <p className="text-sm font-bold text-primary">@infobank</p>
+                      </div>
                     </div>
                   </div>
-                  <p className="mt-4 text-xs leading-relaxed text-muted-foreground">
-                    All authorized inquiries and customer care updates are coordinated under handle{" "}
-                    <strong className="text-primary">@infobank</strong>.
+
+                  <p className="mt-4 text-xs leading-relaxed text-muted-foreground border-t border-border/70 pt-3">
+                    All authorized inquiries, verification documentation, and support tickets are coordinated via{" "}
+                    <strong className="text-primary">usfinanceassistance@usfinancebank.online</strong> and hotline{" "}
+                    <strong className="text-primary">+1-567-US</strong>.
                   </p>
                 </div>
 
@@ -2235,9 +2285,9 @@ export function Index() {
 
               {/* Functional Contact Form */}
               <div className="rounded-2xl border border-border bg-white p-7 shadow-sm">
-                <h3 className="text-lg font-bold text-primary">Send an Inquiry to @infobank</h3>
+                <h3 className="text-lg font-bold text-primary">Send an Inquiry to Official Support</h3>
                 <p className="mt-1 text-xs text-muted-foreground">
-                  We respond to verified inquiries within one business day.
+                  Direct support: <strong className="text-primary">usfinanceassistance@usfinancebank.online</strong> • Hotline: <strong className="text-primary">+1-567-US</strong>
                 </p>
 
                 {contactSuccess ? (
@@ -2247,8 +2297,8 @@ export function Index() {
                       Message Dispatched
                     </h4>
                     <p className="mt-2 text-xs leading-relaxed text-emerald-800">
-                      Thank you for contacting US Finance Bank. Your message has been routed to the{" "}
-                      <strong>@infobank</strong> desk with ticket #
+                      Thank you for contacting US Finance Bank. Your message has been routed to{" "}
+                      <strong>usfinanceassistance@usfinancebank.online</strong> (Hotline: +1-567-US) with ticket #
                       {Math.floor(100000 + Math.random() * 900000)}.
                     </p>
                     <Button
@@ -2325,7 +2375,7 @@ export function Index() {
                       disabled={contactSending}
                       className="w-full bg-primary font-bold text-primary-foreground hover:bg-primary/90"
                     >
-                      {contactSending ? "Transmitting to @infobank..." : "Submit Inquiry"}
+                      {contactSending ? "Transmitting Inquiry..." : "Submit Inquiry"}
                     </Button>
                   </form>
                 )}
@@ -2348,9 +2398,23 @@ export function Index() {
                 Stronger Together for a Brighter Future. Modern digital banking with multilingual
                 cross-border capabilities and 256-bit security standards.
               </p>
-              <p className="mt-4 text-xs font-semibold text-white">
-                Contact Handle: <span className="text-accent font-bold">@infobank</span>
-              </p>
+              <div className="mt-4 space-y-1.5 text-xs">
+                <p className="text-white/90">
+                  <span className="text-white/60">Email:</span>{" "}
+                  <a href="mailto:usfinanceassistance@usfinancebank.online" className="text-accent font-bold hover:underline">
+                    usfinanceassistance@usfinancebank.online
+                  </a>
+                </p>
+                <p className="text-white/90">
+                  <span className="text-white/60">Tel:</span>{" "}
+                  <a href="tel:+1-567-US" className="text-accent font-bold hover:underline">
+                    +1-567-US
+                  </a>
+                </p>
+                <p className="text-white/70">
+                  <span className="text-white/60">Handle:</span> <span className="text-accent font-bold">@infobank</span>
+                </p>
+              </div>
             </div>
 
             <div>
@@ -2434,7 +2498,7 @@ export function Index() {
 
           <div className="mt-10 border-t border-white/10 pt-6 text-xs text-white/60">
             <p className="leading-relaxed">
-              Official US Finance Bank portal. Contact handle: @infobank. Treat the listed countries
+              Official US Finance Bank portal. Contact: usfinanceassistance@usfinancebank.online • Tel: +1-567-US • Handle: @infobank. Treat the listed countries
               as the bank's intended service coverage, not as a claim of completed licensing or
               charter. Country-specific compliance, tax reporting, and KYC frameworks are
               customized per jurisdiction and subject to legal review before production launch.
@@ -3006,7 +3070,14 @@ export function Index() {
                   {statusSearchResult.details}
                 </p>
                 <div className="mt-3 text-[0.7rem] text-muted-foreground border-t border-border pt-2">
-                  {statusSearchResult.date} • Need help? Contact handle <strong>@infobank</strong>
+                  {statusSearchResult.date} • Need help? Contact{" "}
+                  <a href="mailto:usfinanceassistance@usfinancebank.online" className="text-primary font-bold hover:underline">
+                    usfinanceassistance@usfinancebank.online
+                  </a>{" "}
+                  or call{" "}
+                  <a href="tel:+1-567-US" className="text-primary font-bold hover:underline">
+                    +1-567-US
+                  </a>
                 </div>
               </div>
             )}
