@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+﻿import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 import {
   Menu,
@@ -52,7 +52,6 @@ import { Button } from "@/components/ui/button";
 import usFinanceBuildingHero from "@/assets/us-finance-bank-building.jpg";
 import branchCanadaImg from "@/assets/branch-canada.jpg";
 import branchUkImg from "@/assets/branch-uk.jpg";
-import branchMexicoImg from "@/assets/branch-mexico.jpg";
 import mobileCardBankingImg from "@/assets/mobile-card-banking.jpg";
 import officerSupportImg from "@/assets/officer-support.jpg";
 import {
@@ -3109,12 +3108,12 @@ export function Index() {
                 </div>
               </div>
 
-              {/* Step 3: Mexico Branch */}
+              {/* Step 3: Digital Card & Mobile Banking */}
               <div className="w-full sm:w-[calc(50%-1rem)] lg:w-[calc(33.333%-1.5rem)] max-w-sm overflow-hidden rounded-2xl border border-border/80 bg-white shadow-xs transition-transform hover:-translate-y-1 hover:shadow-md">
                 <div className="relative aspect-[4/3] w-full overflow-hidden bg-slate-100">
                   <img
-                    src={branchMexicoImg}
-                    alt="Step 3: USA Finance Bank Mexico Branch"
+                    src={mobileCardBankingImg}
+                    alt="Step 3: Mobile Banking and Debit Card"
                     className="h-full w-full object-cover object-center"
                     loading="lazy"
                   />
@@ -3124,32 +3123,17 @@ export function Index() {
                 </div>
               </div>
 
-              {/* Step 4: Digital Card & Mobile Banking */}
+              {/* Step 4: Officer Customer Support */}
               <div className="w-full sm:w-[calc(50%-1rem)] lg:w-[calc(33.333%-1.5rem)] max-w-sm overflow-hidden rounded-2xl border border-border/80 bg-white shadow-xs transition-transform hover:-translate-y-1 hover:shadow-md">
                 <div className="relative aspect-[4/3] w-full overflow-hidden bg-slate-100">
                   <img
-                    src={mobileCardBankingImg}
-                    alt="Step 4: Mobile Banking and Debit Card"
+                    src={officerSupportImg}
+                    alt="Step 4: Banking Officer Support Desk"
                     className="h-full w-full object-cover object-center"
                     loading="lazy"
                   />
                   <div className="absolute top-3 left-3 rounded-md bg-navy-deep/90 px-3 py-1 text-xs font-extrabold uppercase tracking-wider text-white shadow-sm backdrop-blur-xs">
                     Step 4
-                  </div>
-                </div>
-              </div>
-
-              {/* Step 5: Officer Customer Support */}
-              <div className="w-full sm:w-[calc(50%-1rem)] lg:w-[calc(33.333%-1.5rem)] max-w-sm overflow-hidden rounded-2xl border border-border/80 bg-white shadow-xs transition-transform hover:-translate-y-1 hover:shadow-md">
-                <div className="relative aspect-[4/3] w-full overflow-hidden bg-slate-100">
-                  <img
-                    src={officerSupportImg}
-                    alt="Step 5: Banking Officer Support Desk"
-                    className="h-full w-full object-cover object-center"
-                    loading="lazy"
-                  />
-                  <div className="absolute top-3 left-3 rounded-md bg-navy-deep/90 px-3 py-1 text-xs font-extrabold uppercase tracking-wider text-white shadow-sm backdrop-blur-xs">
-                    Step 5
                   </div>
                 </div>
               </div>

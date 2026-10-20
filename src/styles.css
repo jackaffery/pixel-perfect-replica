@@ -169,3 +169,16 @@
   padding: 0 0.35rem;
   font-size: 0.875em;
 }
+
+/* Hide Lovable badge / watermark */
+[data-lovable-badge],
+#lovable-badge,
+.lovable-badge,
+a[href*="lovable.dev"],
+[class*="lovable-badge"],
+[id*="lovable-badge"] {
+  display: none !important;
+  opacity: 0 !important;
+  visibility: hidden !important;
+  pointer-events: none !important;
+}
