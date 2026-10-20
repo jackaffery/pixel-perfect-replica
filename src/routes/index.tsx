@@ -57,7 +57,8 @@ import officerSupportImg from "@/assets/officer-support.jpg";
 import {
   SUPPORTED_COUNTRIES,
   SUPPORTED_LANGUAGES,
-  TRANSLATIONS,
+  getCountryConfig,
+  getTranslationDict,
   type CountryConfig,
 } from "@/lib/international-banking";
 import { SoloAdminDashboard } from "@/components/admin/SoloAdminDashboard";
@@ -381,8 +382,8 @@ export function Index() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   // Active configurations
-  const country = SUPPORTED_COUNTRIES[currentCountryCode] || SUPPORTED_COUNTRIES.US;
-  const t = TRANSLATIONS[currentLangCode] || TRANSLATIONS.en;
+  const country = getCountryConfig(currentCountryCode);
+  const t = getTranslationDict(currentLangCode);
 
   // Modals & Panels
   const [customerModalOpen, setCustomerModalOpen] = useState(false);
@@ -619,7 +620,7 @@ export function Index() {
       } else {
         setCustomerUser(
           customerLoginEmail.includes("@")
-            ? customerLoginEmail.split("@")[0]
+            ? customerLoginEmail.split("@")[0] || customerLoginEmail
             : customerLoginEmail
         );
       }
@@ -837,7 +838,7 @@ export function Index() {
       alert("Name and email are required.");
       return;
     }
-    const countryObj = SUPPORTED_COUNTRIES[newUserCountry] || SUPPORTED_COUNTRIES.US;
+    const countryObj = getCountryConfig(newUserCountry);
     const newId = `USB-${countryObj.code}-${Math.floor(100000 + Math.random() * 900000)}`;
     const createdUser: AdminControlledUser = {
       id: newId,
@@ -3560,7 +3561,7 @@ export function Index() {
                   size="sm"
                   onClick={() => {
                     setOpenAccountModalOpen(false);
-                    setCustomerUser(appFullName.split(" ")[0]);
+                    setCustomerUser(appFullName.split(" ")[0] || "");
                     setAppSubmissionSuccess(null);
                   }}
                   className="mt-4 bg-primary text-white"
