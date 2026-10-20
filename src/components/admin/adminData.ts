@@ -1,6 +1,42 @@
 // Mock data types and realistic banking records for US Finance Bank Solo Admin Workspace
 // Designed strictly for fictional administrative simulation
 
+export interface AdminUserRecord {
+  id: string;
+  name: string;
+  email: string;
+  phone: string;
+  mailingAddress: string;
+  dateJoined: string; // e.g., "2025-10-12"
+  displayDateJoined: string;
+  onlineAccessStatus: "Active" | "Suspended" | "Reinstated" | "Closed";
+  verificationStatus: "Verified" | "Pending Review" | "Action Required" | "Rejected";
+  linkedCustomerId: string;
+  communicationPreferences: {
+    emailAlerts: boolean;
+    smsNotifications: boolean;
+    paperlessStatements: boolean;
+    marketingUpdates: boolean;
+  };
+  security: {
+    twoFactorEnabled: boolean;
+    activeSessionsCount: number;
+    lastSignIn: string;
+    lastSignInIp: string;
+    passwordResetRequired: boolean;
+  };
+  adminNotes: string[];
+  accessChangeHistory: {
+    id: string;
+    timestamp: string;
+    actor: string;
+    action: string;
+    previousState: string;
+    newState: string;
+    reason: string;
+  }[];
+}
+
 export interface AdminCustomer {
   id: string;
   name: string;
@@ -107,7 +143,7 @@ export interface SoloAdminAuditEntry {
   id: string;
   timestamp: string;
   actor: string;
-  section: "Overview" | "Customers" | "Accounts" | "Transactions" | "Compliance" | "Support" | "Reports" | "Settings" | "Security";
+  section: "Overview" | "Users" | "Customers" | "Accounts" | "Transactions" | "Compliance" | "Support" | "Reports" | "Settings" | "Security";
   action: string;
   targetId?: string;
   details: string;
@@ -220,6 +256,254 @@ export const MOCK_CUSTOMERS: AdminCustomer[] = [
     joinedDate: "Feb 01, 2026",
     adminNotes: "Identity documents failed biometric match test. Account administratively suspended.",
     linkedAccountIds: ["ACC-JP-501"],
+  },
+];
+
+export const MOCK_ADMIN_USERS: AdminUserRecord[] = [
+  {
+    id: "USR-10091",
+    name: "Eleanor Vance",
+    email: "eleanor.vance@example.com",
+    phone: "+1 (555) 234-8901",
+    mailingAddress: "742 Evergreen Terrace, Springfield, IL 62704, United States",
+    dateJoined: "2025-10-12",
+    displayDateJoined: "Oct 12, 2025",
+    onlineAccessStatus: "Active",
+    verificationStatus: "Verified",
+    linkedCustomerId: "CUST-109283",
+    communicationPreferences: {
+      emailAlerts: true,
+      smsNotifications: true,
+      paperlessStatements: true,
+      marketingUpdates: false,
+    },
+    security: {
+      twoFactorEnabled: true,
+      activeSessionsCount: 2,
+      lastSignIn: "Today, 08:34 AM",
+      lastSignInIp: "192.0.2.45 (Springfield, US)",
+      passwordResetRequired: false,
+    },
+    adminNotes: [
+      "Client requested SMS notifications be redirected to mobile primary. Identity verification confirmed via tier-1 domestic documents.",
+      "Profile mailing address re-verified during annual compliance check.",
+    ],
+    accessChangeHistory: [
+      {
+        id: "HIS-101",
+        timestamp: "Oct 12, 2025, 09:00 AM",
+        actor: "System / Provisioning",
+        action: "Initial Online Access Provisioned",
+        previousState: "None",
+        newState: "Active",
+        reason: "New account onboarding with verified identity documents.",
+      },
+    ],
+  },
+  {
+    id: "USR-10092",
+    name: "Liam Davies",
+    email: "liam.davies@example.co.uk",
+    phone: "+44 20 7946 0912",
+    mailingAddress: "14 Belgrave Square, Westminster, London SW1X 8PS, United Kingdom",
+    dateJoined: "2025-11-03",
+    displayDateJoined: "Nov 03, 2025",
+    onlineAccessStatus: "Active",
+    verificationStatus: "Verified",
+    linkedCustomerId: "CUST-401928",
+    communicationPreferences: {
+      emailAlerts: true,
+      smsNotifications: false,
+      paperlessStatements: true,
+      marketingUpdates: false,
+    },
+    security: {
+      twoFactorEnabled: true,
+      activeSessionsCount: 1,
+      lastSignIn: "Yesterday, 04:15 PM",
+      lastSignInIp: "198.51.100.12 (London, UK)",
+      passwordResetRequired: false,
+    },
+    adminNotes: [
+      "Cross-border treasury permissions cleared. Standard web session limits apply.",
+    ],
+    accessChangeHistory: [
+      {
+        id: "HIS-102",
+        timestamp: "Nov 03, 2025, 11:20 AM",
+        actor: "Solo Administrator",
+        action: "Online Access Approved",
+        previousState: "Pending",
+        newState: "Active",
+        reason: "UK jurisdiction identity verification and proof of residence confirmed.",
+      },
+    ],
+  },
+  {
+    id: "USR-10093",
+    name: "Mathieu Tremblay",
+    email: "mathieu.t@example.ca",
+    phone: "+1 (416) 555-0182",
+    mailingAddress: "88 Bay Street, Suite 1400, Toronto, ON M5J 2R8, Canada",
+    dateJoined: "2026-10-19",
+    displayDateJoined: "Yesterday",
+    onlineAccessStatus: "Active",
+    verificationStatus: "Pending Review",
+    linkedCustomerId: "CUST-884910",
+    communicationPreferences: {
+      emailAlerts: true,
+      smsNotifications: true,
+      paperlessStatements: false,
+      marketingUpdates: true,
+    },
+    security: {
+      twoFactorEnabled: false,
+      activeSessionsCount: 1,
+      lastSignIn: "Yesterday, 02:10 PM",
+      lastSignInIp: "203.0.113.88 (Toronto, CA)",
+      passwordResetRequired: false,
+    },
+    adminNotes: [
+      "User enrolled yesterday. Online banking access active in probationary state while SIN document is reviewed.",
+    ],
+    accessChangeHistory: [
+      {
+        id: "HIS-103",
+        timestamp: "Yesterday, 02:00 PM",
+        actor: "System / Onboarding",
+        action: "Online Account Initialized",
+        previousState: "None",
+        newState: "Active",
+        reason: "Self-service onboarding completed; awaiting final KYC verification.",
+      },
+    ],
+  },
+  {
+    id: "USR-10094",
+    name: "Sofia Rodriguez",
+    email: "sofia.rodriguez@example.mx",
+    phone: "+52 55 1234 5678",
+    mailingAddress: "Paseo de la Reforma 222, Piso 8, Cuauhtémoc, 06600 CDMX, Mexico",
+    dateJoined: "2025-12-18",
+    displayDateJoined: "Dec 18, 2025",
+    onlineAccessStatus: "Active",
+    verificationStatus: "Verified",
+    linkedCustomerId: "CUST-301924",
+    communicationPreferences: {
+      emailAlerts: true,
+      smsNotifications: true,
+      paperlessStatements: true,
+      marketingUpdates: true,
+    },
+    security: {
+      twoFactorEnabled: true,
+      activeSessionsCount: 3,
+      lastSignIn: "Today, 06:12 AM",
+      lastSignInIp: "187.189.20.15 (Mexico City, MX)",
+      passwordResetRequired: false,
+    },
+    adminNotes: [
+      "Dual commercial and personal profiles linked. Multi-device sign-in authenticated.",
+    ],
+    accessChangeHistory: [
+      {
+        id: "HIS-104",
+        timestamp: "Dec 18, 2025, 10:45 AM",
+        actor: "Solo Administrator",
+        action: "Online Access Granted",
+        previousState: "Pending",
+        newState: "Active",
+        reason: "RFC / CURP regulatory clearance satisfied.",
+      },
+    ],
+  },
+  {
+    id: "USR-10095",
+    name: "Lukas Weber",
+    email: "lukas.weber@example.de",
+    phone: "+49 30 1234567",
+    mailingAddress: "Friedrichstraße 43, 10117 Berlin, Germany",
+    dateJoined: "2026-01-10",
+    displayDateJoined: "Jan 10, 2026",
+    onlineAccessStatus: "Suspended",
+    verificationStatus: "Action Required",
+    linkedCustomerId: "CUST-662914",
+    communicationPreferences: {
+      emailAlerts: true,
+      smsNotifications: false,
+      paperlessStatements: true,
+      marketingUpdates: false,
+    },
+    security: {
+      twoFactorEnabled: true,
+      activeSessionsCount: 0,
+      lastSignIn: "Oct 17, 2026, 09:22 AM",
+      lastSignInIp: "85.214.132.117 (Berlin, DE)",
+      passwordResetRequired: true,
+    },
+    adminNotes: [
+      "Online portal access suspended pending investigation into abnormal login locations and wire triggers.",
+      "Requires re-verification of government photo identification before online reinstatement.",
+    ],
+    accessChangeHistory: [
+      {
+        id: "HIS-105",
+        timestamp: "Oct 17, 2026, 02:15 PM",
+        actor: "Solo Administrator",
+        action: "Online Access Suspended",
+        previousState: "Active",
+        newState: "Suspended",
+        reason: "Compliance Alert ALR-001 - Multiple unauthorized offshore login attempts detected.",
+      },
+      {
+        id: "HIS-105-B",
+        timestamp: "Oct 17, 2026, 02:16 PM",
+        actor: "Solo Administrator",
+        action: "Sessions Terminated & Password Reset Flagged",
+        previousState: "Standard",
+        newState: "Reset Required",
+        reason: "Precautionary security isolation.",
+      },
+    ],
+  },
+  {
+    id: "USR-10096",
+    name: "Kenji Takahashi",
+    email: "kenji.takahashi@example.jp",
+    phone: "+81 3 5555 0143",
+    mailingAddress: "Minato-ku, Roppongi 6-10-1, Tokyo 106-6108, Japan",
+    dateJoined: "2026-02-01",
+    displayDateJoined: "Feb 01, 2026",
+    onlineAccessStatus: "Closed",
+    verificationStatus: "Rejected",
+    linkedCustomerId: "CUST-994102",
+    communicationPreferences: {
+      emailAlerts: false,
+      smsNotifications: false,
+      paperlessStatements: false,
+      marketingUpdates: false,
+    },
+    security: {
+      twoFactorEnabled: false,
+      activeSessionsCount: 0,
+      lastSignIn: "Feb 01, 2026, 03:00 PM",
+      lastSignInIp: "133.242.18.2 (Tokyo, JP)",
+      passwordResetRequired: true,
+    },
+    adminNotes: [
+      "Online credentials revoked permanently. Identity documents failed biometric validation.",
+    ],
+    accessChangeHistory: [
+      {
+        id: "HIS-106",
+        timestamp: "Feb 01, 2026, 04:30 PM",
+        actor: "Solo Administrator",
+        action: "Online Access Closed Permanently",
+        previousState: "Active",
+        newState: "Closed",
+        reason: "Biometric document validation failed. Administrative closure applied.",
+      },
+    ],
   },
 ];
 

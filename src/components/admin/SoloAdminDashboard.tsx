@@ -31,11 +31,18 @@ import {
   Sparkles,
   KeyRound,
   RefreshCw,
-  SlidersHorizontal,
+  UserCheck,
+  UserX,
+  Mail,
+  Phone,
+  MapPin,
+  Laptop,
+  Edit3,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   MOCK_CUSTOMERS,
+  MOCK_ADMIN_USERS,
   MOCK_ACCOUNTS,
   MOCK_TRANSACTIONS,
   MOCK_COMPLIANCE_REVIEWS,
@@ -43,6 +50,7 @@ import {
   MOCK_ALERTS,
   MOCK_AUDIT_LOGS,
   type AdminCustomer,
+  type AdminUserRecord,
   type BankAccountRecord,
   type BankTransactionRecord,
   type ComplianceReviewItem,
@@ -62,7 +70,7 @@ export function SoloAdminDashboard({
 }: SoloAdminDashboardProps) {
   // Navigation
   const [activeSection, setActiveSection] = useState<
-    "overview" | "customers" | "accounts" | "transactions" | "compliance" | "support" | "reports" | "audit" | "settings"
+    "overview" | "users" | "customers" | "accounts" | "transactions" | "compliance" | "support" | "reports" | "audit" | "settings"
   >("overview");
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [globalSearch, setGlobalSearch] = useState("");
@@ -70,6 +78,7 @@ export function SoloAdminDashboard({
   const [showProfileMenu, setShowProfileMenu] = useState(false);
 
   // Core State
+  const [adminUsers, setAdminUsers] = useState<AdminUserRecord[]>(MOCK_ADMIN_USERS);
   const [customers, setCustomers] = useState<AdminCustomer[]>(MOCK_CUSTOMERS);
   const [accounts, setAccounts] = useState<BankAccountRecord[]>(MOCK_ACCOUNTS);
   const [transactions, setTransactions] = useState<BankTransactionRecord[]>(MOCK_TRANSACTIONS);
@@ -79,6 +88,31 @@ export function SoloAdminDashboard({
   const [auditLogs, setAuditLogs] = useState<SoloAdminAuditEntry[]>(MOCK_AUDIT_LOGS);
 
   // Selected Detail Modals
+  const [selectedUser, setSelectedUser] = useState<AdminUserRecord | null>(null);
+  const [userEditModalOpen, setUserEditModalOpen] = useState(false);
+  const [userEditForm, setUserEditForm] = useState<{
+    name: string;
+    phone: string;
+    mailingAddress: string;
+    communicationPreferences: {
+      emailAlerts: boolean;
+      smsNotifications: boolean;
+      paperlessStatements: boolean;
+      marketingUpdates: boolean;
+    };
+  }>({
+    name: "",
+    phone: "",
+    mailingAddress: "",
+    communicationPreferences: {
+      emailAlerts: true,
+      smsNotifications: true,
+      paperlessStatements: true,
+      marketingUpdates: false,
+    },
+  });
+  const [newAdminNoteText, setNewAdminNoteText] = useState("");
+
   const [selectedCustomer, setSelectedCustomer] = useState<AdminCustomer | null>(null);
   const [selectedAccount, setSelectedAccount] = useState<BankAccountRecord | null>(null);
   const [selectedTransaction, setSelectedTransaction] = useState<BankTransactionRecord | null>(null);
@@ -91,12 +125,17 @@ export function SoloAdminDashboard({
     description: string;
     confirmLabel: string;
     danger?: boolean;
+    requiresReauth?: boolean;
     onConfirm: () => void;
   } | null>(null);
   const [actionReason, setActionReason] = useState("");
   const [actionNotification, setActionNotification] = useState("");
 
   // Filters
+  const [userFilterStatus, setUserFilterStatus] = useState("all");
+  const [userFilterVerification, setUserFilterVerification] = useState("all");
+  const [userFilterSearch, setUserFilterSearch] = useState("");
+  const [userFilterDateSort, setUserFilterDateSort] = useState<"newest" | "oldest">("newest");
   const [customerFilterStatus, setCustomerFilterStatus] = useState("all");
   const [accountFilterType, setAccountFilterType] = useState("all");
   const [txFilterStatus, setTxFilterStatus] = useState("all");
@@ -134,6 +173,273 @@ export function SoloAdminDashboard({
     setAuditLogs((prev) => [entry, ...prev]);
     setActionNotification(`${action}: ${details}`);
     setTimeout(() => setActionNotification(""), 5000);
+  };
+
+  // User Access Management Actions
+  const handleUpdateUserOnlineAccess = (
+    userId: string,
+    newStatus: AdminUserRecord["onlineAccessStatus"],
+    reason: string
+  ) => {
+    const user = adminUsers.find((u) => u.id === userId);
+    if (!user) return;
+    const oldStatus = user.onlineAccessStatus;
+
+    const historyEntry = {
+      id: `HIS-${Date.now().toString().slice(-4)}`,
+      timestamp: "Today, " + new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+      actor: "Solo Administrator",
+      action: `Online Access Status changed to ${newStatus}`,
+      previousState: oldStatus,
+      newState: newStatus,
+      reason: reason || "Administrative action executed by Solo Admin",
+    };
+
+    setAdminUsers((prev) =>
+      prev.map((u) =>
+        u.id === userId
+          ? {
+              ...u,
+              onlineAccessStatus: newStatus,
+              security: {
+                ...u.security,
+                // If closing or suspending, wipe active sessions
+                activeSessionsCount: newStatus === "Suspended" || newStatus === "Closed" ? 0 : u.security.activeSessionsCount,
+              },
+              accessChangeHistory: [historyEntry, ...u.accessChangeHistory],
+            }
+          : u
+      )
+    );
+
+    appendAuditLog(
+      "Users",
+      `User Access Changed: ${newStatus}`,
+      `User: ${user.name} (${user.email}) | Previous: ${oldStatus} -> New: ${newStatus} | Reason: ${reason || "Solo admin discretion"}`,
+      userId
+    );
+
+    setSelectedUser((prev) =>
+      prev && prev.id === userId
+        ? {
+            ...prev,
+            onlineAccessStatus: newStatus,
+            security: {
+              ...prev.security,
+              activeSessionsCount: newStatus === "Suspended" || newStatus === "Closed" ? 0 : prev.security.activeSessionsCount,
+            },
+            accessChangeHistory: [historyEntry, ...prev.accessChangeHistory],
+          }
+        : prev
+    );
+
+    setConfirmActionModal(null);
+    setActionReason("");
+  };
+
+  const handleForceUserSignOut = (userId: string, reason: string) => {
+    const user = adminUsers.find((u) => u.id === userId);
+    if (!user) return;
+
+    const historyEntry = {
+      id: `HIS-${Date.now().toString().slice(-4)}`,
+      timestamp: "Today, " + new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+      actor: "Solo Administrator",
+      action: "Revoked All Active Web & Mobile Sessions",
+      previousState: `${user.security.activeSessionsCount} active sessions`,
+      newState: "0 active sessions",
+      reason: reason || "Forced administrative revocation",
+    };
+
+    setAdminUsers((prev) =>
+      prev.map((u) =>
+        u.id === userId
+          ? {
+              ...u,
+              security: { ...u.security, activeSessionsCount: 0 },
+              accessChangeHistory: [historyEntry, ...u.accessChangeHistory],
+            }
+          : u
+      )
+    );
+
+    appendAuditLog(
+      "Users",
+      "Revoked Active User Sessions",
+      `User: ${user.name} | Terminated all active sessions (Previously ${user.security.activeSessionsCount}) | Reason: ${reason || "Session kill instruction"}`,
+      userId
+    );
+
+    setSelectedUser((prev) =>
+      prev && prev.id === userId
+        ? {
+            ...prev,
+            security: { ...prev.security, activeSessionsCount: 0 },
+            accessChangeHistory: [historyEntry, ...prev.accessChangeHistory],
+          }
+        : prev
+    );
+
+    setConfirmActionModal(null);
+    setActionReason("");
+  };
+
+  const handleRequirePasswordReset = (userId: string, reason: string) => {
+    const user = adminUsers.find((u) => u.id === userId);
+    if (!user) return;
+
+    const historyEntry = {
+      id: `HIS-${Date.now().toString().slice(-4)}`,
+      timestamp: "Today, " + new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+      actor: "Solo Administrator",
+      action: "Enforced Mandatory Password Reset on Next Login",
+      previousState: user.security.passwordResetRequired ? "Reset Flagged" : "Standard",
+      newState: "Reset Required",
+      reason: reason || "Credential rotation policy triggered by Solo Admin",
+    };
+
+    setAdminUsers((prev) =>
+      prev.map((u) =>
+        u.id === userId
+          ? {
+              ...u,
+              security: { ...u.security, passwordResetRequired: true, activeSessionsCount: 0 },
+              accessChangeHistory: [historyEntry, ...u.accessChangeHistory],
+            }
+          : u
+      )
+    );
+
+    appendAuditLog(
+      "Users",
+      "Mandated User Password Reset",
+      `User: ${user.name} | Password reset flag set to TRUE, sessions killed. Reason: ${reason || "Security caution"}`,
+      userId
+    );
+
+    setSelectedUser((prev) =>
+      prev && prev.id === userId
+        ? {
+            ...prev,
+            security: { ...prev.security, passwordResetRequired: true, activeSessionsCount: 0 },
+            accessChangeHistory: [historyEntry, ...prev.accessChangeHistory],
+          }
+        : prev
+    );
+
+    setConfirmActionModal(null);
+    setActionReason("");
+  };
+
+  const handleSaveUserProfileEdits = (userId: string) => {
+    const user = adminUsers.find((u) => u.id === userId);
+    if (!user) return;
+
+    // Track field level diff for audit log
+    const diffs: string[] = [];
+    if (user.name !== userEditForm.name) {
+      diffs.push(`Name: '${user.name}' -> '${userEditForm.name}'`);
+    }
+    if (user.phone !== userEditForm.phone) {
+      diffs.push(`Phone: '${user.phone}' -> '${userEditForm.phone}'`);
+    }
+    if (user.mailingAddress !== userEditForm.mailingAddress) {
+      diffs.push(`Address: '${user.mailingAddress}' -> '${userEditForm.mailingAddress}'`);
+    }
+    if (user.communicationPreferences.emailAlerts !== userEditForm.communicationPreferences.emailAlerts) {
+      diffs.push(`Email Alerts: ${user.communicationPreferences.emailAlerts} -> ${userEditForm.communicationPreferences.emailAlerts}`);
+    }
+    if (user.communicationPreferences.smsNotifications !== userEditForm.communicationPreferences.smsNotifications) {
+      diffs.push(`SMS: ${user.communicationPreferences.smsNotifications} -> ${userEditForm.communicationPreferences.smsNotifications}`);
+    }
+    if (user.communicationPreferences.paperlessStatements !== userEditForm.communicationPreferences.paperlessStatements) {
+      diffs.push(`Paperless: ${user.communicationPreferences.paperlessStatements} -> ${userEditForm.communicationPreferences.paperlessStatements}`);
+    }
+    if (user.communicationPreferences.marketingUpdates !== userEditForm.communicationPreferences.marketingUpdates) {
+      diffs.push(`Marketing: ${user.communicationPreferences.marketingUpdates} -> ${userEditForm.communicationPreferences.marketingUpdates}`);
+    }
+
+    if (diffs.length === 0) {
+      setUserEditModalOpen(false);
+      return;
+    }
+
+    const historyEntry = {
+      id: `HIS-${Date.now().toString().slice(-4)}`,
+      timestamp: "Today, " + new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+      actor: "Solo Administrator",
+      action: "Updated Permitted User Profile Details",
+      previousState: "Previous profile snapshot",
+      newState: diffs.join(" | "),
+      reason: actionReason || "Administrative profile update requested/verified",
+    };
+
+    setAdminUsers((prev) =>
+      prev.map((u) =>
+        u.id === userId
+          ? {
+              ...u,
+              name: userEditForm.name,
+              phone: userEditForm.phone,
+              mailingAddress: userEditForm.mailingAddress,
+              communicationPreferences: { ...userEditForm.communicationPreferences },
+              accessChangeHistory: [historyEntry, ...u.accessChangeHistory],
+            }
+          : u
+      )
+    );
+
+    appendAuditLog(
+      "Users",
+      "Updated User Profile Fields",
+      `User: ${user.name} (${userId}) | Changes: ${diffs.join("; ")} | Justification: ${actionReason || "Verified documentation"}`,
+      userId
+    );
+
+    setSelectedUser((prev) =>
+      prev && prev.id === userId
+        ? {
+            ...prev,
+            name: userEditForm.name,
+            phone: userEditForm.phone,
+            mailingAddress: userEditForm.mailingAddress,
+            communicationPreferences: { ...userEditForm.communicationPreferences },
+            accessChangeHistory: [historyEntry, ...prev.accessChangeHistory],
+          }
+        : prev
+    );
+
+    setUserEditModalOpen(false);
+    setActionReason("");
+  };
+
+  const handleAddInternalAdminNote = (userId: string) => {
+    if (!newAdminNoteText.trim()) return;
+    const note = `[${new Date().toLocaleDateString([], { month: "short", day: "numeric", year: "numeric" })} - Solo Admin]: ${newAdminNoteText.trim()}`;
+
+    setAdminUsers((prev) =>
+      prev.map((u) =>
+        u.id === userId
+          ? {
+              ...u,
+              adminNotes: [note, ...u.adminNotes],
+            }
+          : u
+      )
+    );
+
+    appendAuditLog("Users", "Appended Internal Admin Note", `Note added to user record: "${newAdminNoteText.trim()}"`, userId);
+
+    setSelectedUser((prev) =>
+      prev && prev.id === userId
+        ? {
+            ...prev,
+            adminNotes: [note, ...prev.adminNotes],
+          }
+        : prev
+    );
+
+    setNewAdminNoteText("");
   };
 
   // Safe Customer Status Changer
@@ -272,6 +578,27 @@ export function SoloAdminDashboard({
   };
 
   // Filtered views
+  const filteredUsers = adminUsers.filter((u) => {
+    const q = (userFilterSearch || globalSearch).toLowerCase();
+    const matchesSearch =
+      !q ||
+      u.name.toLowerCase().includes(q) ||
+      u.email.toLowerCase().includes(q) ||
+      u.id.toLowerCase().includes(q) ||
+      u.phone.toLowerCase().includes(q) ||
+      u.mailingAddress.toLowerCase().includes(q);
+    const matchesStatus =
+      userFilterStatus === "all" || u.onlineAccessStatus.toLowerCase() === userFilterStatus.toLowerCase();
+    const matchesVerification =
+      userFilterVerification === "all" || u.verificationStatus.toLowerCase() === userFilterVerification.toLowerCase();
+    return matchesSearch && matchesStatus && matchesVerification;
+  }).sort((a, b) => {
+    if (userFilterDateSort === "newest") {
+      return new Date(b.dateJoined).getTime() - new Date(a.dateJoined).getTime();
+    }
+    return new Date(a.dateJoined).getTime() - new Date(b.dateJoined).getTime();
+  });
+
   const filteredCustomers = customers.filter((c) => {
     const matchesSearch =
       c.name.toLowerCase().includes(globalSearch.toLowerCase()) ||
@@ -383,6 +710,7 @@ export function SoloAdminDashboard({
         <nav className="flex-1 space-y-1 overflow-y-auto px-3 py-4">
           {[
             { id: "overview", label: "Main Dashboard", icon: BarChart3, badge: unreadAlerts.length ? `${unreadAlerts.length} Alerts` : undefined },
+            { id: "users", label: "User Management", icon: UserCheck, badge: adminUsers.length.toString(), badgeColor: "bg-teal-600" },
             { id: "customers", label: "Customers", icon: Users, badge: customers.length.toString() },
             { id: "accounts", label: "Bank Accounts", icon: CreditCard, badge: accounts.length.toString() },
             { id: "transactions", label: "Transactions", icon: ArrowRightLeft, badge: flaggedTxCount > 0 ? `${flaggedTxCount} Flagged` : undefined, badgeColor: "bg-rose-500" },
@@ -791,6 +1119,714 @@ export function SoloAdminDashboard({
                   ))}
                 </div>
               </div>
+            </div>
+          )}
+
+          {/* ======================================================== */}
+          {/* VIEW 1.5: USER MANAGEMENT */}
+          {/* ======================================================== */}
+          {activeSection === "users" && (
+            <div className="space-y-6 max-w-7xl mx-auto">
+              {/* Header & Controls */}
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div>
+                  <div className="flex items-center gap-2">
+                    <h2 className="font-display text-2xl font-black text-white">User Management</h2>
+                    <span className="rounded-full bg-teal-500/20 px-2.5 py-0.5 text-xs font-bold text-teal-300 border border-teal-500/30">
+                      Solo Admin Authority
+                    </span>
+                  </div>
+                  <p className="text-xs text-slate-400 mt-1">
+                    Search and manage individual user profiles, update permitted contact info, and control digital online banking access.
+                  </p>
+                </div>
+
+                <div className="flex flex-wrap items-center gap-2">
+                  {/* Status Filter */}
+                  <select
+                    value={userFilterStatus}
+                    onChange={(e) => setUserFilterStatus(e.target.value)}
+                    className="rounded-xl border border-slate-800 bg-slate-900 px-3 py-1.5 text-xs text-slate-200 focus:border-teal-400 focus:outline-none"
+                  >
+                    <option value="all">All Access Statuses ({adminUsers.length})</option>
+                    <option value="active">Active Online Access</option>
+                    <option value="suspended">Suspended Access</option>
+                    <option value="reinstated">Reinstated</option>
+                    <option value="closed">Closed Access</option>
+                  </select>
+
+                  {/* Verification Filter */}
+                  <select
+                    value={userFilterVerification}
+                    onChange={(e) => setUserFilterVerification(e.target.value)}
+                    className="rounded-xl border border-slate-800 bg-slate-900 px-3 py-1.5 text-xs text-slate-200 focus:border-teal-400 focus:outline-none"
+                  >
+                    <option value="all">All KYC Statuses</option>
+                    <option value="verified">Verified Only</option>
+                    <option value="pending review">Pending Review</option>
+                    <option value="action required">Action Required</option>
+                    <option value="rejected">Rejected</option>
+                  </select>
+
+                  {/* Date Joined Sort */}
+                  <button
+                    type="button"
+                    onClick={() => setUserFilterDateSort((prev) => (prev === "newest" ? "oldest" : "newest"))}
+                    className="flex items-center gap-1.5 rounded-xl border border-slate-800 bg-slate-900 px-3 py-1.5 text-xs font-semibold text-slate-300 hover:bg-slate-800"
+                    title="Toggle Date Joined Sort"
+                  >
+                    <Clock className="h-3.5 w-3.5 text-teal-400" />
+                    <span>Joined: {userFilterDateSort === "newest" ? "Newest First" : "Oldest First"}</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* Status Notice: Clear separation of Online Access vs Financial Products */}
+              <div className="rounded-2xl border border-blue-500/30 bg-blue-950/20 p-4 text-xs text-blue-200/90 flex items-start gap-3">
+                <ShieldCheck className="h-5 w-5 text-blue-400 shrink-0 mt-0.5" />
+                <div className="space-y-1">
+                  <span className="font-bold text-blue-300">Important Access & Safety Architecture Notice:</span>
+                  <p className="text-[0.72rem] text-blue-200/80 leading-relaxed">
+                    Online Access status directly governs a user&apos;s digital credential authentication and mobile/web portal authorization. It is strictly separate from customer legal status and underlying financial account settlement. All password updates, credential revocations, and permitted profile edits are append-only logged with explicit audit reasons. Solo Administrators are barred from viewing passwords, impersonating users, or initiating funds transfers.
+                  </p>
+                </div>
+              </div>
+
+              {/* Users Table */}
+              <div className="overflow-hidden rounded-2xl border border-slate-800 bg-slate-900/60 shadow-xl">
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left text-xs text-slate-300">
+                    <thead className="border-b border-slate-800 bg-slate-900/90 text-[0.7rem] uppercase tracking-wider text-slate-400 font-bold">
+                      <tr>
+                        <th className="px-5 py-3.5">User & ID</th>
+                        <th className="px-5 py-3.5">Contact Details</th>
+                        <th className="px-5 py-3.5">Date Joined</th>
+                        <th className="px-5 py-3.5">KYC Status</th>
+                        <th className="px-5 py-3.5">Online Access</th>
+                        <th className="px-5 py-3.5">Active Sessions</th>
+                        <th className="px-5 py-3.5 text-right">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-800/80">
+                      {filteredUsers.length === 0 ? (
+                        <tr>
+                          <td colSpan={7} className="px-5 py-10 text-center text-slate-500">
+                            No users match the search and filter criteria.
+                          </td>
+                        </tr>
+                      ) : (
+                        filteredUsers.map((user) => (
+                          <tr key={user.id} className="hover:bg-slate-800/40 transition-colors">
+                            <td className="px-5 py-4">
+                              <div className="font-bold text-white text-sm">{user.name}</div>
+                              <div className="font-mono text-[0.7rem] text-slate-400">{user.id}</div>
+                            </td>
+                            <td className="px-5 py-4">
+                              <div className="text-slate-200">{user.email}</div>
+                              <div className="text-[0.7rem] text-slate-400">{user.phone}</div>
+                            </td>
+                            <td className="px-5 py-4">
+                              <span className="font-mono text-slate-300">{user.displayDateJoined}</span>
+                            </td>
+                            <td className="px-5 py-4">
+                              <span
+                                className={`rounded-full px-2.5 py-0.5 text-[0.68rem] font-bold border ${
+                                  user.verificationStatus === "Verified"
+                                    ? "border-emerald-500/30 bg-emerald-950/40 text-emerald-300"
+                                    : user.verificationStatus === "Pending Review"
+                                    ? "border-amber-500/30 bg-amber-950/40 text-amber-300"
+                                    : user.verificationStatus === "Action Required"
+                                    ? "border-blue-500/30 bg-blue-950/40 text-blue-300"
+                                    : "border-rose-500/30 bg-rose-950/40 text-rose-300"
+                                }`}
+                              >
+                                {user.verificationStatus}
+                              </span>
+                            </td>
+                            <td className="px-5 py-4">
+                              <span
+                                className={`rounded-full px-2.5 py-0.5 text-[0.68rem] font-bold border ${
+                                  user.onlineAccessStatus === "Active"
+                                    ? "border-teal-500/30 bg-teal-950/40 text-teal-300"
+                                    : user.onlineAccessStatus === "Reinstated"
+                                    ? "border-blue-500/30 bg-blue-950/40 text-blue-300"
+                                    : user.onlineAccessStatus === "Suspended"
+                                    ? "border-rose-500/30 bg-rose-950/40 text-rose-300"
+                                    : "border-slate-600 bg-slate-800 text-slate-400"
+                                }`}
+                              >
+                                {user.onlineAccessStatus} Access
+                              </span>
+                            </td>
+                            <td className="px-5 py-4">
+                              <div className="flex items-center gap-2">
+                                <span
+                                  className={`h-2 w-2 rounded-full ${
+                                    user.security.activeSessionsCount > 0 ? "bg-emerald-400 animate-pulse" : "bg-slate-600"
+                                  }`}
+                                />
+                                <span className="text-slate-300 text-xs font-mono">
+                                  {user.security.activeSessionsCount} active
+                                </span>
+                              </div>
+                              {user.security.passwordResetRequired && (
+                                <span className="mt-1 inline-block text-[0.65rem] font-bold text-amber-400">
+                                  ⚠ Reset Mandatory
+                                </span>
+                              )}
+                            </td>
+                            <td className="px-5 py-4 text-right">
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => {
+                                  setSelectedUser(user);
+                                  appendAuditLog(
+                                    "Users",
+                                    "Inspected User Profile",
+                                    `Opened comprehensive profile drawer for ${user.name} (${user.id}).`,
+                                    user.id
+                                  );
+                                }}
+                                className="border-slate-700 bg-slate-800/80 text-xs font-semibold text-slate-200 hover:bg-teal-600 hover:border-teal-600 hover:text-white"
+                              >
+                                Review Profile →
+                              </Button>
+                            </td>
+                          </tr>
+                        ))
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              {/* USER PROFILE & ACCESS CONTROL DRAWER MODAL */}
+              {selectedUser && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 overflow-y-auto">
+                  <div className="relative w-full max-w-4xl rounded-3xl border border-slate-800 bg-slate-900 p-6 sm:p-8 shadow-2xl max-h-[90vh] overflow-y-auto">
+                    {/* Header */}
+                    <div className="flex items-start justify-between border-b border-slate-800 pb-5">
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <span className="rounded bg-teal-500/20 px-2 py-0.5 text-[0.68rem] font-bold text-teal-300 border border-teal-500/30">
+                            USER ID: {selectedUser.id}
+                          </span>
+                          <span
+                            className={`rounded-full px-2 py-0.5 text-[0.68rem] font-bold ${
+                              selectedUser.onlineAccessStatus === "Active"
+                                ? "bg-teal-950 text-teal-300 border border-teal-700/50"
+                                : "bg-rose-950 text-rose-300 border border-rose-700/50"
+                            }`}
+                          >
+                            Online Access: {selectedUser.onlineAccessStatus}
+                          </span>
+                        </div>
+                        <h3 className="mt-2 text-2xl font-black text-white">{selectedUser.name}</h3>
+                        <p className="text-xs text-slate-400">
+                          Joined on {selectedUser.displayDateJoined} • Customer Link ID: {selectedUser.linkedCustomerId}
+                        </p>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setSelectedUser(null)}
+                        className="rounded-xl p-2 text-slate-400 hover:bg-slate-800 hover:text-white"
+                      >
+                        ✕
+                      </button>
+                    </div>
+
+                    {/* Quick Profile Summary Cards */}
+                    <div className="mt-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                      <div className="rounded-2xl border border-slate-800 bg-slate-950/60 p-4">
+                        <span className="text-[0.7rem] uppercase tracking-wider text-slate-400 font-bold">Email Address</span>
+                        <div className="mt-1 flex items-center gap-2 text-xs font-semibold text-white truncate">
+                          <Mail className="h-3.5 w-3.5 text-teal-400 shrink-0" />
+                          <span className="truncate">{selectedUser.email}</span>
+                        </div>
+                      </div>
+
+                      <div className="rounded-2xl border border-slate-800 bg-slate-950/60 p-4">
+                        <span className="text-[0.7rem] uppercase tracking-wider text-slate-400 font-bold">Phone Number</span>
+                        <div className="mt-1 flex items-center gap-2 text-xs font-semibold text-white">
+                          <Phone className="h-3.5 w-3.5 text-teal-400 shrink-0" />
+                          <span>{selectedUser.phone}</span>
+                        </div>
+                      </div>
+
+                      <div className="rounded-2xl border border-slate-800 bg-slate-950/60 p-4">
+                        <span className="text-[0.7rem] uppercase tracking-wider text-slate-400 font-bold">MFA / 2FA Status</span>
+                        <div className="mt-1 flex items-center gap-2 text-xs font-semibold text-white">
+                          <KeyRound className="h-3.5 w-3.5 text-teal-400 shrink-0" />
+                          <span>{selectedUser.security.twoFactorEnabled ? "Hardware / App 2FA Enabled" : "Not Enrolled"}</span>
+                        </div>
+                      </div>
+
+                      <div className="rounded-2xl border border-slate-800 bg-slate-950/60 p-4">
+                        <span className="text-[0.7rem] uppercase tracking-wider text-slate-400 font-bold">Active Sessions</span>
+                        <div className="mt-1 flex items-center gap-2 text-xs font-semibold text-white">
+                          <Laptop className="h-3.5 w-3.5 text-teal-400 shrink-0" />
+                          <span>{selectedUser.security.activeSessionsCount} Live Session(s)</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Mailing Address & Edit Profile Trigger */}
+                    <div className="mt-4 rounded-2xl border border-slate-800 bg-slate-950/40 p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                      <div>
+                        <span className="text-[0.7rem] uppercase tracking-wider text-slate-400 font-bold flex items-center gap-1.5">
+                          <MapPin className="h-3.5 w-3.5 text-teal-400" />
+                          Registered Mailing Address
+                        </span>
+                        <p className="mt-1 text-xs text-slate-200">{selectedUser.mailingAddress}</p>
+                      </div>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => {
+                          setUserEditForm({
+                            name: selectedUser.name,
+                            phone: selectedUser.phone,
+                            mailingAddress: selectedUser.mailingAddress,
+                            communicationPreferences: { ...selectedUser.communicationPreferences },
+                          });
+                          setUserEditModalOpen(true);
+                        }}
+                        className="border-slate-700 text-xs font-bold text-teal-300 hover:bg-teal-950 hover:border-teal-500 shrink-0"
+                      >
+                        <Edit3 className="mr-1.5 h-3.5 w-3.5" />
+                        Edit Permitted Profile Details
+                      </Button>
+                    </div>
+
+                    {/* Communication Preferences */}
+                    <div className="mt-4 rounded-2xl border border-slate-800 bg-slate-950/40 p-4">
+                      <span className="text-[0.7rem] uppercase tracking-wider text-slate-400 font-bold">
+                        User Communication Preferences
+                      </span>
+                      <div className="mt-2 grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs">
+                        <div className={`p-2 rounded-xl border ${selectedUser.communicationPreferences.emailAlerts ? "border-teal-500/40 bg-teal-950/30 text-teal-200" : "border-slate-800 text-slate-500"}`}>
+                          Email Alerts: {selectedUser.communicationPreferences.emailAlerts ? "Enabled" : "Off"}
+                        </div>
+                        <div className={`p-2 rounded-xl border ${selectedUser.communicationPreferences.smsNotifications ? "border-teal-500/40 bg-teal-950/30 text-teal-200" : "border-slate-800 text-slate-500"}`}>
+                          SMS Push: {selectedUser.communicationPreferences.smsNotifications ? "Enabled" : "Off"}
+                        </div>
+                        <div className={`p-2 rounded-xl border ${selectedUser.communicationPreferences.paperlessStatements ? "border-teal-500/40 bg-teal-950/30 text-teal-200" : "border-slate-800 text-slate-500"}`}>
+                          Paperless: {selectedUser.communicationPreferences.paperlessStatements ? "Active" : "Off"}
+                        </div>
+                        <div className={`p-2 rounded-xl border ${selectedUser.communicationPreferences.marketingUpdates ? "border-teal-500/40 bg-teal-950/30 text-teal-200" : "border-slate-800 text-slate-500"}`}>
+                          Marketing: {selectedUser.communicationPreferences.marketingUpdates ? "Subscribed" : "Opted Out"}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Linked Bank Accounts (Masked by default) */}
+                    <div className="mt-6">
+                      <div className="flex items-center justify-between">
+                        <h4 className="font-bold text-sm text-white flex items-center gap-2">
+                          <CreditCard className="h-4 w-4 text-teal-400" />
+                          Linked Financial Accounts (Masked Numbers)
+                        </h4>
+                        <span className="text-[0.68rem] text-slate-400 font-mono">
+                          Safety: Never reveal full PAN or account secret
+                        </span>
+                      </div>
+                      <div className="mt-3 space-y-2">
+                        {accounts
+                          .filter((a) => a.customerId === selectedUser.linkedCustomerId)
+                          .map((acc) => (
+                            <div
+                              key={acc.id}
+                              className="flex items-center justify-between rounded-xl border border-slate-800 bg-slate-950/80 p-3 text-xs"
+                            >
+                              <div className="flex items-center gap-3">
+                                <div className="h-8 w-8 rounded-lg bg-teal-950/80 border border-teal-500/30 flex items-center justify-center text-teal-300 font-bold">
+                                  {acc.currency}
+                                </div>
+                                <div>
+                                  <div className="font-bold text-white">{acc.accountType}</div>
+                                  <div className="font-mono text-[0.7rem] text-slate-400">
+                                    Number: {acc.accountNumberMasked} • Routing: {acc.routingNumber}
+                                  </div>
+                                </div>
+                              </div>
+                              <div className="text-right">
+                                <div className="font-mono font-bold text-white">
+                                  {acc.currency} {acc.balance.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                                </div>
+                                <span className="rounded bg-slate-800 px-2 py-0.5 text-[0.65rem] text-slate-400 font-semibold">
+                                  Account Status: {acc.status}
+                                </span>
+                              </div>
+                            </div>
+                          ))}
+                      </div>
+                    </div>
+
+                    {/* Access Controls & Security Actions */}
+                    <div className="mt-6 rounded-2xl border border-rose-500/30 bg-rose-950/10 p-5">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <h4 className="font-bold text-sm text-white flex items-center gap-2">
+                            <Lock className="h-4 w-4 text-rose-400" />
+                            Digital Online Access Controls (Solo Administrator)
+                          </h4>
+                          <p className="text-xs text-slate-400 mt-0.5">
+                            Modifying digital access does not reverse or alter settled bank funds. Re-authentication password is simulated for audit logging.
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="mt-4 flex flex-wrap gap-2.5">
+                        {selectedUser.onlineAccessStatus !== "Active" && (
+                          <Button
+                            size="sm"
+                            onClick={() =>
+                              setConfirmActionModal({
+                                title: `Reinstate Online Access for ${selectedUser.name}?`,
+                                description: "Reinstates digital credentials and allows the user to log back into online banking.",
+                                confirmLabel: "Reinstate Access",
+                                danger: false,
+                                onConfirm: () => handleUpdateUserOnlineAccess(selectedUser.id, "Active", actionReason),
+                              })
+                            }
+                            className="bg-teal-600 hover:bg-teal-700 text-xs font-bold text-white"
+                          >
+                            <UserCheck className="mr-1.5 h-3.5 w-3.5" />
+                            Reinstate Online Access
+                          </Button>
+                        )}
+
+                        {selectedUser.onlineAccessStatus !== "Suspended" && (
+                          <Button
+                            size="sm"
+                            variant="destructive"
+                            onClick={() =>
+                              setConfirmActionModal({
+                                title: `Suspend Online Access for ${selectedUser.name}?`,
+                                description: "Immediately blocks portal authentication and terminates live sessions. Bank accounts remain on record.",
+                                confirmLabel: "Suspend Digital Access",
+                                danger: true,
+                                requiresReauth: true,
+                                onConfirm: () => handleUpdateUserOnlineAccess(selectedUser.id, "Suspended", actionReason),
+                              })
+                            }
+                            className="bg-rose-600 hover:bg-rose-700 text-xs font-bold"
+                          >
+                            <UserX className="mr-1.5 h-3.5 w-3.5" />
+                            Suspend Online Access
+                          </Button>
+                        )}
+
+                        {selectedUser.onlineAccessStatus !== "Closed" && (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() =>
+                              setConfirmActionModal({
+                                title: `Permanently Close Online Access for ${selectedUser.name}?`,
+                                description: "Deactivates digital credentials permanently. Requires new onboarding to regain web access.",
+                                confirmLabel: "Close Online Access",
+                                danger: true,
+                                requiresReauth: true,
+                                onConfirm: () => handleUpdateUserOnlineAccess(selectedUser.id, "Closed", actionReason),
+                              })
+                            }
+                            className="border-rose-600/50 text-rose-300 hover:bg-rose-950 text-xs font-bold"
+                          >
+                            Close Digital Access
+                          </Button>
+                        )}
+
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() =>
+                            setConfirmActionModal({
+                              title: `Force Sign-Out All Active Sessions for ${selectedUser.name}?`,
+                              description: "Invalidates all active JSON web tokens, mobile app sessions, and cookies. User must re-authenticate.",
+                              confirmLabel: "Terminate All Sessions",
+                              danger: false,
+                              onConfirm: () => handleForceUserSignOut(selectedUser.id, actionReason),
+                            })
+                          }
+                          className="border-slate-700 text-slate-300 hover:bg-slate-800 text-xs font-bold"
+                        >
+                          <Laptop className="mr-1.5 h-3.5 w-3.5 text-amber-400" />
+                          Sign Out Active Sessions
+                        </Button>
+
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() =>
+                            setConfirmActionModal({
+                              title: `Require Password Reset on Next Login for ${selectedUser.name}?`,
+                              description: "Marks credential as expired. The user will be prompted to choose a new secure passphrase upon their next sign-in.",
+                              confirmLabel: "Enforce Password Reset",
+                              danger: false,
+                              onConfirm: () => handleRequirePasswordReset(selectedUser.id, actionReason),
+                            })
+                          }
+                          className="border-slate-700 text-slate-300 hover:bg-slate-800 text-xs font-bold"
+                        >
+                          <KeyRound className="mr-1.5 h-3.5 w-3.5 text-teal-400" />
+                          Require Password Reset
+                        </Button>
+                      </div>
+                    </div>
+
+                    {/* Internal Admin Notes */}
+                    <div className="mt-6 rounded-2xl border border-slate-800 bg-slate-950/60 p-5">
+                      <h4 className="font-bold text-sm text-white flex items-center gap-2">
+                        <FileText className="h-4 w-4 text-teal-400" />
+                        Internal Administrator Notes
+                      </h4>
+                      <p className="text-xs text-slate-400 mt-0.5">
+                        Private administrative log entries visible only to the Solo Administrator.
+                      </p>
+
+                      <div className="mt-3 flex gap-2">
+                        <input
+                          type="text"
+                          value={newAdminNoteText}
+                          onChange={(e) => setNewAdminNoteText(e.target.value)}
+                          placeholder="Add new internal administrative note..."
+                          className="flex-1 rounded-xl border border-slate-800 bg-slate-900 px-3.5 py-2 text-xs text-white placeholder-slate-500 focus:border-teal-400 focus:outline-none"
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter") {
+                              handleAddInternalAdminNote(selectedUser.id);
+                            }
+                          }}
+                        />
+                        <Button
+                          size="sm"
+                          onClick={() => handleAddInternalAdminNote(selectedUser.id)}
+                          className="bg-teal-600 hover:bg-teal-700 text-xs font-bold text-white shrink-0"
+                        >
+                          Add Note
+                        </Button>
+                      </div>
+
+                      <div className="mt-4 space-y-2">
+                        {selectedUser.adminNotes.length === 0 ? (
+                          <p className="text-xs text-slate-500 italic">No administrative notes recorded yet.</p>
+                        ) : (
+                          selectedUser.adminNotes.map((note, idx) => (
+                            <div
+                              key={idx}
+                              className="rounded-xl border border-slate-800 bg-slate-900/40 p-3 text-xs text-slate-300 leading-relaxed"
+                            >
+                              {note}
+                            </div>
+                          ))
+                        )}
+                      </div>
+                    </div>
+
+                    {/* History of Profile and Access Changes */}
+                    <div className="mt-6 rounded-2xl border border-slate-800 bg-slate-950/60 p-5">
+                      <h4 className="font-bold text-sm text-white flex items-center gap-2">
+                        <History className="h-4 w-4 text-teal-400" />
+                        History of Profile and Access Changes
+                      </h4>
+                      <p className="text-xs text-slate-400 mt-0.5">
+                        Append-only history of administrative updates and access modifications for this user.
+                      </p>
+
+                      <div className="mt-4 divide-y divide-slate-800/80">
+                        {selectedUser.accessChangeHistory.map((item) => (
+                          <div key={item.id} className="py-3 text-xs">
+                            <div className="flex items-center justify-between gap-2">
+                              <span className="font-bold text-white">{item.action}</span>
+                              <span className="text-[0.7rem] font-mono text-slate-500">{item.timestamp}</span>
+                            </div>
+                            <div className="mt-1 text-[0.72rem] text-slate-400">
+                              <span className="font-semibold text-slate-300">Operator:</span> {item.actor} |{" "}
+                              <span className="font-semibold text-slate-300">Reason:</span> {item.reason}
+                            </div>
+                            <div className="mt-1 text-[0.68rem] font-mono text-teal-400/90 bg-slate-900/60 p-2 rounded-lg border border-slate-800">
+                              State Change: {item.newState}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Close Drawer Footer */}
+                    <div className="mt-6 flex justify-end">
+                      <Button
+                        variant="outline"
+                        onClick={() => setSelectedUser(null)}
+                        className="border-slate-700 text-xs font-bold text-slate-300 hover:bg-slate-800"
+                      >
+                        Close Profile Drawer
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* MODAL: EDIT PERMITTED PROFILE FIELDS */}
+              {userEditModalOpen && selectedUser && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
+                  <div className="w-full max-w-lg rounded-3xl border border-slate-800 bg-slate-900 p-6 shadow-2xl">
+                    <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+                      <div>
+                        <h3 className="font-bold text-white text-base">Edit Permitted Profile Details</h3>
+                        <p className="text-xs text-slate-400">Updating record for {selectedUser.name}</p>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setUserEditModalOpen(false)}
+                        className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-800 hover:text-white"
+                      >
+                        ✕
+                      </button>
+                    </div>
+
+                    <div className="mt-4 space-y-4">
+                      <div>
+                        <label className="block text-xs font-bold text-slate-300 mb-1">Full Legal Name</label>
+                        <input
+                          type="text"
+                          value={userEditForm.name}
+                          onChange={(e) => setUserEditForm({ ...userEditForm, name: e.target.value })}
+                          className="w-full rounded-xl border border-slate-800 bg-slate-950 px-3 py-2 text-xs text-white focus:border-teal-400 focus:outline-none"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-xs font-bold text-slate-300 mb-1">Phone Number</label>
+                        <input
+                          type="text"
+                          value={userEditForm.phone}
+                          onChange={(e) => setUserEditForm({ ...userEditForm, phone: e.target.value })}
+                          className="w-full rounded-xl border border-slate-800 bg-slate-950 px-3 py-2 text-xs text-white focus:border-teal-400 focus:outline-none"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-xs font-bold text-slate-300 mb-1">Mailing Address</label>
+                        <textarea
+                          rows={2}
+                          value={userEditForm.mailingAddress}
+                          onChange={(e) => setUserEditForm({ ...userEditForm, mailingAddress: e.target.value })}
+                          className="w-full rounded-xl border border-slate-800 bg-slate-950 px-3 py-2 text-xs text-white focus:border-teal-400 focus:outline-none"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-xs font-bold text-slate-300 mb-2">Communication Preferences</label>
+                        <div className="space-y-2">
+                          <label className="flex items-center gap-2 text-xs text-slate-300 cursor-pointer">
+                            <input
+                              type="checkbox"
+                              checked={userEditForm.communicationPreferences.emailAlerts}
+                              onChange={(e) =>
+                                setUserEditForm({
+                                  ...userEditForm,
+                                  communicationPreferences: {
+                                    ...userEditForm.communicationPreferences,
+                                    emailAlerts: e.target.checked,
+                                  },
+                                })
+                              }
+                              className="rounded border-slate-700 bg-slate-950 text-teal-500"
+                            />
+                            <span>Email Security & Transaction Alerts</span>
+                          </label>
+
+                          <label className="flex items-center gap-2 text-xs text-slate-300 cursor-pointer">
+                            <input
+                              type="checkbox"
+                              checked={userEditForm.communicationPreferences.smsNotifications}
+                              onChange={(e) =>
+                                setUserEditForm({
+                                  ...userEditForm,
+                                  communicationPreferences: {
+                                    ...userEditForm.communicationPreferences,
+                                    smsNotifications: e.target.checked,
+                                  },
+                                })
+                              }
+                              className="rounded border-slate-700 bg-slate-950 text-teal-500"
+                            />
+                            <span>SMS Notifications</span>
+                          </label>
+
+                          <label className="flex items-center gap-2 text-xs text-slate-300 cursor-pointer">
+                            <input
+                              type="checkbox"
+                              checked={userEditForm.communicationPreferences.paperlessStatements}
+                              onChange={(e) =>
+                                setUserEditForm({
+                                  ...userEditForm,
+                                  communicationPreferences: {
+                                    ...userEditForm.communicationPreferences,
+                                    paperlessStatements: e.target.checked,
+                                  },
+                                })
+                              }
+                              className="rounded border-slate-700 bg-slate-950 text-teal-500"
+                            />
+                            <span>Paperless Electronic Statements</span>
+                          </label>
+
+                          <label className="flex items-center gap-2 text-xs text-slate-300 cursor-pointer">
+                            <input
+                              type="checkbox"
+                              checked={userEditForm.communicationPreferences.marketingUpdates}
+                              onChange={(e) =>
+                                setUserEditForm({
+                                  ...userEditForm,
+                                  communicationPreferences: {
+                                    ...userEditForm.communicationPreferences,
+                                    marketingUpdates: e.target.checked,
+                                  },
+                                })
+                              }
+                              className="rounded border-slate-700 bg-slate-950 text-teal-500"
+                            />
+                            <span>Marketing & Product Announcements</span>
+                          </label>
+                        </div>
+                      </div>
+
+                      <div>
+                        <label className="block text-xs font-bold text-slate-400 mb-1">
+                          Reason for Profile Update (Required for Audit Log):
+                        </label>
+                        <input
+                          type="text"
+                          value={actionReason}
+                          onChange={(e) => setActionReason(e.target.value)}
+                          placeholder="e.g., Customer verified documentation change request"
+                          className="w-full rounded-xl border border-slate-800 bg-slate-950 px-3 py-2 text-xs text-white placeholder-slate-600 focus:border-teal-400 focus:outline-none"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="mt-6 flex items-center justify-end gap-2">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={() => setUserEditModalOpen(false)}
+                        className="border-slate-700 text-xs text-slate-300 hover:bg-slate-800"
+                      >
+                        Cancel
+                      </Button>
+                      <Button
+                        type="button"
+                        onClick={() => handleSaveUserProfileEdits(selectedUser.id)}
+                        className="bg-teal-600 hover:bg-teal-700 text-xs font-bold text-white"
+                      >
+                        Save & Record in Audit Log
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
           )}
 
@@ -1994,6 +3030,31 @@ export function SoloAdminDashboard({
               {confirmActionModal.description}
             </p>
 
+            {confirmActionModal.requiresReauth && (
+              <div className="mt-4 rounded-xl border border-rose-500/40 bg-rose-950/20 p-3">
+                <div className="flex items-center gap-2 text-rose-300 font-bold text-xs">
+                  <Lock className="h-3.5 w-3.5 text-rose-400" />
+                  <span>Re-Authentication Required for Sensitive Action</span>
+                </div>
+                <p className="mt-1 text-[0.68rem] text-rose-200/70">
+                  Solo master clearance requires entry of your administrative verification passphrase.
+                </p>
+                <input
+                  type="password"
+                  value={reauthPassword}
+                  onChange={(e) => {
+                    setReauthPassword(e.target.value);
+                    setReauthError("");
+                  }}
+                  placeholder="Enter admin passphrase (e.g. admin)"
+                  className="mt-2 w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-1.5 text-xs text-white placeholder-slate-500 focus:border-rose-400 focus:outline-none"
+                />
+                {reauthError && (
+                  <p className="mt-1 text-[0.68rem] text-rose-400 font-bold">{reauthError}</p>
+                )}
+              </div>
+            )}
+
             <div className="mt-4">
               <label className="block text-xs font-bold text-slate-400 mb-1">
                 Reason / Audit Justification (Required):
@@ -2021,7 +3082,17 @@ export function SoloAdminDashboard({
               </Button>
               <Button
                 type="button"
-                onClick={confirmActionModal.onConfirm}
+                onClick={() => {
+                  if (confirmActionModal.requiresReauth) {
+                    if (reauthPassword !== "admin" && reauthPassword !== "password") {
+                      setReauthError("Invalid admin security passphrase. Action canceled.");
+                      return;
+                    }
+                  }
+                  setReauthPassword("");
+                  setReauthError("");
+                  confirmActionModal.onConfirm();
+                }}
                 className={`text-xs font-bold ${
                   confirmActionModal.danger ? "bg-rose-600 hover:bg-rose-700 text-white" : "bg-teal-600 hover:bg-teal-700 text-white"
                 }`}
