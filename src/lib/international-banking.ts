@@ -546,3 +546,26 @@ export const TRANSLATIONS: Record<string, TranslationDict> = {
     signOut: "로그아웃"
   }
 };
+
+/**
+ * Typed accessors for the locale registries.
+ *
+ * Both registries are typed `Record<string, …>`, so under noUncheckedIndexedAccess every
+ * lookup comes back as `T | undefined` and each call site would need its own fallback.
+ * These helpers centralise the fallback so callers get a fully populated object.
+ */
+export function getCountryConfig(code?: string | null): CountryConfig {
+  const match = (code ? SUPPORTED_COUNTRIES[code] : undefined) ?? SUPPORTED_COUNTRIES["US"];
+  if (match) return match;
+  const [first] = Object.values(SUPPORTED_COUNTRIES);
+  if (first) return first;
+  throw new Error("SUPPORTED_COUNTRIES registry is empty");
+}
+
+export function getTranslationDict(lang?: string | null): TranslationDict {
+  const match = (lang ? TRANSLATIONS[lang] : undefined) ?? TRANSLATIONS["en"];
+  if (match) return match;
+  const [first] = Object.values(TRANSLATIONS);
+  if (first) return first;
+  throw new Error("TRANSLATIONS registry is empty");
+}
