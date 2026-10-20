@@ -86,6 +86,24 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { name: "twitter:card", content: "summary_large_image" },
       { name: "twitter:title", content: "US Finance Bank | Online Banking" },
       { name: "twitter:description", content: "Banking Made Simpler. Your Future, Your Finance." },
+      { property: "og:image", content: "/us-finance-bank-building.jpg" },
+      { name: "twitter:image", content: "/us-finance-bank-building.jpg" },
+    ],
+    scripts: [
+      {
+        type: "application/ld+json",
+        children: JSON.stringify({
+          "@context": "https://schema.org",
+          "@type": "FinancialService",
+          name: "US Finance Bank",
+          description: "Modern, secure, multilingual digital banking serving global clients with local currency, ID verification, and 24/7 account protection.",
+          url: "https://usfinancebank.internal",
+          logo: "https://usfinancebank.internal/favicon.ico",
+          currenciesAccepted: "USD, EUR, GBP, CAD, MXN, JPY, CHF, AUD, SGD, VND",
+          paymentAccepted: "Credit Card, Wire Transfer, Direct Deposit, Debit Card",
+          openingHours: "Mo-Su 00:00-24:00"
+        }),
+      },
     ],
     links: [
       {
@@ -95,6 +113,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { rel: "preconnect", href: "https://fonts.googleapis.com" },
       { rel: "stylesheet", href: "https://fonts.googleapis.com/css2?family=Libre+Caslon+Text:wght@400;700&family=Public+Sans:wght@400;500;600;700&display=swap" },
       { rel: "icon", href: "/favicon.ico", type: "image/x-icon" },
+      { rel: "canonical", href: "/" },
     ],
   }),
   shellComponent: RootShell,
