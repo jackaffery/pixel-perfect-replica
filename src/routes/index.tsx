@@ -8,6 +8,7 @@ import {
   Smartphone,
   Headset,
   ArrowRight,
+  ArrowRightLeft,
   ShieldCheck,
   Users,
   BookOpen,
@@ -443,40 +444,142 @@ export function Index() {
   // Customer Dashboard State
   const [checkingBalance, setCheckingBalance] = useState(12450.8);
   const [savingsBalance, setSavingsBalance] = useState(48200.0);
+  const [selectedCustomerTx, setSelectedCustomerTx] = useState<{
+    id: string;
+    date: string;
+    desc: string;
+    category: string;
+    amount: string;
+    positive: boolean;
+    status: string;
+    transferStatus?: string;
+    counterparty?: string;
+    statusUpdates?: {
+      id: string;
+      fromStatus: string;
+      toStatus: string;
+      updatedBy: string;
+      reason: string;
+      timestamp: string;
+    }[];
+  } | null>(null);
+
   const [transactions, setTransactions] = useState([
     {
-      id: "tx-1",
+      id: "TX-90214",
       date: "Today, 10:14 AM",
       desc: "Direct Deposit — Official Payroll",
       category: "Income",
+      counterparty: "Global Enterprise Payroll Inc.",
       amount: "+$3,450.00",
       positive: true,
+      status: "Completed",
+      transferStatus: "Completed",
+      statusUpdates: [
+        {
+          id: "UPD-90214-1",
+          fromStatus: "Processing",
+          toStatus: "Completed",
+          updatedBy: "Staff Admin",
+          reason: "Verified clearing confirmation from Global Enterprise Payroll Inc.",
+          timestamp: "Today, 10:14 AM",
+        },
+      ],
     },
     {
-      id: "tx-2",
-      date: "Oct 18, 2026",
-      desc: "Merchant Transaction — Contactless",
-      category: "Groceries",
-      amount: "-$142.35",
-      positive: false,
-    },
-    {
-      id: "tx-3",
+      id: "TX-90209",
       date: "Oct 16, 2026",
       desc: "Utility Provider — Bill Pay Direct",
       category: "Utilities",
-      amount: "-$84.10",
+      counterparty: "Consolidated Edison Utility",
+      amount: "-$184.20",
       positive: false,
+      status: "Completed",
+      transferStatus: "Completed",
+      statusUpdates: [
+        {
+          id: "UPD-90209-1",
+          fromStatus: "Processing",
+          toStatus: "Completed",
+          updatedBy: "Staff Admin",
+          reason: "Electronic utility bill settlement completed.",
+          timestamp: "Oct 16, 2026, 05:40 PM",
+        },
+      ],
     },
     {
-      id: "tx-4",
-      date: "Oct 14, 2026",
-      desc: "High-Yield Interest Accrual",
-      category: "Interest",
-      amount: "+$182.40",
-      positive: true,
+      id: "TX-90212",
+      date: "Oct 17, 2026",
+      desc: "Wire Transfer — International Settlement",
+      category: "Wire Transfer",
+      counterparty: "Offshore Vault Ltd. (CY)",
+      amount: "-$14,200.00",
+      positive: false,
+      status: "On hold",
+      transferStatus: "On hold",
+      statusUpdates: [
+        {
+          id: "UPD-90212-1",
+          fromStatus: "Processing",
+          toStatus: "On hold",
+          updatedBy: "Staff Admin",
+          reason: "Temporary compliance hold pending counterparty verification documentation.",
+          timestamp: "Oct 17, 2026, 02:15 PM",
+        },
+      ],
+    },
+    {
+      id: "TX-90211",
+      date: "Yesterday, 08:35 AM",
+      desc: "Interbank Commercial Transfer",
+      category: "Transfer",
+      counterparty: "Ontario Commercial Services",
+      amount: "-$6,000.00",
+      positive: false,
+      status: "Processing",
+      transferStatus: "Processing",
+      statusUpdates: [
+        {
+          id: "UPD-90211-1",
+          fromStatus: "On hold",
+          toStatus: "Processing",
+          updatedBy: "Staff Admin",
+          reason: "Initial ACH batch scheduled for interbank clearing.",
+          timestamp: "Yesterday, 08:35 AM",
+        },
+      ],
     },
   ]);
+
+  // Sync customer transactions with centralized transfer data from localStorage
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const saved = localStorage.getItem("us_finance_bank_transactions");
+      if (saved) {
+        try {
+          const list = JSON.parse(saved);
+          if (Array.isArray(list) && list.length > 0) {
+            setTransactions((prev) =>
+              prev.map((t) => {
+                const match = list.find((item: any) => item.id === t.id);
+                if (match) {
+                  return {
+                    ...t,
+                    status: match.transferStatus || match.status,
+                    transferStatus: match.transferStatus || match.status,
+                    statusUpdates: match.statusUpdates || t.statusUpdates,
+                  };
+                }
+                return t;
+              })
+            );
+          }
+        } catch {
+          // ignore
+        }
+      }
+    }
+  }, [customerUser]);
   const [transferAmount, setTransferAmount] = useState("");
   const [transferRecipient, setTransferRecipient] = useState("");
   const [transferSuccess, setTransferSuccess] = useState("");
@@ -674,19 +777,73 @@ export function Index() {
       return;
     }
     setCheckingBalance((prev) => prev - amt);
-    setTransactions((prev) => [
-      {
-        id: `tx-${Date.now()}`,
-        date: "Just now",
-        desc: `Transfer to ${transferRecipient || "External Account"}`,
-        category: "Transfer",
-        amount: `-${country.currency.symbol}${amt.toFixed(2)}`,
-        positive: false,
-      },
-      ...prev,
-    ]);
+    const newTxId = `TX-${Math.floor(10000 + Math.random() * 90000)}`;
+    const nowTime = "Today, " + new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+    const initialStatus = amt > 10000 ? "On hold" : "Processing";
+    const initialReason = amt > 10000
+      ? "Large transfer amount flagged for administrative secondary review."
+      : "Transfer submitted to interbank clearing queue.";
+
+    const newTx = {
+      id: newTxId,
+      date: nowTime,
+      timestamp: nowTime,
+      desc: `Transfer to ${transferRecipient || "External Account"}`,
+      type: "Wire Transfer",
+      category: "Transfer",
+      amount: `-${country.currency.symbol}${amt.toFixed(2)}`,
+      numericAmount: amt,
+      currency: country.currency.code,
+      counterparty: transferRecipient || "External Beneficiary Account",
+      accountMasked: "••••••••4819",
+      customerId: "CUST-109283",
+      customerName: customerUser || "Eleanor Vance",
+      positive: false,
+      status: initialStatus,
+      transferStatus: initialStatus,
+      statusUpdates: [
+        {
+          id: `UPD-${Date.now().toString().slice(-4)}`,
+          fromStatus: "Initiated",
+          toStatus: initialStatus,
+          updatedBy: "System Gateway",
+          reason: initialReason,
+          timestamp: nowTime,
+        },
+      ],
+    };
+
+    setTransactions((prev) => [newTx, ...prev]);
+
+    // Also sync to localStorage so Admin sees it in Transfer Transactions!
+    if (typeof window !== "undefined") {
+      try {
+        const saved = localStorage.getItem("us_finance_bank_transactions");
+        const list = saved ? JSON.parse(saved) : [];
+        const adminFormatTx = {
+          id: newTxId,
+          accountId: "ACC-US-001",
+          accountMasked: "••••••••4819",
+          customerId: "CUST-109283",
+          customerName: customerUser || "Eleanor Vance",
+          type: "Wire Transfer" as const,
+          amount: amt,
+          currency: country.currency.code,
+          direction: "debit" as const,
+          counterparty: transferRecipient || "External Beneficiary Account",
+          timestamp: nowTime,
+          status: initialStatus,
+          transferStatus: initialStatus,
+          statusUpdates: newTx.statusUpdates,
+        };
+        localStorage.setItem("us_finance_bank_transactions", JSON.stringify([adminFormatTx, ...list]));
+      } catch {
+        // ignore
+      }
+    }
+
     setTransferSuccess(
-      `Transferred ${country.currency.symbol}${amt.toFixed(2)} to ${transferRecipient || "Recipient"}`
+      `Transfer of ${country.currency.symbol}${amt.toFixed(2)} to ${transferRecipient || "Recipient"} initiated. Status: ${initialStatus}.`
     );
     setTransferAmount("");
     setTransferRecipient("");
@@ -1623,7 +1780,12 @@ export function Index() {
               {/* Transactions Ledger */}
               <div className="mt-6 rounded-xl border border-border bg-white p-6 shadow-xs">
                 <div className="flex items-center justify-between border-b border-border pb-4">
-                  <h2 className="text-lg font-bold text-primary">{t.recentTransactions}</h2>
+                  <div>
+                    <h2 className="text-lg font-bold text-primary">{t.recentTransactions}</h2>
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                      Select any transfer to review its live status, verified administrative updates, and clearing notes.
+                    </p>
+                  </div>
                   <span className="text-xs font-medium text-muted-foreground">
                     Format: {country.dateFormat}
                   </span>
@@ -1632,27 +1794,157 @@ export function Index() {
                   {transactions.map((tx) => (
                     <div
                       key={tx.id}
-                      className="flex items-center justify-between py-3.5 text-sm"
+                      onClick={() => setSelectedCustomerTx(tx)}
+                      className="flex flex-col sm:flex-row sm:items-center justify-between py-3.5 px-2 rounded-lg hover:bg-slate-50 cursor-pointer transition-colors gap-2"
                     >
                       <div>
-                        <p className="font-semibold text-primary">{tx.desc}</p>
+                        <div className="flex items-center gap-2">
+                          <p className="font-semibold text-primary">{tx.desc}</p>
+                          <span
+                            className={`rounded-full px-2.5 py-0.5 text-[0.68rem] font-bold ${
+                              (tx.transferStatus || tx.status) === "Completed"
+                                ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
+                                : (tx.transferStatus || tx.status) === "On hold"
+                                ? "bg-amber-50 text-amber-700 border border-amber-200"
+                                : "bg-blue-50 text-blue-700 border border-blue-200"
+                            }`}
+                          >
+                            {tx.transferStatus || tx.status}
+                          </span>
+                        </div>
                         <p className="text-xs text-muted-foreground">
-                          {tx.date} • {tx.category}
+                          {tx.date} • {tx.category} • Ref: <span className="font-mono">{tx.id}</span>
                         </p>
                       </div>
-                      <span
-                        className={`font-mono font-bold ${
-                          tx.positive ? "text-emerald-600" : "text-foreground"
-                        }`}
-                      >
-                        {tx.amount}
-                      </span>
+                      <div className="flex sm:flex-col items-center sm:items-end justify-between sm:justify-center">
+                        <span
+                          className={`font-mono font-bold ${
+                            tx.positive ? "text-emerald-600" : "text-foreground"
+                          }`}
+                        >
+                          {tx.amount}
+                        </span>
+                        <span className="text-[0.72rem] text-primary font-semibold hover:underline">
+                          View Transfer Details →
+                        </span>
+                      </div>
                     </div>
                   ))}
                 </div>
               </div>
             </div>
           </section>
+        )}
+
+        {/* CUSTOMER TRANSFER DETAILS & STATUS UPDATES MODAL */}
+        {selectedCustomerTx && (
+          <div
+            role="dialog"
+            aria-modal="true"
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-xs overflow-y-auto"
+          >
+            <div className="relative w-full max-w-lg rounded-2xl border border-border bg-white p-6 sm:p-7 shadow-2xl text-foreground max-h-[90vh] overflow-y-auto">
+              <button
+                type="button"
+                onClick={() => setSelectedCustomerTx(null)}
+                className="absolute right-4 top-4 rounded-full p-1 text-muted-foreground hover:bg-secondary hover:text-foreground"
+              >
+                <X className="h-5 w-5" />
+              </button>
+
+              <div className="flex items-center gap-3 border-b border-border pb-4">
+                <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-primary/10 text-primary">
+                  <ArrowRightLeft className="h-6 w-6" />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <h3 className="text-base font-bold text-primary">Customer Transfer Details</h3>
+                    <span
+                      className={`rounded-full px-2.5 py-0.5 text-xs font-bold ${
+                        (selectedCustomerTx.transferStatus || selectedCustomerTx.status) === "Completed"
+                          ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
+                          : (selectedCustomerTx.transferStatus || selectedCustomerTx.status) === "On hold"
+                          ? "bg-amber-50 text-amber-700 border border-amber-200"
+                          : "bg-blue-50 text-blue-700 border border-blue-200"
+                      }`}
+                    >
+                      {selectedCustomerTx.transferStatus || selectedCustomerTx.status}
+                    </span>
+                  </div>
+                  <p className="text-xs text-muted-foreground">Tracking Reference: <span className="font-mono">{selectedCustomerTx.id}</span></p>
+                </div>
+              </div>
+
+              {/* Transfer Summary */}
+              <div className="mt-4 space-y-2.5 text-xs">
+                <div className="flex items-center justify-between rounded-xl bg-secondary/30 p-3">
+                  <span className="text-muted-foreground">Total Settlement Amount:</span>
+                  <span className={`font-mono font-bold text-base ${selectedCustomerTx.positive ? "text-emerald-600" : "text-primary"}`}>
+                    {selectedCustomerTx.amount}
+                  </span>
+                </div>
+                <div className="rounded-xl border border-border p-3 space-y-1.5">
+                  <p><strong className="text-foreground">Description:</strong> {selectedCustomerTx.desc}</p>
+                  <p><strong className="text-foreground">Channel / Category:</strong> {selectedCustomerTx.category}</p>
+                  <p><strong className="text-foreground">Date / Timestamp:</strong> {selectedCustomerTx.date}</p>
+                  {selectedCustomerTx.counterparty && (
+                    <p><strong className="text-foreground">Counterparty Beneficiary:</strong> {selectedCustomerTx.counterparty}</p>
+                  )}
+                </div>
+              </div>
+
+              {/* Transfer Status History & Notes */}
+              <div className="mt-4 rounded-xl border border-border bg-slate-50 p-4">
+                <div className="flex items-center justify-between border-b border-border pb-2 mb-2.5">
+                  <h4 className="font-bold text-xs uppercase tracking-wider text-primary flex items-center gap-1.5">
+                    <History className="h-3.5 w-3.5 text-primary" />
+                    Transfer Status Updates & Verification History
+                  </h4>
+                  <span className="text-[0.65rem] text-muted-foreground">Synchronized With Bank Records</span>
+                </div>
+
+                <div className="space-y-2 max-h-48 overflow-y-auto pr-1">
+                  {!selectedCustomerTx.statusUpdates || selectedCustomerTx.statusUpdates.length === 0 ? (
+                    <div className="text-[0.72rem] text-muted-foreground p-3 text-center">
+                      Current status ({selectedCustomerTx.transferStatus || selectedCustomerTx.status}) confirmed at initiation.
+                    </div>
+                  ) : (
+                    selectedCustomerTx.statusUpdates.map((upd: any) => (
+                      <div key={upd.id} className="rounded-lg border border-border bg-white p-2.5 text-xs shadow-2xs">
+                        <div className="flex items-center justify-between">
+                          <span className="font-bold text-primary">
+                            Status: <span className="text-muted-foreground font-normal">{upd.fromStatus}</span> → <strong className="text-accent">{upd.toStatus}</strong>
+                          </span>
+                          <span className="text-[0.68rem] text-muted-foreground font-mono">{upd.timestamp}</span>
+                        </div>
+                        <p className="mt-1 text-[0.72rem] text-muted-foreground leading-relaxed">
+                          <strong className="text-foreground">Verified Note:</strong> {upd.reason}
+                        </p>
+                        <p className="text-[0.65rem] text-muted-foreground mt-0.5">
+                          Logged by: {upd.updatedBy}
+                        </p>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </div>
+
+              {/* Demonstration notice */}
+              <div className="mt-4 rounded-lg bg-amber-50 border border-amber-200 p-2.5 text-[0.7rem] text-amber-900 leading-relaxed">
+                <strong>Demonstration Environment:</strong> Displayed statuses reflect verified administrative tracking only and do not indicate real financial movement.
+              </div>
+
+              <div className="mt-5 flex justify-end">
+                <Button
+                  size="sm"
+                  onClick={() => setSelectedCustomerTx(null)}
+                  className="bg-primary text-primary-foreground hover:bg-primary/90 text-xs font-bold"
+                >
+                  Close Transfer Details
+                </Button>
+              </div>
+            </div>
+          </div>
         )}
 
 

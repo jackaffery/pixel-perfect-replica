@@ -53,6 +53,7 @@ import {
   HandCoins,
   ChevronDown,
   Network,
+  PauseCircle,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -68,6 +69,7 @@ import {
   type AdminUserRecord,
   type BankAccountRecord,
   type BankTransactionRecord,
+  type TransferStatusUpdate,
   type ComplianceReviewItem,
   type SupportCase,
   type OperationalAlert,
@@ -96,11 +98,28 @@ export function SoloAdminDashboard({
   const [adminUsers, setAdminUsers] = useState<AdminUserRecord[]>(MOCK_ADMIN_USERS);
   const [customers, setCustomers] = useState<AdminCustomer[]>(MOCK_CUSTOMERS);
   const [accounts, setAccounts] = useState<BankAccountRecord[]>(MOCK_ACCOUNTS);
-  const [transactions, setTransactions] = useState<BankTransactionRecord[]>(MOCK_TRANSACTIONS);
+  const [transactions, setTransactions] = useState<BankTransactionRecord[]>(() => {
+    if (typeof window !== "undefined") {
+      const saved = localStorage.getItem("us_finance_bank_transactions");
+      if (saved) {
+        try {
+          return JSON.parse(saved);
+        } catch {
+          // fallback
+        }
+      }
+    }
+    return MOCK_TRANSACTIONS;
+  });
   const [complianceReviews, setComplianceReviews] = useState<ComplianceReviewItem[]>(MOCK_COMPLIANCE_REVIEWS);
   const [supportCases, setSupportCases] = useState<SupportCase[]>(MOCK_SUPPORT_CASES);
   const [alerts, setAlerts] = useState<OperationalAlert[]>(MOCK_ALERTS);
   const [auditLogs, setAuditLogs] = useState<SoloAdminAuditEntry[]>(MOCK_AUDIT_LOGS);
+
+  // Transfer Status Management State
+  const [transferStatusSelected, setTransferStatusSelected] = useState<"On hold" | "Processing" | "Completed">("Processing");
+  const [transferStatusReason, setTransferStatusReason] = useState("");
+  const [transferStatusError, setTransferStatusError] = useState("");
 
   // Selected Detail Modals
   const [selectedUser, setSelectedUser] = useState<AdminUserRecord | null>(null);
@@ -631,6 +650,91 @@ export function SoloAdminDashboard({
     setSelectedTransaction((prev) => (prev ? { ...prev, status: "Resolved", reviewNotes: notes } : null));
     setConfirmActionModal(null);
     setActionReason("");
+  };
+
+  // Transfer Status Review & Update Handlers
+  const handleSelectTransactionForReview = (tx: BankTransactionRecord) => {
+    setSelectedTransaction(tx);
+    const curr = (tx.transferStatus ||
+      (tx.status === "Completed" ? "Completed" : tx.status === "On hold" ? "On hold" : "Processing")) as
+      | "On hold"
+      | "Processing"
+      | "Completed";
+    setTransferStatusSelected(curr);
+    setTransferStatusReason("");
+    setTransferStatusError("");
+    appendAuditLog("Transactions", "Inspected Customer Transfer", `Viewed transfer ${tx.id} for ${tx.customerName}`, tx.id);
+  };
+
+  const handleUpdateTransferStatus = (
+    txId: string,
+    newStatus: "On hold" | "Processing" | "Completed",
+    reason: string
+  ) => {
+    if (!reason.trim()) {
+      setTransferStatusError("A specific, verified administrative reason is required for any transfer status change.");
+      return;
+    }
+
+    const targetTx = transactions.find((t) => t.id === txId);
+    if (!targetTx) return;
+
+    const prevStatus = targetTx.transferStatus || (targetTx.status === "Completed" ? "Completed" : targetTx.status === "On hold" ? "On hold" : "Processing");
+    const nowTimestamp = "Today, " + new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+
+    const statusUpdate: TransferStatusUpdate = {
+      id: `UPD-${Date.now().toString().slice(-4)}`,
+      fromStatus: prevStatus,
+      toStatus: newStatus,
+      updatedBy: "Staff Admin",
+      reason: reason.trim(),
+      timestamp: nowTimestamp,
+    };
+
+    const updatedTransactions = transactions.map((t) =>
+      t.id === txId
+        ? {
+            ...t,
+            status: newStatus,
+            transferStatus: newStatus,
+            reviewNotes: reason.trim(),
+            reviewedAt: nowTimestamp,
+            reviewedBy: "Staff Admin",
+            statusUpdates: [statusUpdate, ...(t.statusUpdates || [])],
+          }
+        : t
+    );
+
+    setTransactions(updatedTransactions);
+    if (typeof window !== "undefined") {
+      localStorage.setItem("us_finance_bank_transactions", JSON.stringify(updatedTransactions));
+    }
+
+    appendAuditLog(
+      "Transactions",
+      "Updated Transfer Status",
+      `Transfer ${txId} (${targetTx.customerName}): Status updated from '${prevStatus}' to '${newStatus}'. Administrator: Staff Admin. Reason: ${reason.trim()} [DEMONSTRATION: Non-settlement tracking record]`,
+      txId
+    );
+
+    setSelectedTransaction((prev) =>
+      prev && prev.id === txId
+        ? {
+            ...prev,
+            status: newStatus,
+            transferStatus: newStatus,
+            reviewNotes: reason.trim(),
+            reviewedAt: nowTimestamp,
+            reviewedBy: "Staff Admin",
+            statusUpdates: [statusUpdate, ...(prev.statusUpdates || [])],
+          }
+        : prev
+    );
+
+    setActionNotification(`Transfer ${txId} status successfully updated to ${newStatus}. Recorded in activity history.`);
+    setTimeout(() => setActionNotification(""), 5000);
+    setTransferStatusReason("");
+    setTransferStatusError("");
   };
 
   // Compliance Decision
@@ -1688,6 +1792,92 @@ export function SoloAdminDashboard({
                           ))}
                       </div>
                     </div>
+
+                    {/* Customer Transfer Status & History Section (Manage Users) */}
+                    {(() => {
+                      const userTransfers = transactions.filter(
+                        (t) =>
+                          t.customerName.toLowerCase() === selectedUser.name.toLowerCase() ||
+                          t.customerId === selectedUser.linkedCustomerId
+                      );
+                      return (
+                        <div className="mt-6 rounded-2xl border border-slate-200 bg-white p-5 shadow-2xs">
+                          <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+                            <div>
+                              <h4 className="font-bold text-sm text-slate-900 flex items-center gap-2">
+                                <ArrowRightLeft className="h-4 w-4 text-red-600" />
+                                Transfer Status & Oversight
+                              </h4>
+                              <p className="text-xs text-slate-500 mt-0.5">
+                                Review user transfers and update displayed status to On hold, Processing, or Completed.
+                              </p>
+                            </div>
+                            <span className="rounded-full bg-red-100 px-2.5 py-0.5 text-[0.68rem] font-bold text-red-700">
+                              {userTransfers.length} Transfer(s)
+                            </span>
+                          </div>
+
+                          {userTransfers.length === 0 ? (
+                            <div className="p-4 text-center text-xs text-slate-400">
+                              No transfer transactions recorded for this user profile yet.
+                            </div>
+                          ) : (
+                            <div className="mt-3 divide-y divide-slate-100">
+                              {userTransfers.map((tx) => (
+                                <div
+                                  key={tx.id}
+                                  className="py-3 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs"
+                                >
+                                  <div>
+                                    <div className="flex items-center gap-2">
+                                      <span className="font-mono font-bold text-slate-900">{tx.id}</span>
+                                      <span className="text-slate-400">•</span>
+                                      <span className="text-slate-700 font-semibold">{tx.type}</span>
+                                      <span className="text-slate-400">•</span>
+                                      <span className="text-slate-500">{tx.timestamp}</span>
+                                    </div>
+                                    <p className="text-slate-500 text-[0.72rem] mt-0.5">
+                                      Counterparty: <strong className="text-slate-700">{tx.counterparty}</strong> • Masked Account: <span className="font-mono">{tx.accountMasked}</span>
+                                    </p>
+                                  </div>
+                                  <div className="flex items-center gap-3">
+                                    <div className="text-right">
+                                      <span
+                                        className={`font-mono font-bold ${
+                                          tx.direction === "credit" ? "text-emerald-600" : "text-slate-900"
+                                        }`}
+                                      >
+                                        {tx.direction === "credit" ? "+" : "-"}
+                                        {tx.currency} {tx.amount.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                                      </span>
+                                    </div>
+                                    <span
+                                      className={`rounded-full px-2.5 py-0.5 text-[0.68rem] font-bold ${
+                                        (tx.transferStatus || tx.status) === "Completed"
+                                          ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
+                                          : (tx.transferStatus || tx.status) === "On hold"
+                                          ? "bg-amber-50 text-amber-700 border border-amber-200"
+                                          : "bg-blue-50 text-blue-700 border border-blue-200"
+                                      }`}
+                                    >
+                                      {tx.transferStatus || tx.status}
+                                    </span>
+                                    <Button
+                                      size="sm"
+                                      variant="outline"
+                                      onClick={() => handleSelectTransactionForReview(tx)}
+                                      className="border-red-200 bg-white text-xs font-semibold text-red-600 hover:bg-red-50 hover:border-red-300"
+                                    >
+                                      Review Status →
+                                    </Button>
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })()}
 
                     {/* Access Controls & Security Actions */}
                     <div className="mt-6 rounded-2xl border border-red-200 bg-red-50/50 p-5">
@@ -2788,38 +2978,47 @@ export function SoloAdminDashboard({
                             <span className="font-medium text-slate-700">{tx.type}</span>
                           </td>
                           <td className="px-5 py-3.5 font-sans text-slate-600 truncate max-w-xs">{tx.counterparty}</td>
-                          <td
-                            className={`px-5 py-3.5 text-right font-bold font-mono ${
-                              tx.direction === "credit" ? "text-emerald-600" : "text-slate-800"
-                            }`}
-                          >
-                            {tx.direction === "credit" ? "+" : "-"}
-                            {tx.currency} {tx.amount.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                          <td className="px-5 py-3.5 text-right font-sans">
+                            <div
+                              className={`font-mono font-bold text-xs ${
+                                tx.direction === "credit" ? "text-emerald-600" : "text-slate-800"
+                              }`}
+                            >
+                              {tx.direction === "credit" ? "+" : "-"}{tx.currency}
+                            </div>
+                            <div
+                              className={`font-mono font-black text-sm ${
+                                tx.direction === "credit" ? "text-emerald-600" : "text-slate-900"
+                              }`}
+                            >
+                              {tx.amount.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                            </div>
                           </td>
                           <td className="px-5 py-3.5 font-sans">
                             <span
-                              className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[0.65rem] font-bold ${
-                                tx.status === "Completed"
-                                  ? "bg-emerald-100 text-emerald-800 border border-emerald-200"
+                              className={`inline-flex items-center gap-1 rounded-full px-3 py-1 text-xs font-bold ${
+                                (tx.transferStatus || tx.status) === "Completed"
+                                  ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
+                                  : (tx.transferStatus || tx.status) === "On hold"
+                                  ? "bg-amber-50 text-amber-700 border border-amber-200"
+                                  : (tx.transferStatus || tx.status) === "Processing"
+                                  ? "bg-blue-50 text-blue-700 border border-blue-200"
                                   : tx.status === "Flagged"
-                                  ? "bg-red-100 text-red-800 border border-red-200 animate-pulse"
+                                  ? "bg-red-50 text-red-700 border border-red-200 animate-pulse"
                                   : tx.status === "Resolved"
-                                  ? "bg-blue-100 text-blue-800 border border-blue-200"
-                                  : "bg-amber-100 text-amber-800 border border-amber-200"
+                                  ? "bg-blue-50 text-blue-700 border border-blue-200"
+                                  : "bg-amber-50 text-amber-700 border border-amber-200"
                               }`}
                             >
-                              {tx.status}
+                              {tx.transferStatus || tx.status}
                             </span>
                           </td>
                           <td className="px-5 py-3.5 text-right font-sans">
                             <Button
                               size="sm"
                               variant="outline"
-                              onClick={() => {
-                                setSelectedTransaction(tx);
-                                appendAuditLog("Transactions", "Inspected Transaction", `Viewed TX ${tx.id} for ${tx.customerName}`, tx.id);
-                              }}
-                              className="border-slate-200 text-xs text-red-600 hover:bg-red-50 hover:border-red-300 font-bold shadow-xs"
+                              onClick={() => handleSelectTransactionForReview(tx)}
+                              className="border-red-200 bg-white text-xs text-red-600 hover:bg-red-50 hover:border-red-300 font-bold shadow-2xs"
                             >
                               Review →
                             </Button>
@@ -2831,95 +3030,300 @@ export function SoloAdminDashboard({
                 </div>
               </div>
 
-              {/* Transaction Detail & Flag / Resolve Modal */}
+              {/* Transaction Detail & Transfer Status Review Modal */}
               {selectedTransaction && (
                 <div
                   role="dialog"
                   aria-modal="true"
-                  className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4 backdrop-blur-md"
+                  className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 overflow-y-auto"
                 >
-                  <div className="relative w-full max-w-lg rounded-2xl border border-slate-700 bg-slate-900 p-6 text-slate-200 shadow-2xl">
+                  <div className="relative w-full max-w-2xl rounded-3xl border border-slate-200 bg-white p-6 sm:p-8 text-slate-800 shadow-2xl max-h-[90vh] overflow-y-auto animate-fadeIn">
                     <button
                       type="button"
                       onClick={() => setSelectedTransaction(null)}
-                      className="absolute right-4 top-4 rounded-full p-1 text-slate-400 hover:bg-slate-800 hover:text-white"
+                      className="absolute right-5 top-5 rounded-xl p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-800"
                     >
-                      <XCircle className="h-5 w-5" />
+                      ✕
                     </button>
 
-                    <div className="flex items-center gap-3 border-b border-slate-800 pb-4">
-                      <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-blue-600 text-white shadow-md">
+                    <div className="flex items-center gap-3 border-b border-slate-100 pb-4">
+                      <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-red-600 text-white shadow-md shadow-red-600/20">
                         <ArrowRightLeft className="h-5 w-5" />
                       </div>
                       <div>
-                        <h3 className="text-base font-bold text-white">Transaction Review: {selectedTransaction.id}</h3>
-                        <p className="text-xs text-slate-400">{selectedTransaction.timestamp}</p>
+                        <div className="flex items-center gap-2">
+                          <h3 className="text-base font-bold text-slate-900">
+                            Transfer Review: {selectedTransaction.id}
+                          </h3>
+                          <span className="rounded bg-red-100 px-2 py-0.5 text-[0.65rem] font-bold text-red-700 border border-red-200">
+                            Staff Admin Review
+                          </span>
+                        </div>
+                        <p className="text-xs text-slate-500">
+                          Customer: <strong className="text-slate-700">{selectedTransaction.customerName}</strong> • {selectedTransaction.timestamp}
+                        </p>
                       </div>
                     </div>
 
-                    <div className="mt-4 space-y-3 text-xs font-mono">
-                      <div className="rounded-xl border border-slate-800 bg-slate-950 p-3 flex justify-between items-center">
-                        <span className="font-sans text-slate-400">Total Settlement:</span>
-                        <span className="text-lg font-black text-white">
-                          {selectedTransaction.currency}{" "}
-                          {selectedTransaction.amount.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                    {/* Transfer Summary Cards */}
+                    <div className="mt-5 grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+                      <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                        <span className="text-[0.68rem] uppercase font-bold text-slate-500 tracking-wider">Total Amount</span>
+                        <div className="mt-1 flex items-baseline gap-1">
+                          <span className={`text-xl font-black font-mono ${selectedTransaction.direction === "credit" ? "text-emerald-600" : "text-slate-900"}`}>
+                            {selectedTransaction.direction === "credit" ? "+" : "-"}{selectedTransaction.currency} {selectedTransaction.amount.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                          </span>
+                          <span className="text-[0.7rem] text-slate-500 font-semibold">({selectedTransaction.direction.toUpperCase()})</span>
+                        </div>
+                      </div>
+
+                      <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                        <span className="text-[0.68rem] uppercase font-bold text-slate-500 tracking-wider">Target / Source Account</span>
+                        <p className="mt-1 font-mono font-bold text-sm text-slate-900">{selectedTransaction.accountMasked}</p>
+                        <p className="text-[0.7rem] text-slate-500">{selectedTransaction.type}</p>
+                      </div>
+
+                      <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                        <span className="text-[0.68rem] uppercase font-bold text-slate-500 tracking-wider">Counterparty Beneficiary</span>
+                        <p className="mt-1 font-semibold text-slate-800 text-xs truncate">{selectedTransaction.counterparty}</p>
+                      </div>
+
+                      <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                        <span className="text-[0.68rem] uppercase font-bold text-slate-500 tracking-wider">Current Displayed Status</span>
+                        <div className="mt-1 flex items-center gap-2">
+                          <span
+                            className={`rounded-full px-3 py-1 text-xs font-bold ${
+                              (selectedTransaction.transferStatus || selectedTransaction.status) === "Completed"
+                                ? "bg-emerald-100 text-emerald-800 border border-emerald-200"
+                                : (selectedTransaction.transferStatus || selectedTransaction.status) === "On hold"
+                                ? "bg-amber-100 text-amber-800 border border-amber-200"
+                                : "bg-blue-100 text-blue-800 border border-blue-200"
+                            }`}
+                          >
+                            {selectedTransaction.transferStatus || selectedTransaction.status}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* DEDICATED TRANSFER STATUS SECTION */}
+                    <div className="mt-5 rounded-2xl border border-red-200 bg-red-50/40 p-5">
+                      <div className="flex items-center justify-between border-b border-red-200/60 pb-3">
+                        <div className="flex items-center gap-2">
+                          <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-red-600 text-white shadow-xs">
+                            <ArrowRightLeft className="h-4 w-4" />
+                          </div>
+                          <div>
+                            <h4 className="font-bold text-sm text-slate-900">Transfer Status Control</h4>
+                            <p className="text-[0.7rem] text-slate-500">
+                              Update displayed status to On hold, Processing, or Completed with customer sync.
+                            </p>
+                          </div>
+                        </div>
+                        <span className="rounded bg-red-100 px-2.5 py-0.5 text-[0.68rem] font-bold text-red-700">
+                          Active Status: {selectedTransaction.transferStatus || selectedTransaction.status}
                         </span>
                       </div>
-                      <div className="rounded-xl border border-slate-800 bg-slate-950 p-3 space-y-1.5 font-sans">
-                        <p><strong className="text-slate-400">Customer:</strong> {selectedTransaction.customerName}</p>
-                        <p><strong className="text-slate-400">Target Account:</strong> {selectedTransaction.accountMasked}</p>
-                        <p><strong className="text-slate-400">Counterparty:</strong> {selectedTransaction.counterparty}</p>
-                        <p><strong className="text-slate-400">Transaction Type:</strong> {selectedTransaction.type}</p>
-                        <p><strong className="text-slate-400">Status:</strong> {selectedTransaction.status}</p>
-                        {selectedTransaction.flagReason && (
-                          <div className="mt-2 rounded-lg bg-rose-950/40 border border-rose-500/30 p-2 text-rose-200">
-                            <strong>Flag Reason:</strong> {selectedTransaction.flagReason}
-                          </div>
+
+                      {/* Status Selector Segmented Control */}
+                      <div className="mt-4">
+                        <label className="block text-xs font-bold text-slate-700 mb-2">
+                          Select New Transfer Status:
+                        </label>
+                        <div className="grid grid-cols-3 gap-2.5">
+                          {/* On hold */}
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setTransferStatusSelected("On hold");
+                              setTransferStatusError("");
+                            }}
+                            className={`flex flex-col items-center justify-center gap-1.5 p-3 rounded-xl border font-bold text-xs transition-all ${
+                              transferStatusSelected === "On hold"
+                                ? "border-amber-400 bg-amber-50 text-amber-900 ring-2 ring-amber-400/50 shadow-xs"
+                                : "border-slate-200 bg-white text-slate-600 hover:bg-slate-50"
+                            }`}
+                          >
+                            <PauseCircle className="h-5 w-5 text-amber-600" />
+                            <span>On hold</span>
+                            <span className="text-[0.65rem] font-normal text-slate-500">Verification Pending</span>
+                          </button>
+
+                          {/* Processing */}
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setTransferStatusSelected("Processing");
+                              setTransferStatusError("");
+                            }}
+                            className={`flex flex-col items-center justify-center gap-1.5 p-3 rounded-xl border font-bold text-xs transition-all ${
+                              transferStatusSelected === "Processing"
+                                ? "border-blue-400 bg-blue-50 text-blue-900 ring-2 ring-blue-400/50 shadow-xs"
+                                : "border-slate-200 bg-white text-slate-600 hover:bg-slate-50"
+                            }`}
+                          >
+                            <RefreshCw className="h-5 w-5 text-blue-600" />
+                            <span>Processing</span>
+                            <span className="text-[0.65rem] font-normal text-slate-500">Interbank Clearing</span>
+                          </button>
+
+                          {/* Completed */}
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setTransferStatusSelected("Completed");
+                              setTransferStatusError("");
+                            }}
+                            className={`flex flex-col items-center justify-center gap-1.5 p-3 rounded-xl border font-bold text-xs transition-all ${
+                              transferStatusSelected === "Completed"
+                                ? "border-emerald-400 bg-emerald-50 text-emerald-900 ring-2 ring-emerald-400/50 shadow-xs"
+                                : "border-slate-200 bg-white text-slate-600 hover:bg-slate-50"
+                            }`}
+                          >
+                            <CheckCircle2 className="h-5 w-5 text-emerald-600" />
+                            <span>Completed</span>
+                            <span className="text-[0.65rem] font-normal text-slate-500">Verified & Confirmed</span>
+                          </button>
+                        </div>
+                      </div>
+
+                      {/* Mandatory Reason Input */}
+                      <div className="mt-4">
+                        <label className="block text-xs font-bold text-slate-700 mb-1">
+                          Reason for Status Change <span className="text-red-600">*</span> (Recorded in Activity History):
+                        </label>
+                        <textarea
+                          rows={2}
+                          value={transferStatusReason}
+                          onChange={(e) => {
+                            setTransferStatusReason(e.target.value);
+                            setTransferStatusError("");
+                          }}
+                          placeholder="e.g. Customer provided verified wire confirmation documents / automated clearing verified..."
+                          className="w-full rounded-xl border border-slate-200 bg-white p-3 text-xs text-slate-800 placeholder-slate-400 focus:border-red-500 focus:outline-none"
+                        />
+                        {transferStatusError && (
+                          <p className="mt-1 text-[0.72rem] font-bold text-red-600 flex items-center gap-1">
+                            <AlertCircle className="h-3.5 w-3.5" />
+                            {transferStatusError}
+                          </p>
                         )}
-                        {selectedTransaction.reviewNotes && (
-                          <div className="mt-2 rounded-lg bg-teal-950/40 border border-teal-500/30 p-2 text-teal-200">
-                            <strong>Resolution Notes:</strong> {selectedTransaction.reviewNotes}
+                      </div>
+
+                      {/* Safety & Demonstration Disclaimer */}
+                      <div className="mt-3 rounded-xl border border-amber-200 bg-amber-50/80 p-3 text-[0.7rem] text-amber-900 leading-relaxed flex items-start gap-2">
+                        <AlertTriangle className="h-4 w-4 shrink-0 text-amber-700 mt-0.5" />
+                        <div>
+                          <strong>Demonstration Environment Notice:</strong> Status updates reflect verified administrative record tracking only. Modifying a transfer status does not initiate, release, or complete an actual financial transfer of funds.
+                        </div>
+                      </div>
+
+                      {/* Action Button */}
+                      <div className="mt-4 flex items-center justify-end gap-2">
+                        <Button
+                          type="button"
+                          onClick={() =>
+                            handleUpdateTransferStatus(
+                              selectedTransaction.id,
+                              transferStatusSelected,
+                              transferStatusReason
+                            )
+                          }
+                          className="bg-red-600 hover:bg-red-700 text-xs font-bold text-white shadow-xs px-5 py-2"
+                        >
+                          Update Transfer Status & Sync
+                        </Button>
+                      </div>
+                    </div>
+
+                    {/* STATUS UPDATES & ACTIVITY HISTORY LOG */}
+                    <div className="mt-5 rounded-2xl border border-slate-200 bg-slate-50 p-5">
+                      <div className="flex items-center justify-between border-b border-slate-200/80 pb-3">
+                        <h4 className="font-bold text-xs uppercase tracking-wider text-slate-800 flex items-center gap-2">
+                          <History className="h-4 w-4 text-red-600" />
+                          Transfer Status Updates & Activity History
+                        </h4>
+                        <span className="text-[0.65rem] text-slate-500 font-mono">Immutable Audit Record</span>
+                      </div>
+
+                      <div className="mt-3 space-y-2.5 max-h-48 overflow-y-auto pr-1">
+                        {!selectedTransaction.statusUpdates || selectedTransaction.statusUpdates.length === 0 ? (
+                          <div className="p-3 text-center text-xs text-slate-400">
+                            Initial transfer status recorded upon creation. No subsequent status updates logged.
                           </div>
+                        ) : (
+                          selectedTransaction.statusUpdates.map((upd) => (
+                            <div
+                              key={upd.id}
+                              className="rounded-xl border border-slate-200 bg-white p-3 text-xs space-y-1 shadow-2xs"
+                            >
+                              <div className="flex items-center justify-between">
+                                <span className="font-bold text-slate-800">
+                                  Status Updated: <span className="text-slate-500 font-normal">{upd.fromStatus}</span> → <strong className="text-red-700">{upd.toStatus}</strong>
+                                </span>
+                                <span className="text-[0.68rem] text-slate-400 font-mono">{upd.timestamp}</span>
+                              </div>
+                              <p className="text-[0.72rem] text-slate-600">
+                                <strong className="text-slate-700">Reason:</strong> {upd.reason}
+                              </p>
+                              <div className="text-[0.65rem] text-slate-400">
+                                Recorded by: <strong className="text-slate-600">{upd.updatedBy}</strong>
+                              </div>
+                            </div>
+                          ))
                         )}
                       </div>
                     </div>
 
-                    {/* Safeguard Actions: Flag or Resolve with Confirmation */}
-                    <div className="mt-6 border-t border-slate-800 pt-4 flex items-center justify-end gap-2">
-                      {selectedTransaction.status !== "Flagged" && (
+                    {/* Secondary Flag / Resolve Actions */}
+                    <div className="mt-5 border-t border-slate-100 pt-4 flex items-center justify-between">
+                      <span className="text-[0.7rem] text-slate-500">
+                        Transaction Ref: <strong className="font-mono text-slate-700">{selectedTransaction.id}</strong>
+                      </span>
+                      <div className="flex items-center gap-2">
+                        {selectedTransaction.status !== "Flagged" && (
+                          <Button
+                            size="sm"
+                            variant="destructive"
+                            onClick={() =>
+                              setConfirmActionModal({
+                                title: `Flag Transaction ${selectedTransaction.id} for Review?`,
+                                description: "Enter mandatory AML / risk reason to flag this item in the compliance queue.",
+                                confirmLabel: "Flag Transaction",
+                                danger: true,
+                                onConfirm: () => handleFlagTransaction(selectedTransaction.id, actionReason),
+                              })
+                            }
+                            className="bg-rose-600 hover:bg-rose-700 text-xs font-bold shadow-xs text-white"
+                          >
+                            <AlertTriangle className="mr-1.5 h-3.5 w-3.5" /> Flag for Review
+                          </Button>
+                        )}
+                        {selectedTransaction.status === "Flagged" && (
+                          <Button
+                            size="sm"
+                            onClick={() =>
+                              setConfirmActionModal({
+                                title: `Resolve Flag on ${selectedTransaction.id}?`,
+                                description: "Confirm that compliance screening is satisfied and enter resolution rationale.",
+                                confirmLabel: "Resolve & Clear Flag",
+                                onConfirm: () => handleResolveTransaction(selectedTransaction.id, actionReason),
+                              })
+                            }
+                            className="bg-emerald-600 hover:bg-emerald-700 text-xs font-bold text-white shadow-xs"
+                          >
+                            <CheckCircle2 className="mr-1.5 h-3.5 w-3.5" /> Resolve & Clear Flag
+                          </Button>
+                        )}
                         <Button
                           size="sm"
-                          variant="destructive"
-                          onClick={() =>
-                            setConfirmActionModal({
-                              title: `Flag Transaction ${selectedTransaction.id} for Review?`,
-                              description: "Enter mandatory AML / risk reason to flag this item in the compliance queue.",
-                              confirmLabel: "Flag Transaction",
-                              danger: true,
-                              onConfirm: () => handleFlagTransaction(selectedTransaction.id, actionReason),
-                            })
-                          }
-                          className="bg-rose-600 hover:bg-rose-700 text-xs font-bold"
+                          variant="outline"
+                          onClick={() => setSelectedTransaction(null)}
+                          className="border-slate-200 text-xs text-slate-700 hover:bg-slate-100"
                         >
-                          <AlertTriangle className="mr-1.5 h-3.5 w-3.5" /> Flag for Review
+                          Close
                         </Button>
-                      )}
-                      {selectedTransaction.status === "Flagged" && (
-                        <Button
-                          size="sm"
-                          onClick={() =>
-                            setConfirmActionModal({
-                              title: `Resolve Flag on ${selectedTransaction.id}?`,
-                              description: "Confirm that compliance screening is satisfied and enter resolution rationale.",
-                              confirmLabel: "Resolve & Clear Flag",
-                              onConfirm: () => handleResolveTransaction(selectedTransaction.id, actionReason),
-                            })
-                          }
-                          className="bg-emerald-600 hover:bg-emerald-700 text-xs font-bold"
-                        >
-                          <CheckCircle2 className="mr-1.5 h-3.5 w-3.5" /> Resolve & Clear Flag
-                        </Button>
-                      )}
+                      </div>
                     </div>
                   </div>
                 </div>

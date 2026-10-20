@@ -70,6 +70,15 @@ export interface BankAccountRecord {
   lastActivity: string;
 }
 
+export interface TransferStatusUpdate {
+  id: string;
+  fromStatus: string;
+  toStatus: "On hold" | "Processing" | "Completed";
+  updatedBy: string;
+  reason: string;
+  timestamp: string;
+}
+
 export interface BankTransactionRecord {
   id: string;
   accountId: string;
@@ -82,7 +91,9 @@ export interface BankTransactionRecord {
   direction: "credit" | "debit";
   counterparty: string;
   timestamp: string;
-  status: "Completed" | "Pending Clearing" | "Flagged" | "Blocked" | "Resolved";
+  status: "Completed" | "Processing" | "On hold" | "Pending Clearing" | "Flagged" | "Blocked" | "Resolved";
+  transferStatus?: "On hold" | "Processing" | "Completed";
+  statusUpdates?: TransferStatusUpdate[];
   flagReason?: string;
   reviewNotes?: string;
   reviewedAt?: string;
@@ -636,6 +647,17 @@ export const MOCK_TRANSACTIONS: BankTransactionRecord[] = [
     counterparty: "Global Enterprise Payroll Inc.",
     timestamp: "Today, 10:14 AM",
     status: "Completed",
+    transferStatus: "Completed",
+    statusUpdates: [
+      {
+        id: "UPD-90214-1",
+        fromStatus: "Processing",
+        toStatus: "Completed",
+        updatedBy: "Staff Admin",
+        reason: "Verified clearing confirmation from Global Enterprise Payroll Inc.",
+        timestamp: "Today, 10:14 AM",
+      },
+    ],
   },
   {
     id: "TX-90213",
@@ -650,6 +672,17 @@ export const MOCK_TRANSACTIONS: BankTransactionRecord[] = [
     counterparty: "Barclays Commercial Clearing",
     timestamp: "Today, 09:30 AM",
     status: "Completed",
+    transferStatus: "Completed",
+    statusUpdates: [
+      {
+        id: "UPD-90213-1",
+        fromStatus: "Processing",
+        toStatus: "Completed",
+        updatedBy: "Staff Admin",
+        reason: "Barclays commercial clearing verified successfully.",
+        timestamp: "Today, 09:30 AM",
+      },
+    ],
   },
   {
     id: "TX-90212",
@@ -663,9 +696,20 @@ export const MOCK_TRANSACTIONS: BankTransactionRecord[] = [
     direction: "debit",
     counterparty: "Offshore Vault Ltd. (CY)",
     timestamp: "Oct 17, 2026, 02:10 PM",
-    status: "Flagged",
+    status: "Resolved",
+    transferStatus: "On hold",
     flagReason: "Unusual velocity and high-risk counterparty jurisdiction.",
     reviewNotes: "Requires Solo Admin secondary clearance before routing.",
+    statusUpdates: [
+      {
+        id: "UPD-90212-1",
+        fromStatus: "Processing",
+        toStatus: "On hold",
+        updatedBy: "Staff Admin",
+        reason: "Temporary compliance hold pending counterparty verification documentation.",
+        timestamp: "Oct 17, 2026, 02:15 PM",
+      },
+    ],
   },
   {
     id: "TX-90211",
@@ -680,6 +724,17 @@ export const MOCK_TRANSACTIONS: BankTransactionRecord[] = [
     counterparty: "Ontario Commercial Services",
     timestamp: "Yesterday, 08:35 AM",
     status: "Pending Clearing",
+    transferStatus: "Processing",
+    statusUpdates: [
+      {
+        id: "UPD-90211-1",
+        fromStatus: "On hold",
+        toStatus: "Processing",
+        updatedBy: "Staff Admin",
+        reason: "Initial ACH batch scheduled for interbank clearing.",
+        timestamp: "Yesterday, 08:35 AM",
+      },
+    ],
   },
   {
     id: "TX-90210",
@@ -694,6 +749,17 @@ export const MOCK_TRANSACTIONS: BankTransactionRecord[] = [
     counterparty: "AeroMexico Booking",
     timestamp: "Oct 18, 2026, 03:15 PM",
     status: "Completed",
+    transferStatus: "Completed",
+    statusUpdates: [
+      {
+        id: "UPD-90210-1",
+        fromStatus: "Processing",
+        toStatus: "Completed",
+        updatedBy: "Staff Admin",
+        reason: "POS card network batch settlement confirmed.",
+        timestamp: "Oct 18, 2026, 03:15 PM",
+      },
+    ],
   },
   {
     id: "TX-90209",
@@ -708,6 +774,17 @@ export const MOCK_TRANSACTIONS: BankTransactionRecord[] = [
     counterparty: "Consolidated Edison Utility",
     timestamp: "Oct 16, 2026, 05:40 PM",
     status: "Completed",
+    transferStatus: "Completed",
+    statusUpdates: [
+      {
+        id: "UPD-90209-1",
+        fromStatus: "Processing",
+        toStatus: "Completed",
+        updatedBy: "Staff Admin",
+        reason: "Electronic utility bill settlement completed.",
+        timestamp: "Oct 16, 2026, 05:40 PM",
+      },
+    ],
   },
   {
     id: "TX-90208",
