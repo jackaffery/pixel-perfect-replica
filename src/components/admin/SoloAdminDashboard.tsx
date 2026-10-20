@@ -38,6 +38,17 @@ import {
   MapPin,
   Laptop,
   Edit3,
+  Menu,
+  User,
+  ArrowDownToLine,
+  ArrowUpRight,
+  TrendingUp,
+  UserPlus,
+  Send,
+  HelpCircle,
+  FolderPlus,
+  UserMinus,
+  Check,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -661,62 +672,45 @@ export function SoloAdminDashboard({
   const unreadAlerts = alerts.filter((a) => !a.resolved);
 
   return (
-    <div className="flex h-screen w-full bg-slate-950 font-sans text-slate-100 antialiased overflow-hidden">
+    <div className="flex h-screen w-full bg-[#f4f6f9] font-sans text-slate-800 antialiased overflow-hidden">
       {/* ============================================================ */}
-      {/* 1. COLLAPSIBLE NAV SIDEBAR */}
+      {/* 1. COLLAPSIBLE LEFT SIDEBAR (White clean with red accents) */}
       {/* ============================================================ */}
       <aside
-        className={`flex flex-col border-r border-slate-800/80 bg-slate-900/95 backdrop-blur-md transition-all duration-300 z-30 ${
+        className={`flex flex-col border-r border-slate-200 bg-white transition-all duration-300 z-30 shadow-xs ${
           sidebarCollapsed ? "w-20" : "w-64"
         }`}
       >
-        {/* Bank Brand Header */}
-        <div className="flex h-16 items-center justify-between border-b border-slate-800/80 px-4">
-          <div className="flex items-center gap-3 overflow-hidden">
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-blue-600 to-teal-500 text-white shadow-md shadow-blue-500/20">
-              <Building2 className="h-5 w-5" />
+        {/* Admin Profile Area in Left Sidebar matching visual reference */}
+        <div className="border-b border-slate-100 p-4">
+          <div className="flex items-center gap-3">
+            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-red-600 text-white font-bold shadow-md shadow-red-500/20 text-sm">
+              <User className="h-5 w-5" />
             </div>
             {!sidebarCollapsed && (
-              <div className="flex flex-col leading-tight">
-                <span className="font-display font-black tracking-tight text-white text-base">US Finance Bank</span>
-                <span className="text-[0.65rem] font-bold uppercase tracking-wider text-teal-400">Solo Admin Workspace</span>
+              <div className="min-w-0 leading-tight">
+                <span className="block font-bold text-slate-800 text-sm truncate">
+                  {adminUsername === "Solo Master Administrator" ? "admin admin" : adminUsername}
+                </span>
+                <span className="inline-block mt-0.5 rounded bg-red-100 px-2 py-0.5 text-[0.68rem] font-bold text-red-700">
+                  Admin
+                </span>
               </div>
             )}
           </div>
-          <button
-            type="button"
-            onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
-            className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-800 hover:text-white"
-            title={sidebarCollapsed ? "Expand Sidebar" : "Collapse Sidebar"}
-          >
-            {sidebarCollapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
-          </button>
         </div>
 
-        {/* Solo Authority Banner Badge */}
-        {!sidebarCollapsed && (
-          <div className="mx-3 mt-3 rounded-lg border border-teal-500/30 bg-teal-950/40 p-2.5 text-xs">
-            <div className="flex items-center gap-2 text-teal-300 font-bold">
-              <ShieldCheck className="h-4 w-4 text-teal-400 shrink-0" />
-              <span>Solo Admin Centralized</span>
-            </div>
-            <p className="mt-1 text-[0.68rem] text-teal-200/70 leading-snug">
-              Single-operator workspace. All customer records and controls managed centrally.
-            </p>
-          </div>
-        )}
-
-        {/* Navigation Items */}
+        {/* Sidebar Navigation Items */}
         <nav className="flex-1 space-y-1 overflow-y-auto px-3 py-4">
           {[
-            { id: "overview", label: "Main Dashboard", icon: BarChart3, badge: unreadAlerts.length ? `${unreadAlerts.length} Alerts` : undefined },
-            { id: "users", label: "User Management", icon: UserCheck, badge: adminUsers.length.toString(), badgeColor: "bg-teal-600" },
-            { id: "customers", label: "Customers", icon: Users, badge: customers.length.toString() },
-            { id: "accounts", label: "Bank Accounts", icon: CreditCard, badge: accounts.length.toString() },
-            { id: "transactions", label: "Transactions", icon: ArrowRightLeft, badge: flaggedTxCount > 0 ? `${flaggedTxCount} Flagged` : undefined, badgeColor: "bg-rose-500" },
-            { id: "compliance", label: "Reviews & AML", icon: ShieldAlert, badge: pendingReviewsCount > 0 ? `${pendingReviewsCount} Pending` : undefined, badgeColor: "bg-amber-500" },
-            { id: "support", label: "Support Cases", icon: Headset, badge: openCasesCount > 0 ? `${openCasesCount} Open` : undefined },
-            { id: "reports", label: "Analytics & Reports", icon: FileText },
+            { id: "overview", label: "Dashboard", icon: BarChart3, badge: unreadAlerts.length ? `${unreadAlerts.length}` : undefined },
+            { id: "users", label: "Manage Users", icon: Users, badge: adminUsers.length.toString() },
+            { id: "customers", label: "Customer Profiles", icon: UserCheck, badge: customers.length.toString() },
+            { id: "accounts", label: "Accounts & Balances", icon: CreditCard, badge: accounts.length.toString() },
+            { id: "transactions", label: "Transfer Transactions", icon: ArrowRightLeft, badge: flaggedTxCount > 0 ? `${flaggedTxCount}` : undefined, badgeColor: "bg-red-600" },
+            { id: "compliance", label: "Reviews & Compliance", icon: ShieldAlert, badge: pendingReviewsCount > 0 ? `${pendingReviewsCount}` : undefined, badgeColor: "bg-amber-500" },
+            { id: "support", label: "Support Cases", icon: Headset, badge: openCasesCount > 0 ? `${openCasesCount}` : undefined },
+            { id: "reports", label: "Reports & Analytics", icon: FileText },
             { id: "audit", label: "Audit Ledger", icon: History, badge: auditLogs.length.toString() },
             { id: "settings", label: "Security & Settings", icon: Settings },
           ].map((item) => {
@@ -730,21 +724,23 @@ export function SoloAdminDashboard({
                   setActiveSection(item.id as any);
                   appendAuditLog("Overview", `Navigated to ${item.label}`, `Administrator switched workspace view.`);
                 }}
-                className={`group flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-xs font-semibold transition-all ${
+                className={`group flex w-full items-center gap-3 rounded-lg px-3.5 py-2.5 text-xs font-semibold transition-all ${
                   isActive
-                    ? "bg-gradient-to-r from-blue-600 to-blue-700 text-white shadow-md shadow-blue-600/20"
-                    : "text-slate-400 hover:bg-slate-800/80 hover:text-white"
+                    ? "bg-red-600 text-white shadow-sm font-bold"
+                    : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
                 }`}
                 title={sidebarCollapsed ? item.label : undefined}
               >
-                <Icon className={`h-4 w-4 shrink-0 ${isActive ? "text-white" : "text-slate-400 group-hover:text-white"}`} />
+                <Icon className={`h-4 w-4 shrink-0 ${isActive ? "text-white" : "text-slate-500 group-hover:text-red-600"}`} />
                 {!sidebarCollapsed && (
                   <span className="flex-1 text-left truncate">{item.label}</span>
                 )}
                 {!sidebarCollapsed && item.badge && (
                   <span
-                    className={`rounded-full px-2 py-0.5 text-[0.65rem] font-bold text-white ${
-                      item.badgeColor || "bg-slate-800 border border-slate-700"
+                    className={`rounded-full px-2 py-0.5 text-[0.65rem] font-bold ${
+                      isActive
+                        ? "bg-white text-red-600"
+                        : item.badgeColor ? `${item.badgeColor} text-white` : "bg-slate-100 text-slate-600"
                     }`}
                   >
                     {item.badge}
@@ -755,29 +751,19 @@ export function SoloAdminDashboard({
           })}
         </nav>
 
-        {/* Operator Profile Footer */}
-        <div className="border-t border-slate-800/80 p-3">
-          <div className="flex items-center justify-between rounded-xl bg-slate-800/50 p-2">
-            <div className="flex items-center gap-2 overflow-hidden">
-              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-teal-600 font-bold text-white text-xs">
-                SA
-              </div>
-              {!sidebarCollapsed && (
-                <div className="overflow-hidden leading-tight">
-                  <p className="truncate text-xs font-bold text-white">Solo Admin</p>
-                  <p className="truncate text-[0.65rem] text-slate-400">admin@usfinancebank.internal</p>
-                </div>
-              )}
-            </div>
-            <button
-              type="button"
-              onClick={onSignOut}
-              className="rounded-lg p-1.5 text-slate-400 hover:bg-rose-500/20 hover:text-rose-300"
-              title="Sign Out of Admin Workspace"
-            >
-              <LogOut className="h-4 w-4" />
-            </button>
-          </div>
+        {/* Sidebar Footer */}
+        <div className="border-t border-slate-100 p-3">
+          <button
+            type="button"
+            onClick={onSignOut}
+            className={`flex w-full items-center gap-2 rounded-lg p-2 text-xs font-semibold text-slate-600 hover:bg-red-50 hover:text-red-700 transition-colors ${
+              sidebarCollapsed ? "justify-center" : ""
+            }`}
+            title="Sign Out of Admin Workspace"
+          >
+            <LogOut className="h-4 w-4 text-red-600" />
+            {!sidebarCollapsed && <span>Sign Out</span>}
+          </button>
         </div>
       </aside>
 
@@ -785,48 +771,57 @@ export function SoloAdminDashboard({
       {/* 2. MAIN WORKSPACE CONTAINER */}
       {/* ============================================================ */}
       <div className="flex flex-1 flex-col overflow-hidden">
-        {/* Top Operational Bar */}
-        <header className="flex h-16 items-center justify-between border-b border-slate-800/80 bg-slate-900/90 px-6 backdrop-blur-md z-20">
-          {/* Global Workspace Search */}
-          <div className="relative w-72 md:w-96">
+        {/* TOP NAVIGATION BAR — Red Theme matching visual reference */}
+        <header className="flex h-16 items-center justify-between bg-red-600 px-6 text-white shadow-md z-20">
+          {/* Left: Bank Name & Menu Toggle */}
+          <div className="flex items-center gap-4">
+            <span className="font-display text-lg font-black tracking-tight text-white select-none">
+              US Finance Bank
+            </span>
+            <button
+              type="button"
+              onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
+              className="rounded-lg p-1.5 text-white/90 hover:bg-white/15 hover:text-white transition-colors"
+              title={sidebarCollapsed ? "Expand Sidebar" : "Collapse Sidebar"}
+            >
+              <Menu className="h-5 w-5" />
+            </button>
+          </div>
+
+          {/* Center: Search Field */}
+          <div className="relative w-72 md:w-96 mx-4">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
             <input
               type="text"
               value={globalSearch}
               onChange={(e) => setGlobalSearch(e.target.value)}
-              placeholder="Global search customers, accounts, TXs, tickets..."
-              className="w-full rounded-xl border border-slate-800 bg-slate-950/80 py-2 pl-9 pr-4 text-xs text-slate-200 placeholder-slate-500 focus:border-teal-400 focus:outline-none focus:ring-1 focus:ring-teal-400"
+              placeholder="Manage users, accounts, deposits..."
+              className="w-full rounded-md border-0 bg-white py-1.5 pl-9 pr-8 text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-white/50 shadow-inner"
             />
             {globalSearch && (
               <button
                 type="button"
                 onClick={() => setGlobalSearch("")}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white text-xs"
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 text-xs font-bold"
               >
-                Clear
+                ✕
               </button>
             )}
           </div>
 
-          {/* Quick Actions & Notifications */}
+          {/* Right: Operational Alert & Admin Profile Menu */}
           <div className="flex items-center gap-3">
-            {/* Environment Badge */}
-            <span className="hidden sm:inline-flex items-center gap-1.5 rounded-full border border-teal-500/30 bg-teal-950/30 px-3 py-1 text-[0.68rem] font-bold text-teal-300">
-              <span className="h-1.5 w-1.5 rounded-full bg-teal-400 animate-pulse" />
-              USFB Fictional Core • Single Operator Workspace
-            </span>
-
-            {/* Notification Bell */}
+            {/* Operational Alerts Bell */}
             <div className="relative">
               <button
                 type="button"
                 onClick={() => setShowNotifications(!showNotifications)}
-                className="relative rounded-xl border border-slate-800 bg-slate-800/60 p-2 text-slate-300 hover:bg-slate-800 hover:text-white"
+                className="relative rounded-full p-2 text-white/90 hover:bg-white/15 hover:text-white transition-colors"
                 title="Operational Alerts"
               >
-                <Bell className="h-4 w-4" />
+                <Bell className="h-5 w-5" />
                 {unreadAlerts.length > 0 && (
-                  <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-rose-500 text-[0.6rem] font-black text-white">
+                  <span className="absolute -top-0.5 -right-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-white text-[0.6rem] font-black text-red-600 shadow-sm">
                     {unreadAlerts.length}
                   </span>
                 )}
@@ -834,9 +829,9 @@ export function SoloAdminDashboard({
 
               {/* Notification Center Dropdown */}
               {showNotifications && (
-                <div className="absolute right-0 mt-2 w-80 sm:w-96 rounded-2xl border border-slate-800 bg-slate-900 p-4 shadow-2xl z-50 animate-fadeIn">
-                  <div className="flex items-center justify-between border-b border-slate-800 pb-2.5">
-                    <h4 className="font-bold text-xs uppercase tracking-wider text-slate-300">
+                <div className="absolute right-0 mt-2 w-80 sm:w-96 rounded-2xl border border-slate-200 bg-white p-4 shadow-2xl z-50 animate-fadeIn text-slate-800">
+                  <div className="flex items-center justify-between border-b border-slate-100 pb-2.5">
+                    <h4 className="font-bold text-xs uppercase tracking-wider text-slate-800">
                       Operational Alerts ({alerts.length})
                     </h4>
                     <span className="text-[0.65rem] text-slate-500 font-mono">Real-Time Core Feed</span>
@@ -847,19 +842,19 @@ export function SoloAdminDashboard({
                         key={al.id}
                         className={`rounded-xl border p-3 text-xs ${
                           al.severity === "critical"
-                            ? "border-rose-500/30 bg-rose-950/20 text-rose-200"
+                            ? "border-red-200 bg-red-50 text-red-900"
                             : al.severity === "warning"
-                            ? "border-amber-500/30 bg-amber-950/20 text-amber-200"
-                            : "border-slate-800 bg-slate-800/40 text-slate-300"
+                            ? "border-amber-200 bg-amber-50 text-amber-900"
+                            : "border-slate-200 bg-slate-50 text-slate-800"
                         }`}
                       >
                         <div className="flex items-start justify-between gap-2">
                           <span className="font-bold">{al.title}</span>
-                          <span className="text-[0.65rem] text-slate-400 shrink-0">{al.timestamp}</span>
+                          <span className="text-[0.65rem] text-slate-500 shrink-0">{al.timestamp}</span>
                         </div>
-                        <p className="mt-1 text-[0.72rem] text-slate-400">{al.description}</p>
+                        <p className="mt-1 text-[0.72rem] text-slate-600">{al.description}</p>
                         {al.actionRequired && (
-                          <div className="mt-2 text-[0.68rem] font-bold text-teal-400">
+                          <div className="mt-2 text-[0.68rem] font-bold text-red-600">
                             → {al.actionRequired}
                           </div>
                         )}
@@ -870,30 +865,69 @@ export function SoloAdminDashboard({
               )}
             </div>
 
-            {/* Sign Out Button */}
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={onSignOut}
-              className="border-slate-700 bg-slate-800/80 text-xs font-bold text-slate-200 hover:bg-rose-600 hover:border-rose-600 hover:text-white"
-            >
-              <LogOut className="mr-1.5 h-3.5 w-3.5" />
-              Sign Out
-            </Button>
+            {/* Profile Menu Trigger */}
+            <div className="relative">
+              <button
+                type="button"
+                onClick={() => setShowProfileMenu(!showProfileMenu)}
+                className="flex items-center justify-center h-9 w-9 rounded-full bg-white/20 hover:bg-white/30 text-white transition-colors"
+                title="Admin Profile Menu"
+              >
+                <User className="h-5 w-5" />
+              </button>
+
+              {showProfileMenu && (
+                <div className="absolute right-0 mt-2 w-48 rounded-xl border border-slate-200 bg-white py-1 shadow-xl z-50 text-slate-800 animate-fadeIn">
+                  <div className="px-4 py-2 border-b border-slate-100">
+                    <p className="text-xs font-bold text-slate-800">Solo Administrator</p>
+                    <p className="text-[0.68rem] text-slate-500">US Finance Bank Internal</p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setActiveSection("settings");
+                      setShowProfileMenu(false);
+                    }}
+                    className="w-full text-left px-4 py-2 text-xs text-slate-700 hover:bg-slate-50"
+                  >
+                    Security & Settings
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setActiveSection("audit");
+                      setShowProfileMenu(false);
+                    }}
+                    className="w-full text-left px-4 py-2 text-xs text-slate-700 hover:bg-slate-50"
+                  >
+                    Audit Ledger
+                  </button>
+                  <div className="border-t border-slate-100 mt-1">
+                    <button
+                      type="button"
+                      onClick={onSignOut}
+                      className="w-full text-left px-4 py-2 text-xs text-red-600 hover:bg-red-50 font-bold"
+                    >
+                      Sign Out
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
         </header>
 
         {/* Global Action Banner Toast */}
         {actionNotification && (
-          <div className="bg-gradient-to-r from-teal-900 to-blue-900 border-b border-teal-500/30 px-6 py-2.5 text-xs text-teal-100 flex items-center justify-between shadow-lg animate-fadeIn">
+          <div className="bg-emerald-600 text-white px-6 py-2.5 text-xs flex items-center justify-between shadow-md animate-fadeIn">
             <div className="flex items-center gap-2">
-              <CheckCircle2 className="h-4 w-4 text-teal-400" />
+              <CheckCircle2 className="h-4 w-4" />
               <span>{actionNotification}</span>
             </div>
             <button
               type="button"
               onClick={() => setActionNotification("")}
-              className="text-teal-300 hover:text-white text-xs font-bold"
+              className="text-white/80 hover:text-white text-xs font-bold"
             >
               Dismiss
             </button>
@@ -901,105 +935,195 @@ export function SoloAdminDashboard({
         )}
 
         {/* Content View Area */}
-        <main className="flex-1 overflow-y-auto bg-slate-950 p-6">
+        <main className="flex-1 overflow-y-auto bg-[#f4f6f9] p-6">
           {/* ======================================================== */}
-          {/* VIEW 1: MAIN DASHBOARD & KPIS */}
+          {/* VIEW 1: MAIN DASHBOARD (RED & WHITE THEME MATCHING SCREENSHOT) */}
           {/* ======================================================== */}
           {activeSection === "overview" && (
             <div className="space-y-6 max-w-7xl mx-auto">
-              {/* Section Header */}
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                <div>
-                  <h2 className="font-display text-2xl font-black text-white">Operational Overview</h2>
-                  <p className="text-xs text-slate-400">
-                    Solo-operator administrative intelligence, system health, and pending triage queues.
-                  </p>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Button
-                    size="sm"
-                    onClick={() => setActiveSection("customers")}
-                    className="bg-blue-600 hover:bg-blue-700 text-xs font-bold text-white cursor-pointer"
-                  >
-                    <Search className="mr-1.5 h-3.5 w-3.5" /> Search Customer
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() => setActiveSection("transactions")}
-                    className="border-slate-700 text-xs text-slate-200 hover:bg-slate-800"
-                  >
-                    <AlertTriangle className="mr-1.5 h-3.5 w-3.5 text-amber-400" /> Flagged Queue ({flaggedTxCount})
-                  </Button>
-                </div>
-              </div>
+              {/* Top Banner Header: Red background with Welcome heading & quick links matching screenshot */}
+              <div className="rounded-2xl bg-red-600 p-6 sm:p-8 text-white shadow-md relative overflow-hidden">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                  <div>
+                    <h1 className="font-display text-2xl sm:text-3xl font-extrabold tracking-tight">
+                      Dashboard
+                    </h1>
+                    <p className="text-sm text-red-100 mt-1">
+                      Welcome, {adminUsername === "Solo Master Administrator" ? "admin admin" : adminUsername}!
+                    </p>
+                  </div>
 
-              {/* 4 Metric KPI Cards */}
-              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-                <div className="rounded-2xl border border-slate-800 bg-slate-900/60 p-5 backdrop-blur-sm">
-                  <div className="flex items-center justify-between text-slate-400">
-                    <span className="text-xs font-bold uppercase tracking-wider">Total Customers</span>
-                    <Users className="h-5 w-5 text-blue-400" />
-                  </div>
-                  <div className="mt-3 text-2xl font-black text-white">{customers.length} Accounts</div>
-                  <div className="mt-1 flex items-center gap-2 text-[0.72rem] text-emerald-400">
-                    <CheckCircle2 className="h-3 w-3" />
-                    <span>{customers.filter((c) => c.status === "Active").length} active & verified</span>
-                  </div>
-                </div>
-
-                <div className="rounded-2xl border border-slate-800 bg-slate-900/60 p-5 backdrop-blur-sm">
-                  <div className="flex items-center justify-between text-slate-400">
-                    <span className="text-xs font-bold uppercase tracking-wider">Active Bank Accounts</span>
-                    <CreditCard className="h-5 w-5 text-teal-400" />
-                  </div>
-                  <div className="mt-3 text-2xl font-black text-white">{activeAccountsCount} Open</div>
-                  <div className="mt-1 text-[0.72rem] text-slate-400">
-                    Checking, High-Yield & Treasury Money Market
-                  </div>
-                </div>
-
-                <div className="rounded-2xl border border-slate-800 bg-slate-900/60 p-5 backdrop-blur-sm">
-                  <div className="flex items-center justify-between text-slate-400">
-                    <span className="text-xs font-bold uppercase tracking-wider">Pending AML / Compliance</span>
-                    <ShieldAlert className="h-5 w-5 text-amber-400" />
-                  </div>
-                  <div className="mt-3 text-2xl font-black text-white">{pendingReviewsCount} Cases</div>
-                  <div className="mt-1 flex items-center gap-1.5 text-[0.72rem] text-amber-400">
-                    <Clock className="h-3 w-3" />
-                    <span>Requires Solo Admin review</span>
-                  </div>
-                </div>
-
-                <div className="rounded-2xl border border-slate-800 bg-slate-900/60 p-5 backdrop-blur-sm">
-                  <div className="flex items-center justify-between text-slate-400">
-                    <span className="text-xs font-bold uppercase tracking-wider">Open Support Cases</span>
-                    <Headset className="h-5 w-5 text-purple-400" />
-                  </div>
-                  <div className="mt-3 text-2xl font-black text-white">{openCasesCount} Tickets</div>
-                  <div className="mt-1 text-[0.72rem] text-slate-400">
-                    Assigned exclusively to Solo Admin
+                  {/* 3 Quick Links Buttons matching screenshot */}
+                  <div className="flex flex-wrap items-center gap-2 sm:gap-3">
+                    <button
+                      type="button"
+                      onClick={() => setActiveSection("accounts")}
+                      className="rounded-lg bg-emerald-500 hover:bg-emerald-600 px-4 py-2 text-xs font-bold text-white shadow-sm transition-colors"
+                    >
+                      Deposits
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setActiveSection("transactions")}
+                      className="rounded-lg bg-sky-500 hover:bg-sky-600 px-4 py-2 text-xs font-bold text-white shadow-sm transition-colors"
+                    >
+                      Transfers
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setActiveSection("users")}
+                      className="rounded-lg bg-purple-600 hover:bg-purple-700 px-4 py-2 text-xs font-bold text-white shadow-sm transition-colors"
+                    >
+                      Users
+                    </button>
                   </div>
                 </div>
               </div>
 
-              {/* Activity & Chart Visualization Simulation */}
-              <div className="grid gap-6 lg:grid-cols-3">
-                {/* Simulated Volume & Activity Chart */}
-                <div className="lg:col-span-2 rounded-2xl border border-slate-800 bg-slate-900/60 p-5">
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-800 pb-4">
-                    <div>
-                      <h3 className="font-bold text-sm text-white">Core Volume & Settlement Trajectory</h3>
-                      <p className="text-xs text-slate-400">Simulated 7-day transaction velocity and throughput</p>
+              {/* SUMMARY CARDS GRID matching the 7 summary cards in screenshot */}
+              <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                  {/* Card 1: Total Deposit */}
+                  <div
+                    onClick={() => setActiveSection("accounts")}
+                    className="flex items-center gap-4 p-4 rounded-xl border border-slate-100 hover:border-red-200 hover:bg-red-50/30 cursor-pointer transition-all"
+                  >
+                    <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-amber-50 text-amber-600">
+                      <ArrowDownToLine className="h-6 w-6" />
                     </div>
-                    <div className="flex items-center gap-1.5 rounded-lg border border-slate-800 bg-slate-950 p-1">
+                    <div>
+                      <span className="text-xs font-semibold text-slate-500">Total Deposit</span>
+                      <p className="font-display text-lg font-black text-slate-800">$0.00</p>
+                    </div>
+                  </div>
+
+                  {/* Card 2: Pending Deposit(s) */}
+                  <div
+                    onClick={() => setActiveSection("compliance")}
+                    className="flex items-center gap-4 p-4 rounded-xl border border-slate-100 hover:border-red-200 hover:bg-red-50/30 cursor-pointer transition-all"
+                  >
+                    <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-sky-50 text-sky-500">
+                      <RefreshCw className="h-6 w-6" />
+                    </div>
+                    <div>
+                      <span className="text-xs font-semibold text-slate-500">Pending Deposit(s)</span>
+                      <p className="font-display text-lg font-black text-slate-800">$0.00</p>
+                    </div>
+                  </div>
+
+                  {/* Card 3: Total Transfers */}
+                  <div
+                    onClick={() => setActiveSection("transactions")}
+                    className="flex items-center gap-4 p-4 rounded-xl border border-slate-100 hover:border-red-200 hover:bg-red-50/30 cursor-pointer transition-all"
+                  >
+                    <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-red-50 text-red-600">
+                      <ArrowUpRight className="h-6 w-6" />
+                    </div>
+                    <div>
+                      <span className="text-xs font-semibold text-slate-500">Total Transfers</span>
+                      <p className="font-display text-lg font-black text-slate-800">$12,630,456</p>
+                    </div>
+                  </div>
+
+                  {/* Card 4: Pending Transfers */}
+                  <div
+                    onClick={() => setActiveSection("transactions")}
+                    className="flex items-center gap-4 p-4 rounded-xl border border-slate-100 hover:border-red-200 hover:bg-red-50/30 cursor-pointer transition-all"
+                  >
+                    <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-purple-50 text-purple-600">
+                      <ArrowRightLeft className="h-6 w-6" />
+                    </div>
+                    <div>
+                      <span className="text-xs font-semibold text-slate-500">Pending Transfers</span>
+                      <p className="font-display text-lg font-black text-slate-800">$0.00</p>
+                    </div>
+                  </div>
+
+                  {/* Card 5: Total Users */}
+                  <div
+                    onClick={() => setActiveSection("users")}
+                    className="flex items-center gap-4 p-4 rounded-xl border border-slate-100 hover:border-red-200 hover:bg-red-50/30 cursor-pointer transition-all"
+                  >
+                    <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-emerald-50 text-emerald-600">
+                      <Users className="h-6 w-6" />
+                    </div>
+                    <div>
+                      <span className="text-xs font-semibold text-slate-500">Total Users</span>
+                      <p className="font-display text-lg font-black text-slate-800">{adminUsers.length}</p>
+                    </div>
+                  </div>
+
+                  {/* Card 6: Block Users */}
+                  <div
+                    onClick={() => {
+                      setUserFilterStatus("suspended");
+                      setActiveSection("users");
+                    }}
+                    className="flex items-center gap-4 p-4 rounded-xl border border-slate-100 hover:border-red-200 hover:bg-red-50/30 cursor-pointer transition-all"
+                  >
+                    <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-red-50 text-red-500">
+                      <UserMinus className="h-6 w-6" />
+                    </div>
+                    <div>
+                      <span className="text-xs font-semibold text-slate-500">Block Users</span>
+                      <p className="font-display text-lg font-black text-slate-800">
+                        {adminUsers.filter((u) => u.onlineAccessStatus === "Suspended" || u.onlineAccessStatus === "Closed").length}
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Card 7: Active Users */}
+                  <div
+                    onClick={() => {
+                      setUserFilterStatus("active");
+                      setActiveSection("users");
+                    }}
+                    className="flex items-center gap-4 p-4 rounded-xl border border-slate-100 hover:border-red-200 hover:bg-red-50/30 cursor-pointer transition-all"
+                  >
+                    <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-emerald-50 text-emerald-600">
+                      <UserCheck className="h-6 w-6" />
+                    </div>
+                    <div>
+                      <span className="text-xs font-semibold text-slate-500">Active Users</span>
+                      <p className="font-display text-lg font-black text-slate-800">
+                        {adminUsers.filter((u) => u.onlineAccessStatus === "Active" || u.onlineAccessStatus === "Reinstated").length}
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Card 8: Operational System Health */}
+                  <div
+                    onClick={() => setActiveSection("settings")}
+                    className="flex items-center gap-4 p-4 rounded-xl border border-slate-100 hover:border-red-200 hover:bg-red-50/30 cursor-pointer transition-all"
+                  >
+                    <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-amber-50 text-amber-600">
+                      <ShieldCheck className="h-6 w-6" />
+                    </div>
+                    <div>
+                      <span className="text-xs font-semibold text-slate-500">Security Clearance</span>
+                      <p className="font-display text-sm font-bold text-emerald-600">Solo Admin Active</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Activity & Operational Queue Sections */}
+              <div className="grid gap-6 lg:grid-cols-3">
+                {/* 7-day Trajectory Bar Graph in Clean White/Red Styling */}
+                <div className="lg:col-span-2 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-4">
+                    <div>
+                      <h3 className="font-bold text-sm text-slate-800">Core Volume & Transfer Trajectory</h3>
+                      <p className="text-xs text-slate-500">Simulated 7-day transaction velocity and throughput</p>
+                    </div>
+                    <div className="flex items-center gap-1.5 rounded-lg border border-slate-200 bg-slate-50 p-1">
                       {["7d", "30d", "90d"].map((range) => (
                         <button
                           key={range}
                           type="button"
                           onClick={() => setReportDateRange(range)}
-                          className={`rounded px-2.5 py-1 text-xs font-bold ${
-                            reportDateRange === range ? "bg-blue-600 text-white" : "text-slate-400 hover:text-white"
+                          className={`rounded px-2.5 py-1 text-xs font-bold transition-colors ${
+                            reportDateRange === range ? "bg-red-600 text-white" : "text-slate-600 hover:text-slate-900"
                           }`}
                         >
                           {range.toUpperCase()}
@@ -1008,7 +1132,6 @@ export function SoloAdminDashboard({
                     </div>
                   </div>
 
-                  {/* Synthetic Banking Bar Graph Visualization */}
                   <div className="mt-6 flex h-48 items-end gap-3 px-2">
                     {[
                       { day: "Mon", vol: 48, label: "$48k" },
@@ -1020,52 +1143,52 @@ export function SoloAdminDashboard({
                       { day: "Sun", vol: 42, label: "$42k" },
                     ].map((bar) => (
                       <div key={bar.day} className="flex-1 flex flex-col items-center gap-2 group">
-                        <span className="text-[0.65rem] text-slate-400 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <span className="text-[0.65rem] text-slate-500 opacity-0 group-hover:opacity-100 transition-opacity">
                           {bar.label}
                         </span>
                         <div
                           style={{ height: `${bar.vol}%` }}
-                          className="w-full rounded-t-lg bg-gradient-to-t from-blue-700 to-teal-400 group-hover:brightness-125 transition-all"
+                          className="w-full rounded-t-lg bg-gradient-to-t from-red-700 to-red-400 group-hover:brightness-110 transition-all"
                         />
-                        <span className="text-xs font-bold text-slate-400">{bar.day}</span>
+                        <span className="text-xs font-bold text-slate-500">{bar.day}</span>
                       </div>
                     ))}
                   </div>
 
-                  <div className="mt-4 flex items-center justify-between border-t border-slate-800/80 pt-3 text-[0.72rem] text-slate-400">
+                  <div className="mt-4 flex items-center justify-between border-t border-slate-100 pt-3 text-[0.72rem] text-slate-500">
                     <span>Average Daily Settlement: <strong>$60,571.00 USD</strong></span>
-                    <span className="text-teal-400 font-bold">100% Mock Safe Simulation Data</span>
+                    <span className="text-red-600 font-bold">100% Mock Safe Simulation Data</span>
                   </div>
                 </div>
 
-                {/* Urgent Operational Alerts Queue */}
-                <div className="rounded-2xl border border-slate-800 bg-slate-900/60 p-5 flex flex-col">
-                  <div className="flex items-center justify-between border-b border-slate-800 pb-3">
-                    <h3 className="font-bold text-sm text-white flex items-center gap-2">
-                      <AlertTriangle className="h-4 w-4 text-amber-400" /> Operational Alerts
+                {/* Urgent Alerts Queue in Clean Light Theme */}
+                <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm flex flex-col">
+                  <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+                    <h3 className="font-bold text-sm text-slate-800 flex items-center gap-2">
+                      <AlertTriangle className="h-4 w-4 text-red-600" /> Operational Alerts
                     </h3>
-                    <span className="rounded bg-rose-500/20 px-2 py-0.5 text-[0.65rem] font-bold text-rose-300">
+                    <span className="rounded bg-red-100 px-2 py-0.5 text-[0.65rem] font-bold text-red-700">
                       {unreadAlerts.length} Unresolved
                     </span>
                   </div>
 
-                  <div className="mt-3 flex-1 space-y-3 overflow-y-auto">
+                  <div className="mt-3 flex-1 space-y-3 overflow-y-auto max-h-64">
                     {alerts.slice(0, 4).map((al) => (
                       <div
                         key={al.id}
                         className={`rounded-xl border p-3 text-xs ${
                           al.severity === "critical"
-                            ? "border-rose-500/30 bg-rose-950/20"
+                            ? "border-red-200 bg-red-50 text-red-900"
                             : al.severity === "warning"
-                            ? "border-amber-500/30 bg-amber-950/20"
-                            : "border-slate-800 bg-slate-800/40"
+                            ? "border-amber-200 bg-amber-50 text-amber-900"
+                            : "border-slate-200 bg-slate-50 text-slate-800"
                         }`}
                       >
-                        <div className="flex items-center justify-between font-bold text-slate-200">
+                        <div className="flex items-center justify-between font-bold">
                           <span>{al.title}</span>
-                          <span className="text-[0.65rem] text-slate-400 font-normal">{al.timestamp}</span>
+                          <span className="text-[0.65rem] text-slate-500 font-normal">{al.timestamp}</span>
                         </div>
-                        <p className="mt-1 text-[0.7rem] text-slate-400 leading-snug">{al.description}</p>
+                        <p className="mt-1 text-[0.7rem] text-slate-600 leading-snug">{al.description}</p>
                         {al.actionRequired && (
                           <button
                             type="button"
@@ -1074,7 +1197,7 @@ export function SoloAdminDashboard({
                               else if (al.category === "Security") setActiveSection("settings");
                               else setActiveSection("transactions");
                             }}
-                            className="mt-2 text-[0.68rem] font-bold text-teal-400 hover:underline inline-block"
+                            className="mt-2 text-[0.68rem] font-bold text-red-600 hover:underline inline-block"
                           >
                             Resolve Alert →
                           </button>
@@ -1085,39 +1208,44 @@ export function SoloAdminDashboard({
                 </div>
               </div>
 
-              {/* Recent Real-Time Activity Ledger Snapshot */}
-              <div className="rounded-2xl border border-slate-800 bg-slate-900/60 p-5">
-                <div className="flex items-center justify-between border-b border-slate-800 pb-4">
+              {/* Recent Real-Time Activity Snapshot */}
+              <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+                <div className="flex items-center justify-between border-b border-slate-100 pb-4">
                   <div>
-                    <h3 className="font-bold text-sm text-white">Recent Core Administrative Activity</h3>
-                    <p className="text-xs text-slate-400">Append-only security log records performed by Solo Admin</p>
+                    <h3 className="font-bold text-sm text-slate-800">Recent Core Administrative Activity</h3>
+                    <p className="text-xs text-slate-500">Append-only security log records performed by Solo Admin</p>
                   </div>
                   <Button
                     size="sm"
                     variant="ghost"
                     onClick={() => setActiveSection("audit")}
-                    className="text-xs text-teal-400 hover:text-teal-300"
+                    className="text-xs text-red-600 hover:text-red-700 hover:bg-red-50"
                   >
                     View Complete Audit Log →
                   </Button>
                 </div>
 
-                <div className="mt-4 divide-y divide-slate-800/80">
+                <div className="mt-4 divide-y divide-slate-100">
                   {auditLogs.slice(0, 4).map((entry) => (
                     <div key={entry.id} className="py-2.5 flex items-center justify-between text-xs">
                       <div className="flex items-center gap-3">
-                        <span className="rounded bg-slate-800 px-2 py-0.5 text-[0.65rem] font-bold text-slate-300 font-mono">
+                        <span className="rounded bg-slate-100 px-2 py-0.5 text-[0.65rem] font-bold text-slate-700 font-mono">
                           {entry.section}
                         </span>
                         <div>
-                          <span className="font-bold text-white">{entry.action}</span>
-                          <span className="text-slate-400 ml-2">({entry.details})</span>
+                          <span className="font-bold text-slate-800">{entry.action}</span>
+                          <span className="text-slate-500 ml-2">({entry.details})</span>
                         </div>
                       </div>
-                      <span className="text-slate-500 text-[0.7rem] font-mono shrink-0">{entry.timestamp}</span>
+                      <span className="text-slate-400 text-[0.7rem] font-mono shrink-0">{entry.timestamp}</span>
                     </div>
                   ))}
                 </div>
+              </div>
+
+              {/* Copyright Footer matching screenshot */}
+              <div className="pt-4 pb-2 text-center text-xs text-slate-500 border-t border-slate-200">
+                All Rights Reserved © US Finance Bank {new Date().getFullYear()}
               </div>
             </div>
           )}
@@ -1131,12 +1259,12 @@ export function SoloAdminDashboard({
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div>
                   <div className="flex items-center gap-2">
-                    <h2 className="font-display text-2xl font-black text-white">User Management</h2>
-                    <span className="rounded-full bg-teal-500/20 px-2.5 py-0.5 text-xs font-bold text-teal-300 border border-teal-500/30">
+                    <h2 className="font-display text-2xl font-black text-slate-800">User Management</h2>
+                    <span className="rounded-full bg-red-100 px-2.5 py-0.5 text-xs font-bold text-red-700 border border-red-200">
                       Solo Admin Authority
                     </span>
                   </div>
-                  <p className="text-xs text-slate-400 mt-1">
+                  <p className="text-xs text-slate-500 mt-1">
                     Search and manage individual user profiles, update permitted contact info, and control digital online banking access.
                   </p>
                 </div>
@@ -1146,7 +1274,7 @@ export function SoloAdminDashboard({
                   <select
                     value={userFilterStatus}
                     onChange={(e) => setUserFilterStatus(e.target.value)}
-                    className="rounded-xl border border-slate-800 bg-slate-900 px-3 py-1.5 text-xs text-slate-200 focus:border-teal-400 focus:outline-none"
+                    className="rounded-xl border border-slate-200 bg-white px-3 py-1.5 text-xs text-slate-700 focus:border-red-500 focus:outline-none shadow-xs"
                   >
                     <option value="all">All Access Statuses ({adminUsers.length})</option>
                     <option value="active">Active Online Access</option>
@@ -1159,7 +1287,7 @@ export function SoloAdminDashboard({
                   <select
                     value={userFilterVerification}
                     onChange={(e) => setUserFilterVerification(e.target.value)}
-                    className="rounded-xl border border-slate-800 bg-slate-900 px-3 py-1.5 text-xs text-slate-200 focus:border-teal-400 focus:outline-none"
+                    className="rounded-xl border border-slate-200 bg-white px-3 py-1.5 text-xs text-slate-700 focus:border-red-500 focus:outline-none shadow-xs"
                   >
                     <option value="all">All KYC Statuses</option>
                     <option value="verified">Verified Only</option>
@@ -1172,31 +1300,31 @@ export function SoloAdminDashboard({
                   <button
                     type="button"
                     onClick={() => setUserFilterDateSort((prev) => (prev === "newest" ? "oldest" : "newest"))}
-                    className="flex items-center gap-1.5 rounded-xl border border-slate-800 bg-slate-900 px-3 py-1.5 text-xs font-semibold text-slate-300 hover:bg-slate-800"
+                    className="flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50 shadow-xs"
                     title="Toggle Date Joined Sort"
                   >
-                    <Clock className="h-3.5 w-3.5 text-teal-400" />
+                    <Clock className="h-3.5 w-3.5 text-red-600" />
                     <span>Joined: {userFilterDateSort === "newest" ? "Newest First" : "Oldest First"}</span>
                   </button>
                 </div>
               </div>
 
               {/* Status Notice: Clear separation of Online Access vs Financial Products */}
-              <div className="rounded-2xl border border-blue-500/30 bg-blue-950/20 p-4 text-xs text-blue-200/90 flex items-start gap-3">
-                <ShieldCheck className="h-5 w-5 text-blue-400 shrink-0 mt-0.5" />
+              <div className="rounded-2xl border border-red-200 bg-red-50/50 p-4 text-xs text-slate-700 flex items-start gap-3 shadow-xs">
+                <ShieldCheck className="h-5 w-5 text-red-600 shrink-0 mt-0.5" />
                 <div className="space-y-1">
-                  <span className="font-bold text-blue-300">Important Access & Safety Architecture Notice:</span>
-                  <p className="text-[0.72rem] text-blue-200/80 leading-relaxed">
+                  <span className="font-bold text-red-900">Important Access & Safety Architecture Notice:</span>
+                  <p className="text-[0.72rem] text-slate-600 leading-relaxed">
                     Online Access status directly governs a user&apos;s digital credential authentication and mobile/web portal authorization. It is strictly separate from customer legal status and underlying financial account settlement. All password updates, credential revocations, and permitted profile edits are append-only logged with explicit audit reasons. Solo Administrators are barred from viewing passwords, impersonating users, or initiating funds transfers.
                   </p>
                 </div>
               </div>
 
               {/* Users Table */}
-              <div className="overflow-hidden rounded-2xl border border-slate-800 bg-slate-900/60 shadow-xl">
+              <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
                 <div className="overflow-x-auto">
-                  <table className="w-full text-left text-xs text-slate-300">
-                    <thead className="border-b border-slate-800 bg-slate-900/90 text-[0.7rem] uppercase tracking-wider text-slate-400 font-bold">
+                  <table className="w-full text-left text-xs text-slate-700">
+                    <thead className="border-b border-slate-200 bg-slate-50 text-[0.7rem] uppercase tracking-wider text-slate-500 font-bold">
                       <tr>
                         <th className="px-5 py-3.5">User & ID</th>
                         <th className="px-5 py-3.5">Contact Details</th>
@@ -1207,37 +1335,37 @@ export function SoloAdminDashboard({
                         <th className="px-5 py-3.5 text-right">Actions</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-slate-800/80">
+                    <tbody className="divide-y divide-slate-100">
                       {filteredUsers.length === 0 ? (
                         <tr>
-                          <td colSpan={7} className="px-5 py-10 text-center text-slate-500">
+                          <td colSpan={7} className="px-5 py-10 text-center text-slate-400">
                             No users match the search and filter criteria.
                           </td>
                         </tr>
                       ) : (
                         filteredUsers.map((user) => (
-                          <tr key={user.id} className="hover:bg-slate-800/40 transition-colors">
+                          <tr key={user.id} className="hover:bg-slate-50 transition-colors">
                             <td className="px-5 py-4">
-                              <div className="font-bold text-white text-sm">{user.name}</div>
-                              <div className="font-mono text-[0.7rem] text-slate-400">{user.id}</div>
+                              <div className="font-bold text-slate-900 text-sm">{user.name}</div>
+                              <div className="font-mono text-[0.7rem] text-slate-500">{user.id}</div>
                             </td>
                             <td className="px-5 py-4">
-                              <div className="text-slate-200">{user.email}</div>
-                              <div className="text-[0.7rem] text-slate-400">{user.phone}</div>
+                              <div className="text-slate-800">{user.email}</div>
+                              <div className="text-[0.7rem] text-slate-500">{user.phone}</div>
                             </td>
                             <td className="px-5 py-4">
-                              <span className="font-mono text-slate-300">{user.displayDateJoined}</span>
+                              <span className="font-mono text-slate-600">{user.displayDateJoined}</span>
                             </td>
                             <td className="px-5 py-4">
                               <span
                                 className={`rounded-full px-2.5 py-0.5 text-[0.68rem] font-bold border ${
                                   user.verificationStatus === "Verified"
-                                    ? "border-emerald-500/30 bg-emerald-950/40 text-emerald-300"
+                                    ? "border-emerald-200 bg-emerald-50 text-emerald-800"
                                     : user.verificationStatus === "Pending Review"
-                                    ? "border-amber-500/30 bg-amber-950/40 text-amber-300"
+                                    ? "border-amber-200 bg-amber-50 text-amber-800"
                                     : user.verificationStatus === "Action Required"
-                                    ? "border-blue-500/30 bg-blue-950/40 text-blue-300"
-                                    : "border-rose-500/30 bg-rose-950/40 text-rose-300"
+                                    ? "border-blue-200 bg-blue-50 text-blue-800"
+                                    : "border-red-200 bg-red-50 text-red-800"
                                 }`}
                               >
                                 {user.verificationStatus}
@@ -1247,12 +1375,12 @@ export function SoloAdminDashboard({
                               <span
                                 className={`rounded-full px-2.5 py-0.5 text-[0.68rem] font-bold border ${
                                   user.onlineAccessStatus === "Active"
-                                    ? "border-teal-500/30 bg-teal-950/40 text-teal-300"
+                                    ? "border-emerald-200 bg-emerald-50 text-emerald-800"
                                     : user.onlineAccessStatus === "Reinstated"
-                                    ? "border-blue-500/30 bg-blue-950/40 text-blue-300"
+                                    ? "border-blue-200 bg-blue-50 text-blue-800"
                                     : user.onlineAccessStatus === "Suspended"
-                                    ? "border-rose-500/30 bg-rose-950/40 text-rose-300"
-                                    : "border-slate-600 bg-slate-800 text-slate-400"
+                                    ? "border-red-200 bg-red-50 text-red-800"
+                                    : "border-slate-300 bg-slate-100 text-slate-600"
                                 }`}
                               >
                                 {user.onlineAccessStatus} Access
@@ -1262,15 +1390,15 @@ export function SoloAdminDashboard({
                               <div className="flex items-center gap-2">
                                 <span
                                   className={`h-2 w-2 rounded-full ${
-                                    user.security.activeSessionsCount > 0 ? "bg-emerald-400 animate-pulse" : "bg-slate-600"
+                                    user.security.activeSessionsCount > 0 ? "bg-emerald-500 animate-pulse" : "bg-slate-300"
                                   }`}
                                 />
-                                <span className="text-slate-300 text-xs font-mono">
+                                <span className="text-slate-700 text-xs font-mono">
                                   {user.security.activeSessionsCount} active
                                 </span>
                               </div>
                               {user.security.passwordResetRequired && (
-                                <span className="mt-1 inline-block text-[0.65rem] font-bold text-amber-400">
+                                <span className="mt-1 inline-block text-[0.65rem] font-bold text-amber-600">
                                   ⚠ Reset Mandatory
                                 </span>
                               )}
@@ -1288,7 +1416,7 @@ export function SoloAdminDashboard({
                                     user.id
                                   );
                                 }}
-                                className="border-slate-700 bg-slate-800/80 text-xs font-semibold text-slate-200 hover:bg-teal-600 hover:border-teal-600 hover:text-white"
+                                className="border-slate-200 bg-white text-xs font-semibold text-slate-700 hover:bg-red-600 hover:border-red-600 hover:text-white transition-colors"
                               >
                                 Review Profile →
                               </Button>
@@ -1303,34 +1431,34 @@ export function SoloAdminDashboard({
 
               {/* USER PROFILE & ACCESS CONTROL DRAWER MODAL */}
               {selectedUser && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 overflow-y-auto">
-                  <div className="relative w-full max-w-4xl rounded-3xl border border-slate-800 bg-slate-900 p-6 sm:p-8 shadow-2xl max-h-[90vh] overflow-y-auto">
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 overflow-y-auto">
+                  <div className="relative w-full max-w-4xl rounded-3xl border border-slate-200 bg-white p-6 sm:p-8 shadow-2xl max-h-[90vh] overflow-y-auto text-slate-800">
                     {/* Header */}
-                    <div className="flex items-start justify-between border-b border-slate-800 pb-5">
+                    <div className="flex items-start justify-between border-b border-slate-100 pb-5">
                       <div>
                         <div className="flex items-center gap-2">
-                          <span className="rounded bg-teal-500/20 px-2 py-0.5 text-[0.68rem] font-bold text-teal-300 border border-teal-500/30">
+                          <span className="rounded bg-red-100 px-2 py-0.5 text-[0.68rem] font-bold text-red-700 border border-red-200">
                             USER ID: {selectedUser.id}
                           </span>
                           <span
                             className={`rounded-full px-2 py-0.5 text-[0.68rem] font-bold ${
                               selectedUser.onlineAccessStatus === "Active"
-                                ? "bg-teal-950 text-teal-300 border border-teal-700/50"
-                                : "bg-rose-950 text-rose-300 border border-rose-700/50"
+                                ? "bg-emerald-100 text-emerald-800 border border-emerald-200"
+                                : "bg-red-100 text-red-800 border border-red-200"
                             }`}
                           >
                             Online Access: {selectedUser.onlineAccessStatus}
                           </span>
                         </div>
-                        <h3 className="mt-2 text-2xl font-black text-white">{selectedUser.name}</h3>
-                        <p className="text-xs text-slate-400">
+                        <h3 className="mt-2 text-2xl font-black text-slate-900">{selectedUser.name}</h3>
+                        <p className="text-xs text-slate-500">
                           Joined on {selectedUser.displayDateJoined} • Customer Link ID: {selectedUser.linkedCustomerId}
                         </p>
                       </div>
                       <button
                         type="button"
                         onClick={() => setSelectedUser(null)}
-                        className="rounded-xl p-2 text-slate-400 hover:bg-slate-800 hover:text-white"
+                        className="rounded-xl p-2 text-slate-400 hover:bg-slate-100 hover:text-slate-800"
                       >
                         ✕
                       </button>
@@ -1338,47 +1466,47 @@ export function SoloAdminDashboard({
 
                     {/* Quick Profile Summary Cards */}
                     <div className="mt-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                      <div className="rounded-2xl border border-slate-800 bg-slate-950/60 p-4">
-                        <span className="text-[0.7rem] uppercase tracking-wider text-slate-400 font-bold">Email Address</span>
-                        <div className="mt-1 flex items-center gap-2 text-xs font-semibold text-white truncate">
-                          <Mail className="h-3.5 w-3.5 text-teal-400 shrink-0" />
+                      <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                        <span className="text-[0.7rem] uppercase tracking-wider text-slate-500 font-bold">Email Address</span>
+                        <div className="mt-1 flex items-center gap-2 text-xs font-semibold text-slate-900 truncate">
+                          <Mail className="h-3.5 w-3.5 text-red-600 shrink-0" />
                           <span className="truncate">{selectedUser.email}</span>
                         </div>
                       </div>
 
-                      <div className="rounded-2xl border border-slate-800 bg-slate-950/60 p-4">
-                        <span className="text-[0.7rem] uppercase tracking-wider text-slate-400 font-bold">Phone Number</span>
-                        <div className="mt-1 flex items-center gap-2 text-xs font-semibold text-white">
-                          <Phone className="h-3.5 w-3.5 text-teal-400 shrink-0" />
+                      <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                        <span className="text-[0.7rem] uppercase tracking-wider text-slate-500 font-bold">Phone Number</span>
+                        <div className="mt-1 flex items-center gap-2 text-xs font-semibold text-slate-900">
+                          <Phone className="h-3.5 w-3.5 text-red-600 shrink-0" />
                           <span>{selectedUser.phone}</span>
                         </div>
                       </div>
 
-                      <div className="rounded-2xl border border-slate-800 bg-slate-950/60 p-4">
-                        <span className="text-[0.7rem] uppercase tracking-wider text-slate-400 font-bold">MFA / 2FA Status</span>
-                        <div className="mt-1 flex items-center gap-2 text-xs font-semibold text-white">
-                          <KeyRound className="h-3.5 w-3.5 text-teal-400 shrink-0" />
+                      <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                        <span className="text-[0.7rem] uppercase tracking-wider text-slate-500 font-bold">MFA / 2FA Status</span>
+                        <div className="mt-1 flex items-center gap-2 text-xs font-semibold text-slate-900">
+                          <KeyRound className="h-3.5 w-3.5 text-red-600 shrink-0" />
                           <span>{selectedUser.security.twoFactorEnabled ? "Hardware / App 2FA Enabled" : "Not Enrolled"}</span>
                         </div>
                       </div>
 
-                      <div className="rounded-2xl border border-slate-800 bg-slate-950/60 p-4">
-                        <span className="text-[0.7rem] uppercase tracking-wider text-slate-400 font-bold">Active Sessions</span>
-                        <div className="mt-1 flex items-center gap-2 text-xs font-semibold text-white">
-                          <Laptop className="h-3.5 w-3.5 text-teal-400 shrink-0" />
+                      <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                        <span className="text-[0.7rem] uppercase tracking-wider text-slate-500 font-bold">Active Sessions</span>
+                        <div className="mt-1 flex items-center gap-2 text-xs font-semibold text-slate-900">
+                          <Laptop className="h-3.5 w-3.5 text-red-600 shrink-0" />
                           <span>{selectedUser.security.activeSessionsCount} Live Session(s)</span>
                         </div>
                       </div>
                     </div>
 
                     {/* Mailing Address & Edit Profile Trigger */}
-                    <div className="mt-4 rounded-2xl border border-slate-800 bg-slate-950/40 p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                    <div className="mt-4 rounded-2xl border border-slate-200 bg-slate-50 p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                       <div>
-                        <span className="text-[0.7rem] uppercase tracking-wider text-slate-400 font-bold flex items-center gap-1.5">
-                          <MapPin className="h-3.5 w-3.5 text-teal-400" />
+                        <span className="text-[0.7rem] uppercase tracking-wider text-slate-500 font-bold flex items-center gap-1.5">
+                          <MapPin className="h-3.5 w-3.5 text-red-600" />
                           Registered Mailing Address
                         </span>
-                        <p className="mt-1 text-xs text-slate-200">{selectedUser.mailingAddress}</p>
+                        <p className="mt-1 text-xs text-slate-800">{selectedUser.mailingAddress}</p>
                       </div>
                       <Button
                         size="sm"
@@ -1392,7 +1520,7 @@ export function SoloAdminDashboard({
                           });
                           setUserEditModalOpen(true);
                         }}
-                        className="border-slate-700 text-xs font-bold text-teal-300 hover:bg-teal-950 hover:border-teal-500 shrink-0"
+                        className="border-red-200 bg-red-50 text-xs font-bold text-red-700 hover:bg-red-600 hover:text-white shrink-0 transition-colors"
                       >
                         <Edit3 className="mr-1.5 h-3.5 w-3.5" />
                         Edit Permitted Profile Details
@@ -1400,21 +1528,21 @@ export function SoloAdminDashboard({
                     </div>
 
                     {/* Communication Preferences */}
-                    <div className="mt-4 rounded-2xl border border-slate-800 bg-slate-950/40 p-4">
-                      <span className="text-[0.7rem] uppercase tracking-wider text-slate-400 font-bold">
+                    <div className="mt-4 rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                      <span className="text-[0.7rem] uppercase tracking-wider text-slate-500 font-bold">
                         User Communication Preferences
                       </span>
                       <div className="mt-2 grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs">
-                        <div className={`p-2 rounded-xl border ${selectedUser.communicationPreferences.emailAlerts ? "border-teal-500/40 bg-teal-950/30 text-teal-200" : "border-slate-800 text-slate-500"}`}>
+                        <div className={`p-2 rounded-xl border ${selectedUser.communicationPreferences.emailAlerts ? "border-red-200 bg-red-50 text-red-800" : "border-slate-200 bg-white text-slate-400"}`}>
                           Email Alerts: {selectedUser.communicationPreferences.emailAlerts ? "Enabled" : "Off"}
                         </div>
-                        <div className={`p-2 rounded-xl border ${selectedUser.communicationPreferences.smsNotifications ? "border-teal-500/40 bg-teal-950/30 text-teal-200" : "border-slate-800 text-slate-500"}`}>
+                        <div className={`p-2 rounded-xl border ${selectedUser.communicationPreferences.smsNotifications ? "border-red-200 bg-red-50 text-red-800" : "border-slate-200 bg-white text-slate-400"}`}>
                           SMS Push: {selectedUser.communicationPreferences.smsNotifications ? "Enabled" : "Off"}
                         </div>
-                        <div className={`p-2 rounded-xl border ${selectedUser.communicationPreferences.paperlessStatements ? "border-teal-500/40 bg-teal-950/30 text-teal-200" : "border-slate-800 text-slate-500"}`}>
+                        <div className={`p-2 rounded-xl border ${selectedUser.communicationPreferences.paperlessStatements ? "border-red-200 bg-red-50 text-red-800" : "border-slate-200 bg-white text-slate-400"}`}>
                           Paperless: {selectedUser.communicationPreferences.paperlessStatements ? "Active" : "Off"}
                         </div>
-                        <div className={`p-2 rounded-xl border ${selectedUser.communicationPreferences.marketingUpdates ? "border-teal-500/40 bg-teal-950/30 text-teal-200" : "border-slate-800 text-slate-500"}`}>
+                        <div className={`p-2 rounded-xl border ${selectedUser.communicationPreferences.marketingUpdates ? "border-red-200 bg-red-50 text-red-800" : "border-slate-200 bg-white text-slate-400"}`}>
                           Marketing: {selectedUser.communicationPreferences.marketingUpdates ? "Subscribed" : "Opted Out"}
                         </div>
                       </div>
@@ -1423,11 +1551,11 @@ export function SoloAdminDashboard({
                     {/* Linked Bank Accounts (Masked by default) */}
                     <div className="mt-6">
                       <div className="flex items-center justify-between">
-                        <h4 className="font-bold text-sm text-white flex items-center gap-2">
-                          <CreditCard className="h-4 w-4 text-teal-400" />
+                        <h4 className="font-bold text-sm text-slate-900 flex items-center gap-2">
+                          <CreditCard className="h-4 w-4 text-red-600" />
                           Linked Financial Accounts (Masked Numbers)
                         </h4>
-                        <span className="text-[0.68rem] text-slate-400 font-mono">
+                        <span className="text-[0.68rem] text-slate-500 font-mono">
                           Safety: Never reveal full PAN or account secret
                         </span>
                       </div>
@@ -1437,24 +1565,24 @@ export function SoloAdminDashboard({
                           .map((acc) => (
                             <div
                               key={acc.id}
-                              className="flex items-center justify-between rounded-xl border border-slate-800 bg-slate-950/80 p-3 text-xs"
+                              className="flex items-center justify-between rounded-xl border border-slate-200 bg-slate-50 p-3 text-xs"
                             >
                               <div className="flex items-center gap-3">
-                                <div className="h-8 w-8 rounded-lg bg-teal-950/80 border border-teal-500/30 flex items-center justify-center text-teal-300 font-bold">
+                                <div className="h-8 w-8 rounded-lg bg-red-100 border border-red-200 flex items-center justify-center text-red-700 font-bold">
                                   {acc.currency}
                                 </div>
                                 <div>
-                                  <div className="font-bold text-white">{acc.accountType}</div>
-                                  <div className="font-mono text-[0.7rem] text-slate-400">
+                                  <div className="font-bold text-slate-900">{acc.accountType}</div>
+                                  <div className="font-mono text-[0.7rem] text-slate-500">
                                     Number: {acc.accountNumberMasked} • Routing: {acc.routingNumber}
                                   </div>
                                 </div>
                               </div>
                               <div className="text-right">
-                                <div className="font-mono font-bold text-white">
+                                <div className="font-mono font-bold text-slate-900">
                                   {acc.currency} {acc.balance.toLocaleString(undefined, { minimumFractionDigits: 2 })}
                                 </div>
-                                <span className="rounded bg-slate-800 px-2 py-0.5 text-[0.65rem] text-slate-400 font-semibold">
+                                <span className="rounded bg-slate-200 px-2 py-0.5 text-[0.65rem] text-slate-700 font-semibold">
                                   Account Status: {acc.status}
                                 </span>
                               </div>
@@ -1464,17 +1592,15 @@ export function SoloAdminDashboard({
                     </div>
 
                     {/* Access Controls & Security Actions */}
-                    <div className="mt-6 rounded-2xl border border-rose-500/30 bg-rose-950/10 p-5">
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <h4 className="font-bold text-sm text-white flex items-center gap-2">
-                            <Lock className="h-4 w-4 text-rose-400" />
-                            Digital Online Access Controls (Solo Administrator)
-                          </h4>
-                          <p className="text-xs text-slate-400 mt-0.5">
-                            Modifying digital access does not reverse or alter settled bank funds. Re-authentication password is simulated for audit logging.
-                          </p>
-                        </div>
+                    <div className="mt-6 rounded-2xl border border-red-200 bg-red-50/50 p-5">
+                      <div>
+                        <h4 className="font-bold text-sm text-slate-900 flex items-center gap-2">
+                          <Lock className="h-4 w-4 text-red-600" />
+                          Digital Online Access Controls (Solo Administrator)
+                        </h4>
+                        <p className="text-xs text-slate-500 mt-0.5">
+                          Modifying digital access does not reverse or alter settled bank funds. Re-authentication password is required for audit confirmation.
+                        </p>
                       </div>
 
                       <div className="mt-4 flex flex-wrap gap-2.5">
@@ -1490,7 +1616,7 @@ export function SoloAdminDashboard({
                                 onConfirm: () => handleUpdateUserOnlineAccess(selectedUser.id, "Active", actionReason),
                               })
                             }
-                            className="bg-teal-600 hover:bg-teal-700 text-xs font-bold text-white"
+                            className="bg-emerald-600 hover:bg-emerald-700 text-xs font-bold text-white shadow-xs"
                           >
                             <UserCheck className="mr-1.5 h-3.5 w-3.5" />
                             Reinstate Online Access
@@ -1511,7 +1637,7 @@ export function SoloAdminDashboard({
                                 onConfirm: () => handleUpdateUserOnlineAccess(selectedUser.id, "Suspended", actionReason),
                               })
                             }
-                            className="bg-rose-600 hover:bg-rose-700 text-xs font-bold"
+                            className="bg-red-600 hover:bg-red-700 text-xs font-bold shadow-xs text-white"
                           >
                             <UserX className="mr-1.5 h-3.5 w-3.5" />
                             Suspend Online Access
@@ -1532,7 +1658,7 @@ export function SoloAdminDashboard({
                                 onConfirm: () => handleUpdateUserOnlineAccess(selectedUser.id, "Closed", actionReason),
                               })
                             }
-                            className="border-rose-600/50 text-rose-300 hover:bg-rose-950 text-xs font-bold"
+                            className="border-red-300 text-red-700 hover:bg-red-50 text-xs font-bold"
                           >
                             Close Digital Access
                           </Button>
@@ -1550,9 +1676,9 @@ export function SoloAdminDashboard({
                               onConfirm: () => handleForceUserSignOut(selectedUser.id, actionReason),
                             })
                           }
-                          className="border-slate-700 text-slate-300 hover:bg-slate-800 text-xs font-bold"
+                          className="border-slate-200 bg-white text-slate-700 hover:bg-slate-50 text-xs font-bold shadow-xs"
                         >
-                          <Laptop className="mr-1.5 h-3.5 w-3.5 text-amber-400" />
+                          <Laptop className="mr-1.5 h-3.5 w-3.5 text-amber-500" />
                           Sign Out Active Sessions
                         </Button>
 
@@ -1568,21 +1694,21 @@ export function SoloAdminDashboard({
                               onConfirm: () => handleRequirePasswordReset(selectedUser.id, actionReason),
                             })
                           }
-                          className="border-slate-700 text-slate-300 hover:bg-slate-800 text-xs font-bold"
+                          className="border-slate-200 bg-white text-slate-700 hover:bg-slate-50 text-xs font-bold shadow-xs"
                         >
-                          <KeyRound className="mr-1.5 h-3.5 w-3.5 text-teal-400" />
+                          <KeyRound className="mr-1.5 h-3.5 w-3.5 text-red-600" />
                           Require Password Reset
                         </Button>
                       </div>
                     </div>
 
                     {/* Internal Admin Notes */}
-                    <div className="mt-6 rounded-2xl border border-slate-800 bg-slate-950/60 p-5">
-                      <h4 className="font-bold text-sm text-white flex items-center gap-2">
-                        <FileText className="h-4 w-4 text-teal-400" />
+                    <div className="mt-6 rounded-2xl border border-slate-200 bg-slate-50 p-5">
+                      <h4 className="font-bold text-sm text-slate-900 flex items-center gap-2">
+                        <FileText className="h-4 w-4 text-red-600" />
                         Internal Administrator Notes
                       </h4>
-                      <p className="text-xs text-slate-400 mt-0.5">
+                      <p className="text-xs text-slate-500 mt-0.5">
                         Private administrative log entries visible only to the Solo Administrator.
                       </p>
 
@@ -1592,7 +1718,7 @@ export function SoloAdminDashboard({
                           value={newAdminNoteText}
                           onChange={(e) => setNewAdminNoteText(e.target.value)}
                           placeholder="Add new internal administrative note..."
-                          className="flex-1 rounded-xl border border-slate-800 bg-slate-900 px-3.5 py-2 text-xs text-white placeholder-slate-500 focus:border-teal-400 focus:outline-none"
+                          className="flex-1 rounded-xl border border-slate-200 bg-white px-3.5 py-2 text-xs text-slate-800 placeholder-slate-400 focus:border-red-500 focus:outline-none"
                           onKeyDown={(e) => {
                             if (e.key === "Enter") {
                               handleAddInternalAdminNote(selectedUser.id);
@@ -1602,7 +1728,7 @@ export function SoloAdminDashboard({
                         <Button
                           size="sm"
                           onClick={() => handleAddInternalAdminNote(selectedUser.id)}
-                          className="bg-teal-600 hover:bg-teal-700 text-xs font-bold text-white shrink-0"
+                          className="bg-red-600 hover:bg-red-700 text-xs font-bold text-white shrink-0 shadow-xs"
                         >
                           Add Note
                         </Button>
@@ -1610,12 +1736,12 @@ export function SoloAdminDashboard({
 
                       <div className="mt-4 space-y-2">
                         {selectedUser.adminNotes.length === 0 ? (
-                          <p className="text-xs text-slate-500 italic">No administrative notes recorded yet.</p>
+                          <p className="text-xs text-slate-400 italic">No administrative notes recorded yet.</p>
                         ) : (
                           selectedUser.adminNotes.map((note, idx) => (
                             <div
                               key={idx}
-                              className="rounded-xl border border-slate-800 bg-slate-900/40 p-3 text-xs text-slate-300 leading-relaxed"
+                              className="rounded-xl border border-slate-200 bg-white p-3 text-xs text-slate-700 leading-relaxed shadow-2xs"
                             >
                               {note}
                             </div>
@@ -1625,27 +1751,27 @@ export function SoloAdminDashboard({
                     </div>
 
                     {/* History of Profile and Access Changes */}
-                    <div className="mt-6 rounded-2xl border border-slate-800 bg-slate-950/60 p-5">
-                      <h4 className="font-bold text-sm text-white flex items-center gap-2">
-                        <History className="h-4 w-4 text-teal-400" />
+                    <div className="mt-6 rounded-2xl border border-slate-200 bg-slate-50 p-5">
+                      <h4 className="font-bold text-sm text-slate-900 flex items-center gap-2">
+                        <History className="h-4 w-4 text-red-600" />
                         History of Profile and Access Changes
                       </h4>
-                      <p className="text-xs text-slate-400 mt-0.5">
+                      <p className="text-xs text-slate-500 mt-0.5">
                         Append-only history of administrative updates and access modifications for this user.
                       </p>
 
-                      <div className="mt-4 divide-y divide-slate-800/80">
+                      <div className="mt-4 divide-y divide-slate-200">
                         {selectedUser.accessChangeHistory.map((item) => (
                           <div key={item.id} className="py-3 text-xs">
                             <div className="flex items-center justify-between gap-2">
-                              <span className="font-bold text-white">{item.action}</span>
+                              <span className="font-bold text-slate-900">{item.action}</span>
                               <span className="text-[0.7rem] font-mono text-slate-500">{item.timestamp}</span>
                             </div>
-                            <div className="mt-1 text-[0.72rem] text-slate-400">
-                              <span className="font-semibold text-slate-300">Operator:</span> {item.actor} |{" "}
-                              <span className="font-semibold text-slate-300">Reason:</span> {item.reason}
+                            <div className="mt-1 text-[0.72rem] text-slate-600">
+                              <span className="font-semibold text-slate-800">Operator:</span> {item.actor} |{" "}
+                              <span className="font-semibold text-slate-800">Reason:</span> {item.reason}
                             </div>
-                            <div className="mt-1 text-[0.68rem] font-mono text-teal-400/90 bg-slate-900/60 p-2 rounded-lg border border-slate-800">
+                            <div className="mt-1 text-[0.68rem] font-mono text-red-800 bg-red-50 p-2 rounded-lg border border-red-200">
                               State Change: {item.newState}
                             </div>
                           </div>
@@ -1658,7 +1784,7 @@ export function SoloAdminDashboard({
                       <Button
                         variant="outline"
                         onClick={() => setSelectedUser(null)}
-                        className="border-slate-700 text-xs font-bold text-slate-300 hover:bg-slate-800"
+                        className="border-slate-200 text-xs font-bold text-slate-700 hover:bg-slate-100"
                       >
                         Close Profile Drawer
                       </Button>
@@ -1669,17 +1795,17 @@ export function SoloAdminDashboard({
 
               {/* MODAL: EDIT PERMITTED PROFILE FIELDS */}
               {userEditModalOpen && selectedUser && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
-                  <div className="w-full max-w-lg rounded-3xl border border-slate-800 bg-slate-900 p-6 shadow-2xl">
-                    <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4">
+                  <div className="w-full max-w-lg rounded-3xl border border-slate-200 bg-white p-6 shadow-2xl text-slate-800">
+                    <div className="flex items-center justify-between border-b border-slate-100 pb-3">
                       <div>
-                        <h3 className="font-bold text-white text-base">Edit Permitted Profile Details</h3>
-                        <p className="text-xs text-slate-400">Updating record for {selectedUser.name}</p>
+                        <h3 className="font-bold text-slate-900 text-base">Edit Permitted Profile Details</h3>
+                        <p className="text-xs text-slate-500">Updating record for {selectedUser.name}</p>
                       </div>
                       <button
                         type="button"
                         onClick={() => setUserEditModalOpen(false)}
-                        className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-800 hover:text-white"
+                        className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-800"
                       >
                         ✕
                       </button>
@@ -1687,39 +1813,39 @@ export function SoloAdminDashboard({
 
                     <div className="mt-4 space-y-4">
                       <div>
-                        <label className="block text-xs font-bold text-slate-300 mb-1">Full Legal Name</label>
+                        <label className="block text-xs font-bold text-slate-700 mb-1">Full Legal Name</label>
                         <input
                           type="text"
                           value={userEditForm.name}
                           onChange={(e) => setUserEditForm({ ...userEditForm, name: e.target.value })}
-                          className="w-full rounded-xl border border-slate-800 bg-slate-950 px-3 py-2 text-xs text-white focus:border-teal-400 focus:outline-none"
+                          className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs text-slate-800 focus:border-red-500 focus:outline-none"
                         />
                       </div>
 
                       <div>
-                        <label className="block text-xs font-bold text-slate-300 mb-1">Phone Number</label>
+                        <label className="block text-xs font-bold text-slate-700 mb-1">Phone Number</label>
                         <input
                           type="text"
                           value={userEditForm.phone}
                           onChange={(e) => setUserEditForm({ ...userEditForm, phone: e.target.value })}
-                          className="w-full rounded-xl border border-slate-800 bg-slate-950 px-3 py-2 text-xs text-white focus:border-teal-400 focus:outline-none"
+                          className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs text-slate-800 focus:border-red-500 focus:outline-none"
                         />
                       </div>
 
                       <div>
-                        <label className="block text-xs font-bold text-slate-300 mb-1">Mailing Address</label>
+                        <label className="block text-xs font-bold text-slate-700 mb-1">Mailing Address</label>
                         <textarea
                           rows={2}
                           value={userEditForm.mailingAddress}
                           onChange={(e) => setUserEditForm({ ...userEditForm, mailingAddress: e.target.value })}
-                          className="w-full rounded-xl border border-slate-800 bg-slate-950 px-3 py-2 text-xs text-white focus:border-teal-400 focus:outline-none"
+                          className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs text-slate-800 focus:border-red-500 focus:outline-none"
                         />
                       </div>
 
                       <div>
-                        <label className="block text-xs font-bold text-slate-300 mb-2">Communication Preferences</label>
+                        <label className="block text-xs font-bold text-slate-700 mb-2">Communication Preferences</label>
                         <div className="space-y-2">
-                          <label className="flex items-center gap-2 text-xs text-slate-300 cursor-pointer">
+                          <label className="flex items-center gap-2 text-xs text-slate-700 cursor-pointer">
                             <input
                               type="checkbox"
                               checked={userEditForm.communicationPreferences.emailAlerts}
@@ -1732,12 +1858,12 @@ export function SoloAdminDashboard({
                                   },
                                 })
                               }
-                              className="rounded border-slate-700 bg-slate-950 text-teal-500"
+                              className="rounded border-slate-300 text-red-600 focus:ring-red-500"
                             />
                             <span>Email Security & Transaction Alerts</span>
                           </label>
 
-                          <label className="flex items-center gap-2 text-xs text-slate-300 cursor-pointer">
+                          <label className="flex items-center gap-2 text-xs text-slate-700 cursor-pointer">
                             <input
                               type="checkbox"
                               checked={userEditForm.communicationPreferences.smsNotifications}
@@ -1750,12 +1876,12 @@ export function SoloAdminDashboard({
                                   },
                                 })
                               }
-                              className="rounded border-slate-700 bg-slate-950 text-teal-500"
+                              className="rounded border-slate-300 text-red-600 focus:ring-red-500"
                             />
                             <span>SMS Notifications</span>
                           </label>
 
-                          <label className="flex items-center gap-2 text-xs text-slate-300 cursor-pointer">
+                          <label className="flex items-center gap-2 text-xs text-slate-700 cursor-pointer">
                             <input
                               type="checkbox"
                               checked={userEditForm.communicationPreferences.paperlessStatements}
@@ -1768,12 +1894,12 @@ export function SoloAdminDashboard({
                                   },
                                 })
                               }
-                              className="rounded border-slate-700 bg-slate-950 text-teal-500"
+                              className="rounded border-slate-300 text-red-600 focus:ring-red-500"
                             />
                             <span>Paperless Electronic Statements</span>
                           </label>
 
-                          <label className="flex items-center gap-2 text-xs text-slate-300 cursor-pointer">
+                          <label className="flex items-center gap-2 text-xs text-slate-700 cursor-pointer">
                             <input
                               type="checkbox"
                               checked={userEditForm.communicationPreferences.marketingUpdates}
@@ -1786,7 +1912,7 @@ export function SoloAdminDashboard({
                                   },
                                 })
                               }
-                              className="rounded border-slate-700 bg-slate-950 text-teal-500"
+                              className="rounded border-slate-300 text-red-600 focus:ring-red-500"
                             />
                             <span>Marketing & Product Announcements</span>
                           </label>
@@ -1794,7 +1920,7 @@ export function SoloAdminDashboard({
                       </div>
 
                       <div>
-                        <label className="block text-xs font-bold text-slate-400 mb-1">
+                        <label className="block text-xs font-bold text-slate-600 mb-1">
                           Reason for Profile Update (Required for Audit Log):
                         </label>
                         <input
@@ -1802,7 +1928,7 @@ export function SoloAdminDashboard({
                           value={actionReason}
                           onChange={(e) => setActionReason(e.target.value)}
                           placeholder="e.g., Customer verified documentation change request"
-                          className="w-full rounded-xl border border-slate-800 bg-slate-950 px-3 py-2 text-xs text-white placeholder-slate-600 focus:border-teal-400 focus:outline-none"
+                          className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs text-slate-800 placeholder-slate-400 focus:border-red-500 focus:outline-none"
                         />
                       </div>
                     </div>
@@ -1812,14 +1938,14 @@ export function SoloAdminDashboard({
                         type="button"
                         variant="outline"
                         onClick={() => setUserEditModalOpen(false)}
-                        className="border-slate-700 text-xs text-slate-300 hover:bg-slate-800"
+                        className="border-slate-200 text-xs text-slate-700 hover:bg-slate-100"
                       >
                         Cancel
                       </Button>
                       <Button
                         type="button"
                         onClick={() => handleSaveUserProfileEdits(selectedUser.id)}
-                        className="bg-teal-600 hover:bg-teal-700 text-xs font-bold text-white"
+                        className="bg-red-600 hover:bg-red-700 text-xs font-bold text-white shadow-xs"
                       >
                         Save & Record in Audit Log
                       </Button>
