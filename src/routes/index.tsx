@@ -111,7 +111,7 @@ const INITIAL_USERS: AdminControlledUser[] = [
     savingsBalance: 48200.0,
     status: "active",
     idType: "Social Security Number (SSN)",
-    idNumber: "•••-••-4892",
+    idNumber: "ΓÇóΓÇóΓÇó-ΓÇóΓÇó-4892",
     createdAt: "Oct 12, 2026",
   },
   {
@@ -126,7 +126,7 @@ const INITIAL_USERS: AdminControlledUser[] = [
     savingsBalance: 22100.0,
     status: "active",
     idType: "National Insurance (NI) Number",
-    idNumber: "•• •• •• 89 C",
+    idNumber: "ΓÇóΓÇó ΓÇóΓÇó ΓÇóΓÇó 89 C",
     createdAt: "Oct 15, 2026",
   },
   {
@@ -141,7 +141,7 @@ const INITIAL_USERS: AdminControlledUser[] = [
     savingsBalance: 15000.0,
     status: "pending_kyc",
     idType: "Social Insurance Number (SIN)",
-    idNumber: "••• ••• 419",
+    idNumber: "ΓÇóΓÇóΓÇó ΓÇóΓÇóΓÇó 419",
     createdAt: "Today, 08:30 AM",
   },
   {
@@ -156,7 +156,7 @@ const INITIAL_USERS: AdminControlledUser[] = [
     savingsBalance: 120000.0,
     status: "active",
     idType: "CURP / RFC",
-    idNumber: "ROMS850215••••••",
+    idNumber: "ROMS850215ΓÇóΓÇóΓÇóΓÇóΓÇóΓÇó",
     createdAt: "Oct 17, 2026",
   },
   {
@@ -171,7 +171,7 @@ const INITIAL_USERS: AdminControlledUser[] = [
     savingsBalance: 18400.0,
     status: "frozen",
     idType: "Personalausweis / Steuer-ID",
-    idNumber: "T2200••••",
+    idNumber: "T2200ΓÇóΓÇóΓÇóΓÇó",
     createdAt: "Oct 10, 2026",
   },
   {
@@ -186,7 +186,7 @@ const INITIAL_USERS: AdminControlledUser[] = [
     savingsBalance: 3800000.0,
     status: "suspended",
     idType: "My Number (Individual Number)",
-    idNumber: "•••• •••• 9201",
+    idNumber: "ΓÇóΓÇóΓÇóΓÇó ΓÇóΓÇóΓÇóΓÇó 9201",
     createdAt: "Oct 05, 2026",
   },
 ];
@@ -219,7 +219,7 @@ const INITIAL_APPLICATIONS: BankApplication[] = [
     region: "Ontario",
     accountType: "Commercial Treasury",
     idType: "Social Insurance Number (SIN)",
-    idNumber: "••• ••• 419",
+    idNumber: "ΓÇóΓÇóΓÇó ΓÇóΓÇóΓÇó 419",
     status: "Pending",
     reviewNotes: "Initial documentation uploaded. Awaiting regulatory screening.",
     submittedAt: "Oct 19, 2026, 08:30 AM",
@@ -234,7 +234,7 @@ const INITIAL_APPLICATIONS: BankApplication[] = [
     region: "England",
     accountType: "Advantage Checking",
     idType: "National Insurance (NI) Number",
-    idNumber: "•• •• •• 89 C",
+    idNumber: "ΓÇóΓÇó ΓÇóΓÇó ΓÇóΓÇó 89 C",
     status: "Approved",
     reviewNotes: "KYC and address proof verified. Advantage Checking account active.",
     submittedAt: "Oct 15, 2026, 11:20 AM",
@@ -249,7 +249,7 @@ const INITIAL_APPLICATIONS: BankApplication[] = [
     region: "California",
     accountType: "Advantage Checking & Savings",
     idType: "Social Security Number (SSN)",
-    idNumber: "•••-••-4892",
+    idNumber: "ΓÇóΓÇóΓÇó-ΓÇóΓÇó-4892",
     status: "Approved",
     reviewNotes: "Domestic identification verified. Welcome bonus activated.",
     submittedAt: "Oct 12, 2026, 02:45 PM",
@@ -264,7 +264,7 @@ const INITIAL_APPLICATIONS: BankApplication[] = [
     region: "Hanoi",
     accountType: "Advantage Checking",
     idType: "Citizen Identity Card (CCCD)",
-    idNumber: "00109•••••••",
+    idNumber: "00109ΓÇóΓÇóΓÇóΓÇóΓÇóΓÇóΓÇó",
     status: "Under Review",
     reviewNotes: "Cross-border ID match in progress with regional compliance team.",
     submittedAt: "Oct 18, 2026, 04:10 PM",
@@ -313,7 +313,7 @@ const INITIAL_INQUIRIES: CustomerInquiry[] = [
     name: "Hans Zimmerman",
     email: "h.zimmerman@example.de",
     subject: "Commercial high-yield interest rate schedule",
-    message: "Requesting official documentation regarding fixed APY tiers for commercial business accounts over €100,000.",
+    message: "Requesting official documentation regarding fixed APY tiers for commercial business accounts over Γé¼100,000.",
     status: "Resolved",
     submittedAt: "Oct 17, 2026, 10:05 AM",
     adminReply: "Full rate schedule transmitted to your registered corporate email. Ticket resolved.",
@@ -373,60 +373,6 @@ const INITIAL_AUDIT_LOGS: AdminAuditLog[] = [
   },
 ];
 
-export interface BankAdminStaff {
-  id: string;
-  name: string;
-  email: string;
-  role: string;
-  accessLevel: "Administrator" | "Regional Compliance" | "Branch Operations" | "Customer Support";
-  status: "Active" | "Suspended";
-  assignedRegion: string;
-  createdAt: string;
-}
-
-const INITIAL_ADMINS: BankAdminStaff[] = [
-  {
-    id: "ADM-101",
-    name: "Marcus Vance",
-    email: "marcus.v@usfinancebank.internal",
-    role: "Senior Operations Administrator",
-    accessLevel: "Administrator",
-    status: "Active",
-    assignedRegion: "United States (HQ)",
-    createdAt: "Sep 15, 2026",
-  },
-  {
-    id: "ADM-102",
-    name: "Elena Rostova",
-    email: "elena.r@usfinancebank.internal",
-    role: "European Regional Compliance Admin",
-    accessLevel: "Regional Compliance",
-    status: "Active",
-    assignedRegion: "United Kingdom & Germany",
-    createdAt: "Oct 01, 2026",
-  },
-  {
-    id: "ADM-103",
-    name: "Chen Wei",
-    email: "chen.w@usfinancebank.internal",
-    role: "Asia-Pacific KYC Underwriter",
-    accessLevel: "Branch Operations",
-    status: "Active",
-    assignedRegion: "China, Japan, Vietnam",
-    createdAt: "Oct 05, 2026",
-  },
-  {
-    id: "ADM-104",
-    name: "Carlos Mendez",
-    email: "carlos.m@usfinancebank.internal",
-    role: "Latin America Support Officer",
-    accessLevel: "Customer Support",
-    status: "Suspended",
-    assignedRegion: "Mexico",
-    createdAt: "Oct 08, 2026",
-  },
-];
-
 export function Index() {
   // Localization State
   const [currentCountryCode, setCurrentCountryCode] = useState<string>("US");
@@ -439,21 +385,12 @@ export function Index() {
 
   // Modals & Panels
   const [customerModalOpen, setCustomerModalOpen] = useState(false);
-  const [staffModalOpen, setStaffModalOpen] = useState(false);
   const [adminModalOpen, setAdminModalOpen] = useState(false);
   const [forgotPasswordOpen, setForgotPasswordOpen] = useState(false);
   const [openAccountModalOpen, setOpenAccountModalOpen] = useState(false);
   const [checkStatusModalOpen, setCheckStatusModalOpen] = useState(false);
   const [adjustBalanceUser, setAdjustBalanceUser] = useState<AdminControlledUser | null>(null);
   const [newUserModalOpen, setNewUserModalOpen] = useState(false);
-  const [newAdminModalOpen, setNewAdminModalOpen] = useState(false);
-
-  // Staff Portal Session State
-  const [staffUser, setStaffUser] = useState<BankAdminStaff | null>(null);
-  const [staffLoginEmail, setStaffLoginEmail] = useState("");
-  const [staffLoginPassword, setStaffLoginPassword] = useState("");
-  const [staffAuthLoading, setStaffAuthLoading] = useState(false);
-  const [staffAuthError, setStaffAuthError] = useState("");
 
   // Customer Authentication & Multi-Factor Authentication (MFA)
   const [customerUser, setCustomerUser] = useState<string | null>(null);
@@ -474,7 +411,7 @@ export function Index() {
     {
       id: "tx-1",
       date: "Today, 10:14 AM",
-      desc: "Direct Deposit — Official Payroll",
+      desc: "Direct Deposit ΓÇö Official Payroll",
       category: "Income",
       amount: "+$3,450.00",
       positive: true,
@@ -482,7 +419,7 @@ export function Index() {
     {
       id: "tx-2",
       date: "Oct 18, 2026",
-      desc: "Merchant Transaction — Contactless",
+      desc: "Merchant Transaction ΓÇö Contactless",
       category: "Groceries",
       amount: "-$142.35",
       positive: false,
@@ -490,7 +427,7 @@ export function Index() {
     {
       id: "tx-3",
       date: "Oct 16, 2026",
-      desc: "Utility Provider — Bill Pay Direct",
+      desc: "Utility Provider ΓÇö Bill Pay Direct",
       category: "Utilities",
       amount: "-$84.10",
       positive: false,
@@ -539,20 +476,12 @@ export function Index() {
   const [replyingInquiry, setReplyingInquiry] = useState<CustomerInquiry | null>(null);
   const [adminReplyText, setAdminReplyText] = useState<string>("");
 
-  // Admin & Staff Officers Managed by Solo User
-  const [adminStaffList, setAdminStaffList] = useState<BankAdminStaff[]>(INITIAL_ADMINS);
-  const [newAdminName, setNewAdminName] = useState("");
-  const [newAdminEmail, setNewAdminEmail] = useState("");
-  const [newAdminRole, setNewAdminRole] = useState("Branch Operations Officer");
-  const [newAdminLevel, setNewAdminLevel] = useState<BankAdminStaff["accessLevel"]>("Branch Operations");
-  const [newAdminRegion, setNewAdminRegion] = useState("United States (HQ)");
-
   // Centralized Audit Log State
   const [auditLogs, setAuditLogs] = useState<AdminAuditLog[]>(INITIAL_AUDIT_LOGS);
   const [auditCategoryFilter, setAuditCategoryFilter] = useState<string>("all");
 
-  // Dashboard Navigation Tab (6 Organized Sections)
-  const [adminActiveTab, setAdminActiveTab] = useState<"overview" | "users" | "applications" | "inquiries" | "admins" | "logs">("overview");
+  // Dashboard Navigation Tab
+  const [adminActiveTab, setAdminActiveTab] = useState<"overview" | "users" | "applications" | "inquiries" | "logs">("overview");
 
   // Balance Adjustment Modal State
   const [adjustCheckingAmt, setAdjustCheckingAmt] = useState("");
@@ -767,119 +696,6 @@ export function Index() {
       logAdminAction("Admin Authenticated", "Security & Access", "Solo Super Administrator session started with master clearance.");
       setTimeout(() => setAdminActionNotice(""), 6000);
     }, 500);
-  };
-
-  // Staff Sign In Handler
-  const handleStaffSignIn = (e: React.FormEvent) => {
-    e.preventDefault();
-    setStaffAuthError("");
-    const emailInput = staffLoginEmail.trim().toLowerCase();
-    if (!emailInput || !staffLoginPassword.trim()) {
-      setStaffAuthError("Staff credentials are required.");
-      return;
-    }
-
-    const matchingStaff = adminStaffList.find(
-      (s) =>
-        s.email.toLowerCase() === emailInput ||
-        s.name.toLowerCase() === emailInput ||
-        s.id.toLowerCase() === emailInput
-    );
-
-    if (matchingStaff && matchingStaff.status === "Suspended") {
-      setStaffAuthError("ACCESS REVOKED: This staff account has been suspended by the Solo Master Controller.");
-      return;
-    }
-
-    setStaffAuthLoading(true);
-    setTimeout(() => {
-      setStaffAuthLoading(false);
-      const officer = matchingStaff || {
-        id: `STF-${Math.floor(1000 + Math.random() * 9000)}`,
-        name: staffLoginEmail.includes("@")
-          ? staffLoginEmail.split("@")[0].toUpperCase()
-          : staffLoginEmail.toUpperCase(),
-        email: staffLoginEmail,
-        role: "Branch Operations Staff",
-        accessLevel: "Branch Operations",
-        status: "Active" as const,
-        assignedRegion: country.name,
-        createdAt: "Today",
-      };
-      setStaffUser(officer);
-      setStaffModalOpen(false);
-      setStaffLoginPassword("");
-      logAdminAction(
-        "Staff Signed In",
-        "Security & Access",
-        `Staff member ${officer.name} (${officer.id}) signed in to staff branch portal.`
-      );
-    }, 600);
-  };
-
-  // Solo Master User Controls over Admins & Staff
-  const handleToggleAdminStaffStatus = (adminId: string) => {
-    setAdminStaffList((prev) =>
-      prev.map((adm) => {
-        if (adm.id === adminId) {
-          const nextStatus = adm.status === "Active" ? "Suspended" : "Active";
-          setAdminActionNotice(`Admin ${adm.name} (${adm.id}) access is now ${nextStatus.toUpperCase()}.`);
-          logAdminAction(
-            nextStatus === "Suspended" ? "Admin Suspended" : "Admin Reactivated",
-            "Security & Access",
-            `Solo User changed access status of admin ${adm.name} (${adm.id}) to ${nextStatus}.`
-          );
-          setTimeout(() => setAdminActionNotice(""), 4000);
-          return { ...adm, status: nextStatus };
-        }
-        return adm;
-      })
-    );
-  };
-
-  const handleDeleteAdminStaff = (adminId: string) => {
-    const target = adminStaffList.find((a) => a.id === adminId);
-    if (!target) return;
-    if (confirm(`Remove administrator ${target.name} (${target.id}) from the system?`)) {
-      setAdminStaffList((prev) => prev.filter((a) => a.id !== adminId));
-      setAdminActionNotice(`Administrator ${target.name} removed by Solo Master Controller.`);
-      logAdminAction(
-        "Admin Removed",
-        "Security & Access",
-        `Solo User permanently revoked administrative profile for ${target.name} (${target.id}).`
-      );
-      setTimeout(() => setAdminActionNotice(""), 4000);
-    }
-  };
-
-  const handleCreateNewAdminStaff = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!newAdminName.trim() || !newAdminEmail.trim()) {
-      alert("Name and email are required.");
-      return;
-    }
-    const newId = `ADM-${Math.floor(100 + Math.random() * 900)}`;
-    const createdAdmin: BankAdminStaff = {
-      id: newId,
-      name: newAdminName.trim(),
-      email: newAdminEmail.trim(),
-      role: newAdminRole.trim() || "Operations Administrator",
-      accessLevel: newAdminLevel,
-      status: "Active",
-      assignedRegion: newAdminRegion,
-      createdAt: "Today",
-    };
-    setAdminStaffList((prev) => [createdAdmin, ...prev]);
-    logAdminAction(
-      "Admin Created",
-      "Security & Access",
-      `Solo User provisioned new administrator ${createdAdmin.name} (${createdAdmin.id}) as ${createdAdmin.accessLevel}.`
-    );
-    setNewAdminModalOpen(false);
-    setNewAdminName("");
-    setNewAdminEmail("");
-    setAdminActionNotice(`Administrator ${createdAdmin.name} provisioned successfully.`);
-    setTimeout(() => setAdminActionNotice(""), 4000);
   };
 
   const handleToggleFreezeUser = (userId: string) => {
@@ -1326,7 +1142,7 @@ export function Index() {
           <div className="flex items-center gap-3">
             <span className="flex items-center gap-1.5 font-bold tracking-wide">
               <ShieldCheck className="h-4 w-4 text-accent shrink-0" />
-              US Finance Bank • Global Digital Portal
+              US Finance Bank ΓÇó Global Digital Portal
             </span>
             <span className="hidden text-white/30 sm:inline">|</span>
             <span className="hidden text-white/80 md:inline">
@@ -1372,42 +1188,19 @@ export function Index() {
               </select>
             </div>
 
-            {/* Dedicated Staff Sign-In */}
-            {staffUser ? (
-              <div className="flex items-center gap-1.5 bg-blue-900/60 border border-blue-400/30 px-2 py-0.5 rounded text-xs text-white">
-                <span className="font-bold text-accent">Staff:</span> {staffUser.name}
-                <button
-                  type="button"
-                  onClick={() => setStaffUser(null)}
-                  className="text-[0.65rem] text-white/70 hover:text-white underline ml-1"
-                >
-                  Exit
-                </button>
-              </div>
-            ) : (
-              <button
-                type="button"
-                onClick={() => setStaffModalOpen(true)}
-                className="flex items-center gap-1 font-semibold text-white/90 underline-offset-4 hover:text-white hover:underline focus:outline-none"
-              >
-                <KeyRound className="h-3 w-3 text-accent" />
-                Staff Sign In
-              </button>
-            )}
-
-            {/* Solo Master User (Controls All Admin) Shortcut */}
+            {/* Solo Admin Shortcut */}
             {soloAdminUser ? (
               <div className="flex items-center gap-2">
-                <span className="rounded bg-accent px-2.5 py-0.5 text-xs font-bold text-white shadow-xs flex items-center gap-1">
+                <span className="rounded bg-accent px-2 py-0.5 text-xs font-bold text-white shadow-xs flex items-center gap-1">
                   <SlidersHorizontal className="h-3 w-3" />
-                  Solo Master User Active
+                  Super Administrator Active
                 </span>
                 <button
                   type="button"
                   onClick={() => setSoloAdminUser(null)}
                   className="text-xs text-white/80 hover:text-white underline"
                 >
-                  Exit
+                  Exit Session
                 </button>
               </div>
             ) : (
@@ -1415,11 +1208,11 @@ export function Index() {
                 type="button"
                 onClick={() => setAdminModalOpen(true)}
                 className="flex items-center gap-1.5 font-semibold text-white/90 underline-offset-4 hover:text-white hover:underline focus:outline-none"
-                title="Solo User Control Center — Controls All Admins & System"
+                title="Solo Admin Portal ΓÇö Centralized Super Administrator Dashboard"
               >
                 <SlidersHorizontal className="h-3 w-3 text-accent shrink-0" />
-                <span className="hidden xl:inline">Solo Master User (Controls All Admins)</span>
-                <span className="xl:hidden">Solo Master User</span>
+                <span className="hidden xl:inline">Solo Admin Portal ΓÇö Centralized Super Administrator Dashboard</span>
+                <span className="xl:hidden">Solo Admin Portal</span>
               </button>
             )}
           </div>
@@ -1447,7 +1240,7 @@ export function Index() {
                 US FINANCE BANK
               </span>
               <span className="block text-xs font-semibold uppercase tracking-wider text-accent sm:text-[0.72rem]">
-                {t.tagline} • {country.currency.code} ({country.currency.symbol})
+                {t.tagline} ΓÇó {country.currency.code} ({country.currency.symbol})
               </span>
             </div>
           </a>
@@ -1636,28 +1429,17 @@ export function Index() {
                   {t.signIn}
                 </Button>
               </li>
-              <li className="pt-1 flex gap-2">
+              <li className="pt-1">
                 <Button
-                  variant="outline"
-                  className="w-1/2 text-xs justify-center"
-                  onClick={() => {
-                    setMobileMenuOpen(false);
-                    setStaffModalOpen(true);
-                  }}
-                >
-                  <KeyRound className="mr-1 h-3.5 w-3.5 text-accent shrink-0" />
-                  Staff Sign In
-                </Button>
-                <Button
-                  variant="secondary"
-                  className="w-1/2 text-xs justify-center font-bold"
+                  variant="ghost"
+                  className="w-full text-xs text-muted-foreground justify-start"
                   onClick={() => {
                     setMobileMenuOpen(false);
                     setAdminModalOpen(true);
                   }}
                 >
-                  <SlidersHorizontal className="mr-1 h-3.5 w-3.5 text-accent shrink-0" />
-                  Solo Master User
+                  <SlidersHorizontal className="mr-1.5 h-3.5 w-3.5 text-accent shrink-0" />
+                  Solo Admin Portal ΓÇö Centralized Super Administrator Dashboard
                 </Button>
               </li>
             </ul>
@@ -1681,7 +1463,7 @@ export function Index() {
                       {t.onlineBanking.toUpperCase()}
                     </span>
                     <span className="text-xs text-muted-foreground">
-                      {country.name} • 256-Bit Encrypted Session
+                      {country.name} ΓÇó 256-Bit Encrypted Session
                     </span>
                   </div>
                   <h1
@@ -1691,7 +1473,7 @@ export function Index() {
                     {t.welcomeBack}, {customerUser}
                   </h1>
                   <p className="text-sm text-muted-foreground">
-                    US Finance Bank • Multi-Currency Account Management ({country.currency.code})
+                    US Finance Bank ΓÇó Multi-Currency Account Management ({country.currency.code})
                   </p>
                 </div>
                 <div className="flex items-center gap-3">
@@ -1722,7 +1504,7 @@ export function Index() {
                     </span>
                   </div>
                   <p className="mt-1 text-xs text-muted-foreground">
-                    Account # •••• 4892 (Available)
+                    Account # ΓÇóΓÇóΓÇóΓÇó 4892 (Available)
                   </p>
                 </div>
 
@@ -1741,7 +1523,7 @@ export function Index() {
                     </span>
                   </div>
                   <p className="mt-1 text-xs text-muted-foreground">
-                    Account # •••• 8104 (4.85% APY)
+                    Account # ΓÇóΓÇóΓÇóΓÇó 8104 (4.85% APY)
                   </p>
                 </div>
 
@@ -1800,7 +1582,7 @@ export function Index() {
                       <div>
                         <p className="font-semibold text-primary">{tx.desc}</p>
                         <p className="text-xs text-muted-foreground">
-                          {tx.date} • {tx.category}
+                          {tx.date} ΓÇó {tx.category}
                         </p>
                       </div>
                       <span
@@ -1818,77 +1600,7 @@ export function Index() {
           </section>
         )}
 
-        {/* STAFF OPERATIONS DASHBOARD (Rendered when staff officer is signed in) */}
-        {staffUser && (
-          <section
-            aria-labelledby="staff-panel-title"
-            className="border-b-4 border-blue-600 bg-slate-900 text-white py-8 shadow-xl"
-          >
-            <div className="mx-auto max-w-7xl px-5">
-              <div className="flex flex-col justify-between gap-4 rounded-xl border border-blue-500/30 bg-blue-950/40 p-5 md:flex-row md:items-center">
-                <div>
-                  <div className="flex flex-wrap items-center gap-2">
-                    <span className="rounded bg-blue-600 px-2.5 py-0.5 text-xs font-bold text-white uppercase tracking-wider">
-                      Staff Regional Terminal
-                    </span>
-                    <span className="rounded bg-emerald-500/20 px-2 py-0.5 text-xs font-semibold text-emerald-300 border border-emerald-500/30">
-                      Officer Authenticated
-                    </span>
-                    <span className="text-xs text-white/60">
-                      Staff ID: {staffUser.id}
-                    </span>
-                  </div>
-                  <h2
-                    id="staff-panel-title"
-                    className="mt-1 font-display text-xl font-bold text-white sm:text-2xl"
-                  >
-                    Welcome, Officer {staffUser.name} ({staffUser.role})
-                  </h2>
-                  <p className="text-xs text-white/70">
-                    Assigned Territory: <strong>{staffUser.assignedRegion}</strong> • Monitored & Controlled by Solo Master User
-                  </p>
-                </div>
-                <div className="flex items-center gap-3">
-                  <Button
-                    variant="outline"
-                    onClick={() => {
-                      logAdminAction("Staff Logged Out", "Security & Access", `Officer ${staffUser.name} (${staffUser.id}) closed staff session.`);
-                      setStaffUser(null);
-                    }}
-                    className="border-white/20 text-white hover:bg-white/10 text-xs"
-                  >
-                    <LogOut className="mr-1.5 h-3.5 w-3.5" /> End Staff Session
-                  </Button>
-                </div>
-              </div>
-
-              {/* Staff Regional Quick View */}
-              <div className="mt-4 grid gap-4 sm:grid-cols-3">
-                <div className="rounded-xl border border-white/10 bg-white/5 p-4">
-                  <span className="text-[0.7rem] text-white/50 uppercase font-bold">Assigned Branch Territory</span>
-                  <p className="text-lg font-bold text-white mt-1">{staffUser.assignedRegion}</p>
-                  <p className="text-[0.7rem] text-white/60 mt-0.5">Connected to Central Banking Network</p>
-                </div>
-                <div className="rounded-xl border border-white/10 bg-white/5 p-4">
-                  <span className="text-[0.7rem] text-white/50 uppercase font-bold">Pending Regional Applications</span>
-                  <p className="text-lg font-bold text-amber-400 mt-1">
-                    {applications.filter((a) => a.status === "Pending").length} Under Queue
-                  </p>
-                  <p className="text-[0.7rem] text-white/60 mt-0.5">Processed under Super Admin oversight</p>
-                </div>
-                <div className="rounded-xl border border-white/10 bg-white/5 p-4">
-                  <span className="text-[0.7rem] text-white/50 uppercase font-bold">Inquiry Routing</span>
-                  <p className="text-lg font-bold text-blue-400 mt-1">
-                    {inquiries.filter((i) => i.status !== "Resolved").length} Active Customer Tickets
-                  </p>
-                  <p className="text-[0.7rem] text-white/60 mt-0.5">Assigned to official @infobank team</p>
-                </div>
-              </div>
-            </div>
-          </section>
-        )}
-
-        {/* SOLO ADMIN PORTAL — CENTRALIZED SUPER ADMINISTRATOR DASHBOARD */}
+        {/* SOLO ADMIN PORTAL ΓÇö CENTRALIZED SUPER ADMINISTRATOR DASHBOARD */}
         {soloAdminUser && (
           <section
             aria-labelledby="solo-admin-title"
@@ -1913,7 +1625,7 @@ export function Index() {
                     id="solo-admin-title"
                     className="mt-2 font-display text-2xl font-bold text-white sm:text-3xl"
                   >
-                    Solo Admin Portal — Centralized Super Administrator Dashboard
+                    Solo Admin Portal ΓÇö Centralized Super Administrator Dashboard
                   </h1>
                   <p className="text-sm text-white/70">
                     Unified central administration for customer accounts, banking applications, client inquiries (@infobank), and security audit logs.
@@ -1946,32 +1658,6 @@ export function Index() {
                   <span className="font-semibold">{adminActionNotice}</span>
                 </div>
               )}
-
-              {/* Easy-to-Understand Guide Box */}
-              <div className="mt-6 rounded-xl border border-white/10 bg-white/5 p-4 text-xs text-white/80">
-                <div className="font-bold text-accent uppercase tracking-wider text-[0.7rem] mb-2 flex items-center gap-1.5">
-                  <Sparkles className="h-4 w-4 text-accent" />
-                  Solo User Master Control Guide — How to Manage Your Bank
-                </div>
-                <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-                  <div className="rounded-lg bg-black/30 p-2.5 border border-white/5">
-                    <span className="font-bold text-white block">1. Control All Customers</span>
-                    <span className="text-[0.7rem] text-white/60">Change checking/savings balances, freeze accounts with 1 click, or reset passwords.</span>
-                  </div>
-                  <div className="rounded-lg bg-black/30 p-2.5 border border-white/5">
-                    <span className="font-bold text-white block">2. Approve KYC Applications</span>
-                    <span className="text-[0.7rem] text-white/60">Review customer ID documents and click green 'Approve & Activate' or 'Reject'.</span>
-                  </div>
-                  <div className="rounded-lg bg-black/30 p-2.5 border border-white/5">
-                    <span className="font-bold text-white block">3. Reply to Inquiries</span>
-                    <span className="text-[0.7rem] text-white/60">Answer questions sent to @infobank and mark tickets resolved.</span>
-                  </div>
-                  <div className="rounded-lg bg-black/30 p-2.5 border border-white/5">
-                    <span className="font-bold text-white block">4. Control All Admins</span>
-                    <span className="text-[0.7rem] text-white/60">Add administrators or staff, suspend access, and govern permissions.</span>
-                  </div>
-                </div>
-              </div>
 
               {/* Navigation Tabs */}
               <div className="mt-8 flex flex-wrap items-center gap-2 border-b border-white/10 pb-4">
@@ -2035,18 +1721,6 @@ export function Index() {
                 </button>
                 <button
                   type="button"
-                  onClick={() => setAdminActiveTab("admins")}
-                  className={`flex items-center gap-2 rounded-xl px-4 py-2.5 text-xs font-bold transition-all ${
-                    adminActiveTab === "admins"
-                      ? "bg-accent text-white shadow-md"
-                      : "bg-white/5 text-white/70 hover:bg-white/10 hover:text-white"
-                  }`}
-                >
-                  <ShieldCheck className="h-4 w-4" />
-                  Control All Admins ({adminStaffList.length})
-                </button>
-                <button
-                  type="button"
                   onClick={() => setAdminActiveTab("logs")}
                   className={`flex items-center gap-2 rounded-xl px-4 py-2.5 text-xs font-bold transition-all ${
                     adminActiveTab === "logs"
@@ -2071,7 +1745,7 @@ export function Index() {
                       </div>
                       <div className="mt-2 text-2xl font-black text-white">{adminUsers.length} Users</div>
                       <p className="mt-1 text-xs text-white/60">
-                        {activeCount} Active • {frozenUsersCount + suspendedUsersCount} Restricted
+                        {activeCount} Active ΓÇó {frozenUsersCount + suspendedUsersCount} Restricted
                       </p>
                     </div>
 
@@ -2130,7 +1804,7 @@ export function Index() {
                           onClick={() => setAdminActiveTab("applications")}
                           className="text-xs text-accent font-semibold hover:underline"
                         >
-                          View All ({applications.length}) →
+                          View All ({applications.length}) ΓåÆ
                         </button>
                       </div>
                       <div className="mt-4 space-y-3">
@@ -2145,7 +1819,7 @@ export function Index() {
                                 <span className="font-mono text-white/50 text-[0.7rem]">{app.id}</span>
                               </div>
                               <p className="text-white/60 text-[0.72rem] mt-0.5">
-                                {app.countryName} • {app.accountType} • {app.idType}
+                                {app.countryName} ΓÇó {app.accountType} ΓÇó {app.idType}
                               </p>
                             </div>
                             <div className="flex items-center gap-2">
@@ -2189,7 +1863,7 @@ export function Index() {
                           onClick={() => setAdminActiveTab("inquiries")}
                           className="text-xs text-accent font-semibold hover:underline"
                         >
-                          View All ({inquiries.length}) →
+                          View All ({inquiries.length}) ΓåÆ
                         </button>
                       </div>
                       <div className="mt-4 space-y-3">
@@ -2215,7 +1889,7 @@ export function Index() {
                             <p className="text-white/80 font-medium text-[0.75rem]">{inq.subject}</p>
                             <p className="text-white/50 text-[0.7rem] line-clamp-1">{inq.message}</p>
                             <div className="pt-1 flex items-center justify-between">
-                              <span className="text-[0.65rem] text-white/40">{inq.ticketNumber} • {inq.submittedAt}</span>
+                              <span className="text-[0.65rem] text-white/40">{inq.ticketNumber} ΓÇó {inq.submittedAt}</span>
                               <Button
                                 size="sm"
                                 variant="ghost"
@@ -2225,7 +1899,7 @@ export function Index() {
                                 }}
                                 className="h-6 text-[0.68rem] text-accent hover:bg-accent/20 px-2"
                               >
-                                Reply / Resolve →
+                                Reply / Resolve ΓåÆ
                               </Button>
                             </div>
                           </div>
@@ -2346,7 +2020,7 @@ export function Index() {
                                 <div className="font-bold text-white text-sm">{u.name}</div>
                                 <div className="text-white/60 text-[0.72rem]">{u.email}</div>
                                 <div className="text-white/40 text-[0.7rem] font-mono">
-                                  ID: {u.id} • {u.phone}
+                                  ID: {u.id} ΓÇó {u.phone}
                                 </div>
                               </td>
                               <td className="px-4 py-3.5">
@@ -2527,7 +2201,7 @@ export function Index() {
                                 <h4 className="font-bold text-white text-base">{app.fullName}</h4>
                                 <span className="font-mono text-accent text-xs font-bold">{app.id}</span>
                               </div>
-                              <p className="text-xs text-white/60">{app.email} • {app.phone}</p>
+                              <p className="text-xs text-white/60">{app.email} ΓÇó {app.phone}</p>
                             </div>
                             <span
                               className={`rounded-full px-2.5 py-0.5 text-xs font-bold ${
@@ -2729,155 +2403,7 @@ export function Index() {
                 </div>
               )}
 
-              {/* TAB 5: CONTROL ALL ADMINS & STAFF (SOLO MASTER USER ACCESS ONLY) */}
-              {adminActiveTab === "admins" && (
-                <div className="mt-6 space-y-4">
-                  {/* Master Governance Header */}
-                  <div className="flex flex-col gap-4 rounded-xl border border-white/10 bg-white/5 p-4 sm:flex-row sm:items-center sm:justify-between">
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <ShieldCheck className="h-5 w-5 text-accent" />
-                        <h3 className="font-bold text-white text-base">
-                          Solo Master User Control: Administrative & Staff Hierarchy
-                        </h3>
-                      </div>
-                      <p className="text-xs text-white/60 mt-1">
-                        As the Solo Master Controller, you govern all administrators, branch managers, and operational staff across USA, Canada, UK, and Mexico.
-                      </p>
-                    </div>
-                    <Button
-                      onClick={() => setNewAdminModalOpen(true)}
-                      className="bg-accent text-accent-foreground font-bold hover:bg-accent/90 text-xs shrink-0"
-                    >
-                      <PlusCircle className="mr-1.5 h-4 w-4" /> Provision New Admin/Staff
-                    </Button>
-                  </div>
-
-                  {/* Summary Metric Chips */}
-                  <div className="grid gap-3 grid-cols-2 sm:grid-cols-4">
-                    <div className="rounded-xl border border-white/10 bg-black/30 p-3 text-center">
-                      <span className="text-[0.7rem] text-white/50 uppercase font-bold">Total Administrators</span>
-                      <p className="text-xl font-black text-white">{adminStaffList.length}</p>
-                    </div>
-                    <div className="rounded-xl border border-white/10 bg-black/30 p-3 text-center">
-                      <span className="text-[0.7rem] text-white/50 uppercase font-bold">Active Staff</span>
-                      <p className="text-xl font-black text-emerald-400">
-                        {adminStaffList.filter((a) => a.status === "Active").length}
-                      </p>
-                    </div>
-                    <div className="rounded-xl border border-white/10 bg-black/30 p-3 text-center">
-                      <span className="text-[0.7rem] text-white/50 uppercase font-bold">Suspended Accounts</span>
-                      <p className="text-xl font-black text-rose-400">
-                        {adminStaffList.filter((a) => a.status === "Suspended").length}
-                      </p>
-                    </div>
-                    <div className="rounded-xl border border-white/10 bg-black/30 p-3 text-center">
-                      <span className="text-[0.7rem] text-white/50 uppercase font-bold">Supreme Authority</span>
-                      <p className="text-xs font-bold text-accent mt-1">Solo User (You)</p>
-                    </div>
-                  </div>
-
-                  {/* Admin & Staff Table */}
-                  <div className="overflow-x-auto rounded-xl border border-white/10 bg-white/5">
-                    <table className="w-full text-left text-xs">
-                      <thead className="border-b border-white/10 bg-black/40 text-[0.7rem] uppercase tracking-wider text-white/60">
-                        <tr>
-                          <th className="px-4 py-3">Admin / Officer</th>
-                          <th className="px-4 py-3">Role & Department</th>
-                          <th className="px-4 py-3">Access Level</th>
-                          <th className="px-4 py-3">Assigned Region</th>
-                          <th className="px-4 py-3">Status</th>
-                          <th className="px-4 py-3 text-right">Master Actions</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-white/5 text-white/80">
-                        {adminStaffList.map((adm) => (
-                          <tr key={adm.id} className="hover:bg-white/5 transition-colors">
-                            <td className="px-4 py-3">
-                              <div className="flex items-center gap-2.5">
-                                <div className="h-8 w-8 rounded-full bg-accent/20 border border-accent/40 flex items-center justify-center font-bold text-accent text-xs">
-                                  {adm.name.charAt(0)}
-                                </div>
-                                <div>
-                                  <div className="font-bold text-white flex items-center gap-1.5">
-                                    <span>{adm.name}</span>
-                                    <span className="font-mono text-[0.65rem] text-white/50 bg-white/10 px-1 rounded">
-                                      {adm.id}
-                                    </span>
-                                  </div>
-                                  <div className="text-[0.7rem] text-white/50">{adm.email}</div>
-                                </div>
-                              </div>
-                            </td>
-                            <td className="px-4 py-3 text-white/90 font-medium">
-                              {adm.role}
-                            </td>
-                            <td className="px-4 py-3">
-                              <span className="rounded bg-white/10 px-2 py-0.5 text-[0.7rem] font-semibold text-white/90">
-                                {adm.accessLevel}
-                              </span>
-                            </td>
-                            <td className="px-4 py-3 text-white/70">
-                              {adm.assignedRegion}
-                            </td>
-                            <td className="px-4 py-3">
-                              <span
-                                className={`rounded px-2 py-0.5 text-[0.68rem] font-bold ${
-                                  adm.status === "Active"
-                                    ? "bg-emerald-500/20 text-emerald-300 border border-emerald-500/30"
-                                    : "bg-rose-500/20 text-rose-300 border border-rose-500/30"
-                                }`}
-                              >
-                                {adm.status}
-                              </span>
-                            </td>
-                            <td className="px-4 py-3 text-right">
-                              <div className="flex items-center justify-end gap-2">
-                                <Button
-                                  size="sm"
-                                  variant="outline"
-                                  onClick={() => handleToggleAdminStaffStatus(adm.id)}
-                                  className={`h-7 text-[0.7rem] font-bold ${
-                                    adm.status === "Active"
-                                      ? "border-rose-500/40 text-rose-300 hover:bg-rose-500/20"
-                                      : "border-emerald-500/40 text-emerald-300 hover:bg-emerald-500/20"
-                                  }`}
-                                >
-                                  {adm.status === "Active" ? "Suspend Admin" : "Reactivate"}
-                                </Button>
-                                <Button
-                                  size="sm"
-                                  variant="outline"
-                                  onClick={() => {
-                                    setAdminActionNotice(`Temporary security token generated for ${adm.name}.`);
-                                    logAdminAction("Admin Credentials Reset", "Security & Access", `Solo User generated fresh authorization token for admin ${adm.name} (${adm.id}).`);
-                                    setTimeout(() => setAdminActionNotice(""), 4000);
-                                  }}
-                                  className="h-7 text-[0.7rem] border-white/20 text-white/80 hover:bg-white/10"
-                                  title="Reset security token & send activation prompt"
-                                >
-                                  Reset Key
-                                </Button>
-                                <Button
-                                  size="sm"
-                                  variant="ghost"
-                                  onClick={() => handleDeleteAdminStaff(adm.id)}
-                                  className="h-7 text-[0.7rem] text-rose-400 hover:bg-rose-500/20 hover:text-rose-300"
-                                  title="Revoke Admin Profile"
-                                >
-                                  <Trash2 className="h-3.5 w-3.5" />
-                                </Button>
-                              </div>
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
-              )}
-
-              {/* TAB 6: ADMINISTRATOR ACTIVITY & AUDIT LOG */}
+              {/* TAB 5: ADMINISTRATOR ACTIVITY & AUDIT LOG */}
               {adminActiveTab === "logs" && (
                 <div className="mt-6 space-y-4">
                   {/* Category Filter Toolbar */}
@@ -3057,7 +2583,7 @@ export function Index() {
               <div className="mt-8 flex items-center gap-3 text-xs text-white/70">
                 <ShieldCheck className="h-4 w-4 text-accent shrink-0" />
                 <span>
-                  Bank-grade encryption • Multi-factor authentication • Global identity verification
+                  Bank-grade encryption ΓÇó Multi-factor authentication ΓÇó Global identity verification
                 </span>
               </div>
             </div>
@@ -3430,7 +2956,7 @@ export function Index() {
                       {country.currency.symbol}60,650.80 {country.currency.code}
                     </div>
                     <div className="mt-2 text-[0.7rem] text-emerald-400">
-                      ✓ Biometric 2FA Active • {country.name} Banking Channel
+                      Γ£ô Biometric 2FA Active ΓÇó {country.name} Banking Channel
                     </div>
                   </div>
                   <div className="grid grid-cols-2 gap-3">
@@ -3733,19 +3259,10 @@ export function Index() {
                 <li>
                   <button
                     type="button"
-                    onClick={() => setStaffModalOpen(true)}
-                    className="hover:text-white flex items-center gap-1.5 text-white/90 font-medium underline-offset-2 hover:underline"
-                  >
-                    <KeyRound className="h-3 w-3 text-accent" /> Staff Sign In
-                  </button>
-                </li>
-                <li>
-                  <button
-                    type="button"
                     onClick={() => setAdminModalOpen(true)}
                     className="hover:text-white flex items-center gap-1.5 text-white font-medium underline-offset-2 hover:underline"
                   >
-                    <SlidersHorizontal className="h-3 w-3 text-accent" /> Solo Master User (Controls All Admins)
+                    <SlidersHorizontal className="h-3 w-3 text-accent" /> Solo Admin Portal ΓÇö Centralized Super Administrator Dashboard
                   </button>
                 </li>
               </ul>
@@ -3770,7 +3287,7 @@ export function Index() {
               customized per jurisdiction and subject to legal review before production launch.
             </p>
             <p className="mt-2">
-              © {new Date().getFullYear()} USFinanceBank • US Finance Bank | Online Banking.
+              ┬⌐ {new Date().getFullYear()} USFinanceBank ΓÇó US Finance Bank | Online Banking.
             </p>
           </div>
         </div>
@@ -3802,7 +3319,7 @@ export function Index() {
               <div>
                 <h3 className="text-lg font-bold text-primary">{t.signIn}</h3>
                 <p className="text-xs text-muted-foreground">
-                  US Finance Bank • {country.name} Portal
+                  US Finance Bank ΓÇó {country.name} Portal
                 </p>
               </div>
             </div>
@@ -3987,7 +3504,7 @@ export function Index() {
               </div>
               <div>
                 <h3 className="text-lg font-bold text-primary">
-                  Open an Account • {country.name}
+                  Open an Account ΓÇó {country.name}
                 </h3>
                 <p className="text-xs text-muted-foreground">
                   Tailored to local banking framework & currency ({country.currency.code})
@@ -4319,7 +3836,7 @@ export function Index() {
                   {statusSearchResult.details}
                 </p>
                 <div className="mt-3 text-[0.7rem] text-muted-foreground border-t border-border pt-2">
-                  {statusSearchResult.date} • Need help? Contact handle <strong>@infobank</strong>
+                  {statusSearchResult.date} ΓÇó Need help? Contact handle <strong>@infobank</strong>
                 </div>
               </div>
             )}
@@ -4348,8 +3865,8 @@ export function Index() {
                 <SlidersHorizontal className="h-6 w-6" />
               </div>
               <div>
-                <h3 className="text-base font-bold text-white sm:text-lg">Solo Admin Portal — Centralized Super Administrator Dashboard</h3>
-                <p className="text-xs text-white/60">Unified Master System • Control All Users, Applications & Inquiries</p>
+                <h3 className="text-base font-bold text-white sm:text-lg">Solo Admin Portal ΓÇö Centralized Super Administrator Dashboard</h3>
+                <p className="text-xs text-white/60">Unified Master System ΓÇó Control All Users, Applications & Inquiries</p>
               </div>
             </div>
 
@@ -4367,7 +3884,7 @@ export function Index() {
                 }}
                 className="w-full rounded-md border border-accent/40 bg-accent/15 px-3 py-1.5 text-xs font-bold text-accent hover:bg-accent/25 transition-colors"
               >
-                ⚡ Quick Auto-Fill Solo Admin Credentials (admin / admin)
+                ΓÜí Quick Auto-Fill Solo Admin Credentials (admin / admin)
               </button>
             </div>
 
@@ -4460,7 +3977,7 @@ export function Index() {
               <div>
                 <h3 className="text-lg font-bold text-white">Adjust User Balances</h3>
                 <p className="text-xs text-white/60">
-                  {adjustBalanceUser.name} • {adjustBalanceUser.id}
+                  {adjustBalanceUser.name} ΓÇó {adjustBalanceUser.id}
                 </p>
               </div>
             </div>
@@ -4698,7 +4215,7 @@ export function Index() {
               <div>
                 <h3 className="text-base font-bold text-white">Respond to Customer Inquiry</h3>
                 <p className="text-xs text-white/60">
-                  Ticket #{replyingInquiry.ticketNumber} • {replyingInquiry.name} ({replyingInquiry.email})
+                  Ticket #{replyingInquiry.ticketNumber} ΓÇó {replyingInquiry.name} ({replyingInquiry.email})
                 </p>
               </div>
             </div>
@@ -4786,7 +4303,7 @@ export function Index() {
               <div>
                 <h3 className="text-base font-bold text-white">Review Banking Application</h3>
                 <p className="text-xs text-white/60">
-                  {editingApp.id} • {editingApp.fullName}
+                  {editingApp.id} ΓÇó {editingApp.fullName}
                 </p>
               </div>
             </div>
@@ -4916,259 +4433,6 @@ export function Index() {
                 </Button>
               </form>
             )}
-          </div>
-        </div>
-      )}
-      {/* STAFF SIGN-IN PORTAL MODAL */}
-      {staffModalOpen && (
-        <div
-          role="dialog"
-          aria-modal="true"
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-4 backdrop-blur-sm"
-        >
-          <div className="relative w-full max-w-md rounded-2xl border border-blue-500/30 bg-slate-900 p-7 text-white shadow-2xl">
-            <button
-              type="button"
-              onClick={() => {
-                setStaffModalOpen(false);
-                setStaffAuthError("");
-              }}
-              className="absolute right-4 top-4 rounded-full p-1 text-white/60 hover:bg-white/10 hover:text-white"
-            >
-              <X className="h-5 w-5" />
-            </button>
-
-            <div className="flex items-center gap-3">
-              <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-blue-600 text-white shadow-lg">
-                <KeyRound className="h-6 w-6" />
-              </div>
-              <div>
-                <h3 className="text-lg font-bold text-white">Staff & Regional Officer Sign In</h3>
-                <p className="text-xs text-white/60">Authorized Banking Staff Terminal</p>
-              </div>
-            </div>
-
-            <p className="mt-3 text-xs text-white/70 leading-relaxed">
-              Sign in with your staff officer credentials or employee ID. Account permissions are monitored & controlled by the Solo Master User.
-            </p>
-
-            {/* Quick autofill helper chips */}
-            <div className="mt-3 rounded-lg bg-blue-950/60 border border-blue-500/30 p-2.5">
-              <span className="text-[0.68rem] font-bold text-blue-300 block mb-1">
-                Quick Staff Demo Accounts (Click to Fill):
-              </span>
-              <div className="flex flex-wrap gap-1.5">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setStaffLoginEmail("marcus.v@usfinancebank.internal");
-                    setStaffLoginPassword("staff123");
-                    setStaffAuthError("");
-                  }}
-                  className="rounded bg-white/10 hover:bg-white/20 px-2 py-0.5 text-[0.68rem] text-white font-medium cursor-pointer"
-                >
-                  Marcus Vance (US HQ)
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setStaffLoginEmail("elena.r@usfinancebank.internal");
-                    setStaffLoginPassword("staff123");
-                    setStaffAuthError("");
-                  }}
-                  className="rounded bg-white/10 hover:bg-white/20 px-2 py-0.5 text-[0.68rem] text-white font-medium cursor-pointer"
-                >
-                  Elena Rostova (UK Lead)
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setStaffLoginEmail("carlos.m@usfinancebank.internal");
-                    setStaffLoginPassword("staff123");
-                    setStaffAuthError("");
-                  }}
-                  className="rounded bg-white/10 hover:bg-white/20 px-2 py-0.5 text-[0.68rem] text-white font-medium cursor-pointer"
-                >
-                  Carlos Mendez (Mexico)
-                </button>
-              </div>
-            </div>
-
-            {staffAuthError && (
-              <div className="mt-3 rounded-lg bg-rose-500/20 border border-rose-500/40 p-2.5 text-xs text-rose-300 flex items-start gap-2">
-                <AlertCircle className="h-4 w-4 shrink-0 mt-0.5" />
-                <span>{staffAuthError}</span>
-              </div>
-            )}
-
-            <form onSubmit={handleStaffSignIn} className="mt-4 space-y-3.5">
-              <div>
-                <label htmlFor="stf-email" className="block text-xs font-bold text-white/90">
-                  Staff Email or Employee ID
-                </label>
-                <input
-                  id="stf-email"
-                  type="text"
-                  required
-                  value={staffLoginEmail}
-                  onChange={(e) => setStaffLoginEmail(e.target.value)}
-                  placeholder="e.g. marcus.v@usfinancebank.internal or ADM-101"
-                  className="mt-1 w-full rounded-md border border-white/20 bg-slate-800 px-3.5 py-2 text-xs text-white focus:border-blue-400 focus:outline-none"
-                />
-              </div>
-
-              <div>
-                <label htmlFor="stf-pass" className="block text-xs font-bold text-white/90">
-                  Staff Access Passcode
-                </label>
-                <input
-                  id="stf-pass"
-                  type="password"
-                  required
-                  value={staffLoginPassword}
-                  onChange={(e) => setStaffLoginPassword(e.target.value)}
-                  placeholder="••••••••"
-                  className="mt-1 w-full rounded-md border border-white/20 bg-slate-800 px-3.5 py-2 text-xs text-white focus:border-blue-400 focus:outline-none"
-                />
-              </div>
-
-              <div className="pt-2">
-                <Button
-                  type="submit"
-                  disabled={staffAuthLoading}
-                  className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs py-2.5 cursor-pointer"
-                >
-                  {staffAuthLoading ? "Authenticating Staff..." : "Sign In to Staff Portal"}
-                </Button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {/* PROVISION NEW ADMINISTRATOR / STAFF MODAL (SOLO MASTER USER ACCESS) */}
-      {newAdminModalOpen && (
-        <div
-          role="dialog"
-          aria-modal="true"
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-4 backdrop-blur-sm"
-        >
-          <div className="relative w-full max-w-lg rounded-2xl border border-slate-700 bg-slate-900 p-7 text-white shadow-2xl">
-            <button
-              type="button"
-              onClick={() => setNewAdminModalOpen(false)}
-              className="absolute right-4 top-4 rounded-full p-1 text-white/60 hover:bg-white/10 hover:text-white"
-            >
-              <X className="h-5 w-5" />
-            </button>
-
-            <div className="flex items-center gap-3">
-              <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-accent text-white shadow-lg">
-                <ShieldCheck className="h-6 w-6" />
-              </div>
-              <div>
-                <h3 className="text-lg font-bold text-white">Provision New Administrator or Staff</h3>
-                <p className="text-xs text-white/60">Solo Master User Authority</p>
-              </div>
-            </div>
-
-            <form onSubmit={handleCreateNewAdminStaff} className="mt-5 space-y-4 text-xs">
-              <div>
-                <label htmlFor="nadm-name" className="block font-bold text-white/90">
-                  Officer / Administrator Full Name
-                </label>
-                <input
-                  id="nadm-name"
-                  type="text"
-                  required
-                  value={newAdminName}
-                  onChange={(e) => setNewAdminName(e.target.value)}
-                  placeholder="e.g. Jonathan Reynolds"
-                  className="mt-1 w-full rounded-md border border-white/20 bg-slate-800 px-3.5 py-2 text-xs text-white focus:border-accent focus:outline-none"
-                />
-              </div>
-
-              <div>
-                <label htmlFor="nadm-email" className="block font-bold text-white/90">
-                  Internal Bank Email Address
-                </label>
-                <input
-                  id="nadm-email"
-                  type="email"
-                  required
-                  value={newAdminEmail}
-                  onChange={(e) => setNewAdminEmail(e.target.value)}
-                  placeholder="e.g. jonathan.r@usfinancebank.internal"
-                  className="mt-1 w-full rounded-md border border-white/20 bg-slate-800 px-3.5 py-2 text-xs text-white focus:border-accent focus:outline-none"
-                />
-              </div>
-
-              <div className="grid gap-3 sm:grid-cols-2">
-                <div>
-                  <label htmlFor="nadm-role" className="block font-bold text-white/90">
-                    Official Job Title
-                  </label>
-                  <input
-                    id="nadm-role"
-                    type="text"
-                    required
-                    value={newAdminRole}
-                    onChange={(e) => setNewAdminRole(e.target.value)}
-                    placeholder="e.g. Senior Branch Manager"
-                    className="mt-1 w-full rounded-md border border-white/20 bg-slate-800 px-3.5 py-2 text-xs text-white focus:border-accent focus:outline-none"
-                  />
-                </div>
-
-                <div>
-                  <label htmlFor="nadm-level" className="block font-bold text-white/90">
-                    Access Permission Level
-                  </label>
-                  <select
-                    id="nadm-level"
-                    value={newAdminLevel}
-                    onChange={(e) => setNewAdminLevel(e.target.value as any)}
-                    className="mt-1 w-full rounded-md border border-white/20 bg-slate-800 px-3 py-2 text-xs text-white focus:border-accent focus:outline-none"
-                  >
-                    <option value="Full Super Admin">Full Super Admin</option>
-                    <option value="Branch Operations">Branch Operations</option>
-                    <option value="Loan Officer">Loan Officer</option>
-                    <option value="Support Specialist">Support Specialist</option>
-                  </select>
-                </div>
-              </div>
-
-              <div>
-                <label htmlFor="nadm-region" className="block font-bold text-white/90">
-                  Assigned Regional Territory
-                </label>
-                <select
-                  id="nadm-region"
-                  value={newAdminRegion}
-                  onChange={(e) => setNewAdminRegion(e.target.value)}
-                  className="mt-1 w-full rounded-md border border-white/20 bg-slate-800 px-3 py-2 text-xs text-white focus:border-accent focus:outline-none"
-                >
-                  <option value="United States (HQ)">United States (HQ)</option>
-                  <option value="United Kingdom Branch">United Kingdom Branch</option>
-                  <option value="Canada Operations">Canada Operations</option>
-                  <option value="Mexico Regional Branch">Mexico Regional Branch</option>
-                  <option value="Global Operations">Global Operations</option>
-                </select>
-              </div>
-
-              <div className="flex items-center justify-end gap-3 pt-3">
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => setNewAdminModalOpen(false)}
-                  className="border-white/20 text-white hover:bg-white/10"
-                >
-                  Cancel
-                </Button>
-                <Button type="submit" className="bg-accent text-accent-foreground font-bold hover:bg-accent/90 cursor-pointer">
-                  Provision Administrator
-                </Button>
-              </div>
-            </form>
           </div>
         </div>
       )}
