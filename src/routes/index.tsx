@@ -1366,10 +1366,38 @@ export function Index() {
           {/* Right: Country & Language Selectors */}
           <div className="flex flex-wrap items-center gap-3">
             {/* Country Selector */}
-            <div className="flex items-center gap-1 bg-white/10 px-2 py-1 rounded border border-white/15">
-              <span className="text-sm" aria-hidden="true">
-                {country.flag}
-              </span>
+            <div className="flex items-center gap-1.5 bg-white/10 px-2.5 py-1 rounded border border-white/15">
+              {currentCountryCode === "US" ? (
+                <svg
+                  className="h-3.5 w-5 rounded-[2px] shadow-xs inline-block shrink-0"
+                  viewBox="0 0 640 480"
+                  aria-label="United States Flag"
+                >
+                  <g fillRule="evenodd">
+                    <path fill="#fff" d="M0 0h640v480H0z" />
+                    <path
+                      fill="#b22234"
+                      d="M0 0h640v36.9H0zm0 73.8h640v37H0zm0 73.9h640v37H0zm0 73.8h640v37H0zm0 73.9h640v37H0zm0 73.8h640v37H0zm0 73.9h640v37H0z"
+                    />
+                    <path fill="#3c3b6e" d="M0 0h256v258.5H0z" />
+                    <g fill="#fff">
+                      <circle cx="28" cy="24" r="7" /><circle cx="70" cy="24" r="7" /><circle cx="112" cy="24" r="7" /><circle cx="154" cy="24" r="7" /><circle cx="196" cy="24" r="7" /><circle cx="238" cy="24" r="7" />
+                      <circle cx="49" cy="48" r="7" /><circle cx="91" cy="48" r="7" /><circle cx="133" cy="48" r="7" /><circle cx="175" cy="48" r="7" /><circle cx="217" cy="48" r="7" />
+                      <circle cx="28" cy="72" r="7" /><circle cx="70" cy="72" r="7" /><circle cx="112" cy="72" r="7" /><circle cx="154" cy="72" r="7" /><circle cx="196" cy="72" r="7" /><circle cx="238" cy="72" r="7" />
+                      <circle cx="49" cy="96" r="7" /><circle cx="91" cy="96" r="7" /><circle cx="133" cy="96" r="7" /><circle cx="175" cy="96" r="7" /><circle cx="217" cy="96" r="7" />
+                      <circle cx="28" cy="120" r="7" /><circle cx="70" cy="120" r="7" /><circle cx="112" cy="120" r="7" /><circle cx="154" cy="120" r="7" /><circle cx="196" cy="120" r="7" /><circle cx="238" cy="120" r="7" />
+                      <circle cx="49" cy="144" r="7" /><circle cx="91" cy="144" r="7" /><circle cx="133" cy="144" r="7" /><circle cx="175" cy="144" r="7" /><circle cx="217" cy="144" r="7" />
+                      <circle cx="28" cy="168" r="7" /><circle cx="70" cy="168" r="7" /><circle cx="112" cy="168" r="7" /><circle cx="154" cy="168" r="7" /><circle cx="196" cy="168" r="7" /><circle cx="238" cy="168" r="7" />
+                      <circle cx="49" cy="192" r="7" /><circle cx="91" cy="192" r="7" /><circle cx="133" cy="192" r="7" /><circle cx="175" cy="192" r="7" /><circle cx="217" cy="192" r="7" />
+                      <circle cx="28" cy="216" r="7" /><circle cx="70" cy="216" r="7" /><circle cx="112" cy="216" r="7" /><circle cx="154" cy="216" r="7" /><circle cx="196" cy="216" r="7" /><circle cx="238" cy="216" r="7" />
+                    </g>
+                  </g>
+                </svg>
+              ) : (
+                <span className="text-sm" aria-hidden="true">
+                  {country.flag}
+                </span>
+              )}
               <select
                 aria-label="Select Country"
                 value={currentCountryCode}
@@ -1378,7 +1406,7 @@ export function Index() {
               >
                 {Object.values(SUPPORTED_COUNTRIES).map((c) => (
                   <option key={c.code} value={c.code} className="bg-navy-deep text-white">
-                    {c.flag} {c.name} ({c.currency.code})
+                    {c.name} ({c.currency.code})
                   </option>
                 ))}
               </select>

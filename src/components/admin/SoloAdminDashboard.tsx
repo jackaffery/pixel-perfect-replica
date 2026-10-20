@@ -153,6 +153,13 @@ export function SoloAdminDashboard({
   const [selectedReview, setSelectedReview] = useState<ComplianceReviewItem | null>(null);
   const [selectedCase, setSelectedCase] = useState<SupportCase | null>(null);
 
+  // Customer Profile Support Inspection State (Read-only, Admin Session Isolated, Audited)
+  const [customerProfileInspectionUser, setCustomerProfileInspectionUser] = useState<AdminUserRecord | null>(null);
+  const [profileAuthModalOpen, setProfileAuthModalOpen] = useState(false);
+  const [pendingProfileInspectionUser, setPendingProfileInspectionUser] = useState<AdminUserRecord | null>(null);
+  const [profileAuthReason, setProfileAuthReason] = useState("Customer requested account assistance & transfer verification");
+  const [profileAuthError, setProfileAuthError] = useState("");
+
   // Action / Confirmation States
   const [createUserModalOpen, setCreateUserModalOpen] = useState(false);
   const [newUserData, setNewUserData] = useState({
@@ -501,13 +508,15 @@ export function SoloAdminDashboard({
       mailingAddress: newUserData.mailingAddress.trim() || "100 Financial Way, Suite 400, New York, NY 10005",
       linkedCustomerId: linkedCustId,
       onlineAccessStatus: "Active",
-      kycVerificationStatus: "Verified",
+      verificationStatus: "Verified",
+      dateJoined: new Date().toISOString().slice(0, 10),
       displayDateJoined: "Today, " + new Date().toLocaleDateString([], { month: "short", day: "numeric", year: "numeric" }),
       security: {
         twoFactorEnabled: false,
         activeSessionsCount: 1,
-        forcePasswordResetNextLogin: false,
-        lastPasswordChange: "Initial credential set",
+        lastSignIn: "Just now",
+        lastSignInIp: "127.0.0.1",
+        passwordResetRequired: false,
       },
       communicationPreferences: {
         emailAlerts: true,
@@ -552,6 +561,35 @@ export function SoloAdminDashboard({
       initialBalance: "5000",
       mailingAddress: "",
     });
+  };
+
+  // Open Customer Profile in Support Mode (Strict Authorization & Activity History Log)
+  const handleInitiateOpenCustomerProfile = (user: AdminUserRecord) => {
+    setPendingProfileInspectionUser(user);
+    setProfileAuthReason("Customer requested account assistance & transfer verification");
+    setProfileAuthError("");
+    setProfileAuthModalOpen(true);
+  };
+
+  const handleConfirmAuthorizeCustomerProfile = (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    if (!profileAuthReason.trim()) {
+      setProfileAuthError("Please provide an official support authorization reason.");
+      return;
+    }
+    if (!pendingProfileInspectionUser) return;
+
+    // Record profile access in the admin activity history
+    appendAuditLog(
+      "Users",
+      "Opened Customer Profile for Support",
+      `Staff Admin (${adminUsername}) authorized support inspection of customer account page for ${pendingProfileInspectionUser.name} (User ID: ${pendingProfileInspectionUser.id}, Customer Link: ${pendingProfileInspectionUser.linkedCustomerId}). Reason: "${profileAuthReason.trim()}". Admin session isolated; impersonation, password viewing, and fund transfers are prohibited.`,
+      pendingProfileInspectionUser.id
+    );
+
+    setCustomerProfileInspectionUser(pendingProfileInspectionUser);
+    setProfileAuthModalOpen(false);
+    setPendingProfileInspectionUser(null);
   };
 
   // Safe User Deletion with Audit Trail
@@ -887,7 +925,7 @@ export function SoloAdminDashboard({
         {/* Admin Profile Area in Left Sidebar matching visual reference */}
         <div className="border-b border-slate-100 p-4">
           <div className="flex items-center gap-3">
-            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-red-600 text-white font-bold shadow-md shadow-red-500/20 text-sm">
+            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[#0a192f] text-white font-bold shadow-md shadow-slate-900/10 text-sm border-2 border-red-600">
               <User className="h-5 w-5" />
             </div>
             {!sidebarCollapsed && (
@@ -895,7 +933,7 @@ export function SoloAdminDashboard({
                 <span className="block font-bold text-slate-800 text-sm truncate">
                   {adminUsername === "Solo Master Administrator" ? "admin admin" : adminUsername}
                 </span>
-                <span className="inline-block mt-0.5 rounded bg-red-100 px-2 py-0.5 text-[0.68rem] font-bold text-red-700">
+                <span className="inline-block mt-0.5 rounded bg-red-600 px-2 py-0.5 text-[0.68rem] font-bold text-white shadow-2xs">
                   Admin
                 </span>
               </div>
@@ -936,8 +974,8 @@ export function SoloAdminDashboard({
                 }}
                 className={`group flex w-full items-center gap-3 rounded-lg px-3.5 py-3 text-xs font-semibold transition-all ${
                   isActive
-                    ? "bg-red-600 text-white shadow-sm font-bold"
-                    : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
+                    ? "bg-[#0a192f] text-white shadow-sm font-bold border-l-4 border-red-600 pl-2.5"
+                    : "text-slate-600 hover:bg-slate-100 hover:text-[#0a192f]"
                 }`}
                 title={sidebarCollapsed ? item.label : undefined}
               >
@@ -973,13 +1011,18 @@ export function SoloAdminDashboard({
       {/* 2. MAIN WORKSPACE CONTAINER */}
       {/* ============================================================ */}
       <div className="flex flex-1 flex-col overflow-hidden">
-        {/* TOP NAVIGATION BAR — Red Theme matching visual reference */}
-        <header className="flex h-16 items-center justify-between bg-red-600 px-6 text-white shadow-md z-20">
+        {/* TOP NAVIGATION BAR — Navy Blue, White, and Red Theme (US Flag Inspired) */}
+        <header className="flex h-16 items-center justify-between bg-[#0a192f] border-b-4 border-red-600 px-6 text-white shadow-md z-20">
           {/* Left: Bank Name & Menu Toggle */}
           <div className="flex items-center gap-4">
-            <span className="font-display text-lg font-black tracking-tight text-white select-none">
-              US Finance Bank
-            </span>
+            <div className="flex items-center gap-2.5">
+              <span className="flex h-7 w-7 items-center justify-center rounded bg-red-600 text-white font-black text-xs shadow-xs">
+                US
+              </span>
+              <span className="font-display text-lg font-black tracking-tight text-white select-none">
+                US Finance Bank
+              </span>
+            </div>
             <button
               type="button"
               onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
@@ -998,7 +1041,7 @@ export function SoloAdminDashboard({
               value={globalSearch}
               onChange={(e) => setGlobalSearch(e.target.value)}
               placeholder="Manage users"
-              className="w-full rounded-md border-0 bg-white py-2 pl-9 pr-8 text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-white/50 shadow-inner"
+              className="w-full rounded-md border border-slate-300 bg-white py-2 pl-9 pr-8 text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-red-600 shadow-inner"
             />
             {globalSearch && (
               <button
@@ -1023,7 +1066,7 @@ export function SoloAdminDashboard({
               >
                 <Bell className="h-5 w-5" />
                 {unreadAlerts.length > 0 && (
-                  <span className="absolute -top-0.5 -right-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-white text-[0.6rem] font-black text-red-600 shadow-sm">
+                  <span className="absolute -top-0.5 -right-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-red-600 text-[0.6rem] font-black text-white shadow-sm border border-white">
                     {unreadAlerts.length}
                   </span>
                 )}
@@ -1143,15 +1186,15 @@ export function SoloAdminDashboard({
           {/* ======================================================== */}
           {activeSection === "overview" && (
             <div className="space-y-6 max-w-7xl mx-auto">
-              {/* Top Banner Header: Red background with Welcome heading & quick links matching screenshot */}
-              <div className="rounded-t-2xl bg-red-600 p-6 sm:p-8 text-white shadow-md relative overflow-hidden pb-12">
+              {/* Top Banner Header: Navy Blue & Red accent matching US flag colors */}
+              <div className="rounded-t-2xl bg-gradient-to-r from-[#0a192f] via-[#102747] to-[#183964] border-b-4 border-red-600 p-6 sm:p-8 text-white shadow-md relative overflow-hidden pb-12">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                   <div>
                     <h1 className="font-display text-2xl sm:text-3xl font-extrabold tracking-tight">
                       Dashboard
                     </h1>
-                    <p className="text-sm text-red-100 mt-1">
-                      Welcome, admin admin!
+                    <p className="text-sm text-slate-200 mt-1">
+                      Welcome, {adminUsername === "Solo Master Administrator" ? "admin admin" : adminUsername}!
                     </p>
                   </div>
 
@@ -1606,22 +1649,24 @@ export function SoloAdminDashboard({
                               )}
                             </td>
                             <td className="px-5 py-4 text-right">
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                onClick={() => {
-                                  setSelectedUser(user);
-                                  appendAuditLog(
-                                    "Users",
-                                    "Inspected User Profile",
-                                    `Opened comprehensive profile drawer for ${user.name} (${user.id}).`,
-                                    user.id
-                                  );
-                                }}
-                                className="border-slate-200 bg-white text-xs font-semibold text-slate-700 hover:bg-red-600 hover:border-red-600 hover:text-white transition-colors"
-                              >
-                                Review Profile →
-                              </Button>
+                              <div className="flex items-center justify-end gap-2">
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => {
+                                    setSelectedUser(user);
+                                    appendAuditLog(
+                                      "Users",
+                                      "Inspected User Profile",
+                                      `Opened comprehensive profile drawer for ${user.name} (${user.id}).`,
+                                      user.id
+                                    );
+                                  }}
+                                  className="border-slate-300 bg-white text-xs font-semibold text-[#0a192f] hover:bg-[#0a192f] hover:border-[#0a192f] hover:text-white transition-colors"
+                                >
+                                  Review Profile →
+                                </Button>
+                              </div>
                             </td>
                           </tr>
                         ))
@@ -1639,7 +1684,7 @@ export function SoloAdminDashboard({
                     <div className="flex items-start justify-between border-b border-slate-100 pb-5">
                       <div>
                         <div className="flex items-center gap-2">
-                          <span className="rounded bg-red-100 px-2 py-0.5 text-[0.68rem] font-bold text-red-700 border border-red-200">
+                          <span className="rounded bg-[#0a192f] px-2 py-0.5 text-[0.68rem] font-bold text-white border border-[#0a192f]">
                             USER ID: {selectedUser.id}
                           </span>
                           <span
@@ -1652,18 +1697,29 @@ export function SoloAdminDashboard({
                             Online Access: {selectedUser.onlineAccessStatus}
                           </span>
                         </div>
-                        <h3 className="mt-2 text-2xl font-black text-slate-900">{selectedUser.name}</h3>
+                        <h3 className="mt-2 text-2xl font-black text-[#0a192f]">{selectedUser.name}</h3>
                         <p className="text-xs text-slate-500">
                           Joined on {selectedUser.displayDateJoined} • Customer Link ID: {selectedUser.linkedCustomerId}
                         </p>
                       </div>
-                      <button
-                        type="button"
-                        onClick={() => setSelectedUser(null)}
-                        className="rounded-xl p-2 text-slate-400 hover:bg-slate-100 hover:text-slate-800"
-                      >
-                        ✕
-                      </button>
+                      <div className="flex items-center gap-2.5">
+                        {/* Clearly labeled "Open customer profile" action */}
+                        <Button
+                          size="sm"
+                          onClick={() => handleInitiateOpenCustomerProfile(selectedUser)}
+                          className="bg-[#0a192f] hover:bg-[#152e55] text-white text-xs font-bold shadow-xs border border-slate-700 flex items-center gap-1.5 transition-colors cursor-pointer"
+                        >
+                          <ExternalLink className="h-3.5 w-3.5 text-red-500" />
+                          Open customer profile
+                        </Button>
+                        <button
+                          type="button"
+                          onClick={() => setSelectedUser(null)}
+                          className="rounded-xl p-2 text-slate-400 hover:bg-slate-100 hover:text-slate-800 transition-colors"
+                        >
+                          ✕
+                        </button>
+                      </div>
                     </div>
 
                     {/* Quick Profile Summary Cards */}
@@ -3920,6 +3976,411 @@ export function SoloAdminDashboard({
           </div>
         </div>
       )}
+
+      {/* ============================================================ */}
+      {/* 4. CUSTOMER PROFILE SUPPORT AUTHORIZATION MODAL */}
+      {/* ============================================================ */}
+      {profileAuthModalOpen && pendingProfileInspectionUser && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4 backdrop-blur-sm"
+        >
+          <div className="relative w-full max-w-lg rounded-2xl border border-slate-700 bg-slate-900 p-6 text-slate-200 shadow-2xl">
+            <div className="flex items-center gap-3 border-b border-slate-800 pb-4">
+              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-[#0a192f] border border-red-500 text-red-500 shadow-md">
+                <ShieldCheck className="h-6 w-6 text-red-500" />
+              </div>
+              <div>
+                <h3 className="font-bold text-white text-base">Authorize Customer Profile Access</h3>
+                <p className="text-xs text-slate-400">Support Verification Clearance Required</p>
+              </div>
+            </div>
+
+            <div className="mt-4 rounded-xl border border-blue-500/30 bg-blue-950/20 p-3.5 text-xs text-blue-200 leading-relaxed">
+              <p className="font-semibold text-white">
+                Customer: {pendingProfileInspectionUser.name} ({pendingProfileInspectionUser.linkedCustomerId})
+              </p>
+              <p className="mt-1 text-[0.7rem] text-slate-300">
+                You are requesting to view the customer’s account page in <strong>Read-Only Support Mode</strong>. Impersonation, password entry, and execution of funds are strictly barred. Your administrative session remains completely isolated and audited.
+              </p>
+            </div>
+
+            <form onSubmit={handleConfirmAuthorizeCustomerProfile} className="mt-4 space-y-4">
+              <div>
+                <label className="block text-xs font-bold text-slate-300 mb-1">
+                  Support / Verification Reason (Logged to Activity History):
+                </label>
+                <input
+                  type="text"
+                  value={profileAuthReason}
+                  onChange={(e) => {
+                    setProfileAuthReason(e.target.value);
+                    setProfileAuthError("");
+                  }}
+                  placeholder="e.g., Customer inquiry assistance, transaction status verification"
+                  className="w-full rounded-xl border border-slate-700 bg-slate-950 px-3.5 py-2.5 text-xs text-white placeholder-slate-500 focus:border-red-500 focus:outline-none"
+                  autoFocus
+                />
+                {profileAuthError && (
+                  <p className="mt-1.5 text-xs text-red-400 font-bold">{profileAuthError}</p>
+                )}
+              </div>
+
+              <div className="flex items-center justify-end gap-2.5 pt-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => {
+                    setProfileAuthModalOpen(false);
+                    setPendingProfileInspectionUser(null);
+                  }}
+                  className="border-slate-700 text-xs text-slate-300 hover:bg-slate-800"
+                >
+                  Cancel
+                </Button>
+                <Button
+                  type="submit"
+                  className="bg-red-600 hover:bg-red-700 text-white text-xs font-bold shadow-md flex items-center gap-1.5"
+                >
+                  <ExternalLink className="h-3.5 w-3.5" />
+                  Authorize & Open Profile
+                </Button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* ============================================================ */}
+      {/* 5. CUSTOMER PROFILE & ACCOUNT PAGE VIEW (READ-ONLY SUPPORT MODE) */}
+      {/* ============================================================ */}
+      {customerProfileInspectionUser && (() => {
+        const userAccounts = accounts.filter(
+          (a) => a.customerId === customerProfileInspectionUser.linkedCustomerId
+        );
+        const userTransfers = transactions.filter(
+          (t) =>
+            t.customerName.toLowerCase() === customerProfileInspectionUser.name.toLowerCase() ||
+            t.customerId === customerProfileInspectionUser.linkedCustomerId
+        );
+        const checkingAcc = userAccounts.find((a) => a.accountType.toLowerCase().includes("checking")) || userAccounts[0];
+        const savingsAcc = userAccounts.find((a) => a.accountType.toLowerCase().includes("savings")) || userAccounts[1];
+
+        return (
+          <div
+            role="dialog"
+            aria-modal="true"
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 backdrop-blur-xs p-4 overflow-y-auto"
+          >
+            <div className="relative w-full max-w-5xl rounded-3xl border border-slate-200 bg-[#f8fafc] shadow-2xl max-h-[92vh] overflow-y-auto text-slate-800 flex flex-col">
+              {/* Top Navy Blue & Red Header (US Flag Scheme) */}
+              <div className="sticky top-0 z-20 flex items-center justify-between bg-[#0a192f] border-b-4 border-red-600 px-6 py-4 text-white shadow-md">
+                <div className="flex items-center gap-3">
+                  <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-red-600 text-white font-black text-xs shadow-xs">
+                    US
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <span className="font-display font-extrabold text-base tracking-tight text-white">
+                        Customer Account Page (Support Mode)
+                      </span>
+                      <span className="rounded bg-red-600 px-2 py-0.5 text-[0.62rem] font-bold uppercase tracking-wider text-white">
+                        Read-Only View
+                      </span>
+                      <span className="hidden sm:inline-block rounded bg-white/10 px-2 py-0.5 text-[0.62rem] font-semibold text-slate-300">
+                        Admin Session Isolated
+                      </span>
+                    </div>
+                    <p className="text-[0.7rem] text-slate-300 mt-0.5">
+                      Customer: <strong>{customerProfileInspectionUser.name}</strong> • Customer Link ID: {customerProfileInspectionUser.linkedCustomerId} • Logged Under Audit
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => setCustomerProfileInspectionUser(null)}
+                    className="border-slate-600 bg-white/10 text-white hover:bg-white/20 text-xs font-bold"
+                  >
+                    Close Account View ✕
+                  </Button>
+                </div>
+              </div>
+
+              {/* Safety & Compliance Assurance Notice */}
+              <div className="bg-red-50 border-b border-red-200 px-6 py-3 text-xs text-red-900 flex items-center justify-between">
+                <div className="flex items-center gap-2.5">
+                  <ShieldCheck className="h-4 w-4 text-red-600 shrink-0" />
+                  <span>
+                    <strong>Support Safety Policy:</strong> Viewing account page in verified support mode. Password viewing or modification is prohibited. Customer impersonation and direct fund movement are strictly barred.
+                  </span>
+                </div>
+                <span className="text-[0.68rem] text-red-700 font-mono hidden md:inline-block">
+                  Staff Admin: {adminUsername}
+                </span>
+              </div>
+
+              <div className="p-6 sm:p-8 space-y-6">
+                {/* Customer Identity Banner */}
+                <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-xs">
+                  <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                    <div className="flex items-center gap-4">
+                      <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-[#0a192f] text-white font-bold text-xl border-2 border-red-600 shadow-md">
+                        {customerProfileInspectionUser.name.charAt(0)}
+                      </div>
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <h2 className="text-2xl font-black text-[#0a192f]">
+                            {customerProfileInspectionUser.name}
+                          </h2>
+                          <span
+                            className={`rounded-full px-2.5 py-0.5 text-xs font-bold ${
+                              customerProfileInspectionUser.onlineAccessStatus === "Active"
+                                ? "bg-emerald-100 text-emerald-800 border border-emerald-200"
+                                : "bg-red-100 text-red-800 border border-red-200"
+                            }`}
+                          >
+                            Online Access: {customerProfileInspectionUser.onlineAccessStatus}
+                          </span>
+                        </div>
+                        <p className="text-xs text-slate-500 mt-0.5">
+                          Customer ID: <span className="font-mono font-bold text-slate-700">{customerProfileInspectionUser.linkedCustomerId}</span> • Enrolled: {customerProfileInspectionUser.displayDateJoined} • Support Case Audit Linked
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="flex flex-wrap items-center gap-2">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => {
+                          appendAuditLog(
+                            "Users",
+                            "Dispatched Password Reset Link from Support View",
+                            `Sent secure password reset link to ${customerProfileInspectionUser.email}. Customer credentials not accessed.`,
+                            customerProfileInspectionUser.id
+                          );
+                          setActionNotification(`Password reset link safely sent to ${customerProfileInspectionUser.email}.`);
+                          setTimeout(() => setActionNotification(""), 4000);
+                        }}
+                        className="border-slate-300 bg-white text-xs font-bold text-slate-700 hover:bg-slate-100"
+                      >
+                        <Mail className="mr-1.5 h-3.5 w-3.5 text-blue-600" />
+                        Send Password Reset Link
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => {
+                          handleForceUserSignOut(
+                            customerProfileInspectionUser.id,
+                            "Staff Admin support view active session termination"
+                          );
+                        }}
+                        className="border-slate-300 bg-white text-xs font-bold text-slate-700 hover:bg-slate-100"
+                      >
+                        <Laptop className="mr-1.5 h-3.5 w-3.5 text-amber-600" />
+                        Sign Out Active Sessions
+                      </Button>
+                    </div>
+                  </div>
+
+                  {/* Registered Customer Details */}
+                  <div className="mt-5 grid grid-cols-1 sm:grid-cols-3 gap-3 border-t border-slate-100 pt-4 text-xs">
+                    <div>
+                      <span className="text-[0.68rem] uppercase font-bold text-slate-400">Verified Email</span>
+                      <p className="font-semibold text-slate-900 mt-0.5 flex items-center gap-1.5">
+                        <Mail className="h-3.5 w-3.5 text-red-600 shrink-0" />
+                        {customerProfileInspectionUser.email}
+                      </p>
+                    </div>
+                    <div>
+                      <span className="text-[0.68rem] uppercase font-bold text-slate-400">Verified Phone</span>
+                      <p className="font-semibold text-slate-900 mt-0.5 flex items-center gap-1.5">
+                        <Phone className="h-3.5 w-3.5 text-red-600 shrink-0" />
+                        {customerProfileInspectionUser.phone}
+                      </p>
+                    </div>
+                    <div>
+                      <span className="text-[0.68rem] uppercase font-bold text-slate-400">Mailing Address</span>
+                      <p className="font-semibold text-slate-900 mt-0.5 flex items-center gap-1.5 truncate">
+                        <MapPin className="h-3.5 w-3.5 text-red-600 shrink-0" />
+                        <span className="truncate">{customerProfileInspectionUser.mailingAddress}</span>
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Account Balances Grid (Customer View Representation) */}
+                <div>
+                  <h3 className="font-bold text-sm text-[#0a192f] flex items-center gap-2 mb-3">
+                    <CreditCard className="h-4 w-4 text-red-600" />
+                    Customer Accounts & Live Balances (Read-Only)
+                  </h3>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    {/* Checking Account */}
+                    <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-xs">
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-bold uppercase tracking-wider text-slate-500">
+                          {checkingAcc ? checkingAcc.accountType : "Advantage Checking"}
+                        </span>
+                        <span className="rounded bg-emerald-100 px-2 py-0.5 text-[0.65rem] font-bold text-emerald-800">
+                          {checkingAcc ? checkingAcc.status : "Active"}
+                        </span>
+                      </div>
+                      <div className="mt-3 text-2xl font-black text-[#0a192f]">
+                        {checkingAcc?.currency || "USD"}{" "}
+                        {(checkingAcc?.balance ?? 128450).toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                      </div>
+                      <div className="mt-2 text-xs text-slate-500 font-mono">
+                        Account: {checkingAcc?.accountNumberMasked || "•••• 4892"} • Routing: {checkingAcc?.routingNumber || "021000021"}
+                      </div>
+                    </div>
+
+                    {/* Savings Account */}
+                    <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-xs">
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-bold uppercase tracking-wider text-slate-500">
+                          {savingsAcc ? savingsAcc.accountType : "High-Yield Savings"}
+                        </span>
+                        <span className="rounded bg-emerald-100 px-2 py-0.5 text-[0.65rem] font-bold text-emerald-800">
+                          4.85% APY
+                        </span>
+                      </div>
+                      <div className="mt-3 text-2xl font-black text-[#0a192f]">
+                        {savingsAcc?.currency || "USD"}{" "}
+                        {(savingsAcc?.balance ?? 45210).toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                      </div>
+                      <div className="mt-2 text-xs text-slate-500 font-mono">
+                        Account: {savingsAcc?.accountNumberMasked || "•••• 8104"} • Routing: {savingsAcc?.routingNumber || "021000021"}
+                      </div>
+                    </div>
+
+                    {/* Platinum Debit Card */}
+                    <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-xs">
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-bold uppercase tracking-wider text-slate-500">
+                          US Finance Platinum Debit
+                        </span>
+                        <span className="rounded bg-blue-100 px-2 py-0.5 text-[0.65rem] font-bold text-blue-800">
+                          Active
+                        </span>
+                      </div>
+                      <div className="mt-3 text-base font-black font-mono text-slate-800">
+                        •••• •••• •••• 5519
+                      </div>
+                      <div className="mt-2 text-xs text-slate-500 flex items-center justify-between">
+                        <span>Expires: 09/29</span>
+                        <span className="text-[0.68rem] text-slate-400 font-mono">Chip & Contactless</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Customer Transfer Transactions & Live Status */}
+                <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-xs">
+                  <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+                    <div>
+                      <h3 className="font-bold text-sm text-[#0a192f] flex items-center gap-2">
+                        <ArrowRightLeft className="h-4 w-4 text-red-600" />
+                        Customer Transfer Details & Live Status
+                      </h3>
+                      <p className="text-xs text-slate-500 mt-0.5">
+                        Transfers show the exact status visible to the customer (On hold, Processing, Completed).
+                      </p>
+                    </div>
+                    <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-bold text-slate-700">
+                      {userTransfers.length} Transfer(s) On File
+                    </span>
+                  </div>
+
+                  {userTransfers.length === 0 ? (
+                    <div className="p-6 text-center text-xs text-slate-400">
+                      No transfer records found for this customer profile.
+                    </div>
+                  ) : (
+                    <div className="mt-3 divide-y divide-slate-100">
+                      {userTransfers.map((tx) => {
+                        const displayedStatus = tx.transferStatus || tx.status;
+                        return (
+                          <div
+                            key={tx.id}
+                            className="py-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs"
+                          >
+                            <div>
+                              <div className="flex items-center gap-2">
+                                <span className="font-mono font-bold text-slate-900">{tx.id}</span>
+                                <span className="text-slate-400">•</span>
+                                <span className="font-semibold text-slate-700">{tx.type}</span>
+                                <span className="text-slate-400">•</span>
+                                <span className="text-slate-500">{tx.timestamp}</span>
+                              </div>
+                              <p className="text-slate-600 text-[0.72rem] mt-0.5">
+                                Counterparty: <strong>{tx.counterparty}</strong> • Masked Account: <span className="font-mono">{tx.accountMasked}</span>
+                              </p>
+                            </div>
+
+                            <div className="flex items-center gap-3">
+                              <span
+                                className={`font-mono font-bold text-sm ${
+                                  tx.direction === "credit" ? "text-emerald-600" : "text-slate-900"
+                                }`}
+                              >
+                                {tx.direction === "credit" ? "+" : "-"}
+                                {tx.currency} {tx.amount.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                              </span>
+
+                              <span
+                                className={`rounded-full px-2.5 py-0.5 text-[0.7rem] font-bold ${
+                                  displayedStatus === "Completed"
+                                    ? "bg-emerald-100 text-emerald-800 border border-emerald-200"
+                                    : displayedStatus === "On hold"
+                                    ? "bg-amber-100 text-amber-800 border border-amber-200"
+                                    : "bg-blue-100 text-blue-800 border border-blue-200"
+                                }`}
+                              >
+                                {displayedStatus}
+                              </span>
+
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => {
+                                  setCustomerProfileInspectionUser(null);
+                                  handleSelectTransactionForReview(tx);
+                                }}
+                                className="border-slate-200 text-xs font-semibold text-slate-700 hover:bg-red-50 hover:text-red-700"
+                              >
+                                Update Status →
+                              </Button>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+
+                {/* Footer Controls */}
+                <div className="flex items-center justify-between border-t border-slate-200 pt-4">
+                  <span className="text-xs text-slate-500">
+                    Staff Support Mode • Administrative actions are permanently recorded in Activity History.
+                  </span>
+                  <Button
+                    onClick={() => setCustomerProfileInspectionUser(null)}
+                    className="bg-[#0a192f] hover:bg-[#152e55] text-white text-xs font-bold shadow-xs"
+                  >
+                    Done Reviewing Customer Profile
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
     </div>
   );
 }
