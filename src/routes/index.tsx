@@ -50,6 +50,7 @@ import {
   ClipboardList,
   Check,
   XCircle,
+  ChevronDown,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import usFinanceBuildingHero from "@/assets/us-finance-bank-building.jpg";
@@ -86,6 +87,130 @@ export const Route = createFileRoute("/")({
   }),
   component: Index,
 });
+
+export function CountryFlagIcon({
+  code,
+  className = "h-3.5 w-5 rounded-[2px] shadow-xs inline-block shrink-0 object-cover",
+}: {
+  code: string;
+  className?: string;
+}) {
+  switch (code) {
+    case "US":
+      return (
+        <svg viewBox="0 0 640 480" className={className} aria-label="United States Flag">
+          <path fill="#bd3d44" d="M0 0h640v480H0z" />
+          <path stroke="#fff" strokeWidth="37" d="M0 55.4h640M0 129.2h640M0 203.1h640M0 276.9h640M0 350.8h640M0 424.6h640" />
+          <path fill="#192f5d" d="M0 0h256v258.5H0z" />
+          <g fill="#fff">
+            <circle cx="28" cy="24" r="7" /><circle cx="70" cy="24" r="7" /><circle cx="112" cy="24" r="7" /><circle cx="154" cy="24" r="7" /><circle cx="196" cy="24" r="7" /><circle cx="238" cy="24" r="7" />
+            <circle cx="49" cy="48" r="7" /><circle cx="91" cy="48" r="7" /><circle cx="133" cy="48" r="7" /><circle cx="175" cy="48" r="7" /><circle cx="217" cy="48" r="7" />
+            <circle cx="28" cy="72" r="7" /><circle cx="70" cy="72" r="7" /><circle cx="112" cy="72" r="7" /><circle cx="154" cy="72" r="7" /><circle cx="196" cy="72" r="7" /><circle cx="238" cy="72" r="7" />
+            <circle cx="49" cy="96" r="7" /><circle cx="91" cy="96" r="7" /><circle cx="133" cy="96" r="7" /><circle cx="175" cy="96" r="7" /><circle cx="217" cy="96" r="7" />
+            <circle cx="28" cy="120" r="7" /><circle cx="70" cy="120" r="7" /><circle cx="112" cy="120" r="7" /><circle cx="154" cy="120" r="7" /><circle cx="196" cy="120" r="7" /><circle cx="238" cy="120" r="7" />
+            <circle cx="49" cy="144" r="7" /><circle cx="91" cy="144" r="7" /><circle cx="133" cy="144" r="7" /><circle cx="175" cy="144" r="7" /><circle cx="217" cy="144" r="7" />
+            <circle cx="28" cy="168" r="7" /><circle cx="70" cy="168" r="7" /><circle cx="112" cy="168" r="7" /><circle cx="154" cy="168" r="7" /><circle cx="196" cy="168" r="7" /><circle cx="238" cy="168" r="7" />
+            <circle cx="49" cy="192" r="7" /><circle cx="91" cy="192" r="7" /><circle cx="133" cy="192" r="7" /><circle cx="175" cy="192" r="7" /><circle cx="217" cy="192" r="7" />
+            <circle cx="28" cy="216" r="7" /><circle cx="70" cy="216" r="7" /><circle cx="112" cy="216" r="7" /><circle cx="154" cy="216" r="7" /><circle cx="196" cy="216" r="7" /><circle cx="238" cy="216" r="7" />
+          </g>
+        </svg>
+      );
+    case "GB":
+      return (
+        <svg viewBox="0 0 640 480" className={className} aria-label="United Kingdom Flag">
+          <path fill="#012169" d="M0 0h640v480H0z" />
+          <path fill="#fff" d="M75 0l245 184L565 0h75v60L435 240l205 154v86h-75L320 296 75 480H0v-60l205-154L0 86V0z" />
+          <path fill="#c8102e" d="M424 288l216 162v30h-38L382 318zm-208-96L0 30V0h38l220 162zm208-32L640 0v10l-202 150zm-208 96L0 450v30l202-152z" />
+          <path fill="#fff" d="M256 0h128v480H256zM0 176h640v128H0z" />
+          <path fill="#c8102e" d="M280 0h80v480h-80zM0 200h640v80H0z" />
+        </svg>
+      );
+    case "CA":
+      return (
+        <svg viewBox="0 0 640 480" className={className} aria-label="Canada Flag">
+          <path fill="#d80621" d="M0 0h160v480H0zm480 0h160v480H480z" />
+          <path fill="#fff" d="M160 0h320v480H160z" />
+          <path fill="#d80621" d="M320 100l20 50 48-18-20 50 42 30-50 15 10 35-40-10-10 68h-20l-10-68-40 10 10-35-50-15 42-30-20-50 48 18z" />
+        </svg>
+      );
+    case "MX":
+      return (
+        <svg viewBox="0 0 640 480" className={className} aria-label="Mexico Flag">
+          <path fill="#006847" d="M0 0h213.3v480H0z" />
+          <path fill="#fff" d="M213.3 0h213.4v480H213.3z" />
+          <path fill="#ce1126" d="M426.7 0H640v480H426.7z" />
+          <circle cx="320" cy="240" r="38" fill="#b08d57" opacity="0.85" />
+          <circle cx="320" cy="240" r="28" fill="#583c16" />
+        </svg>
+      );
+    case "CN":
+      return (
+        <svg viewBox="0 0 640 480" className={className} aria-label="China Flag">
+          <path fill="#de2910" d="M0 0h640v480H0z" />
+          <polygon fill="#ffde00" points="120,60 135,108 185,108 145,138 160,185 120,155 80,185 95,138 55,108 105,108" />
+          <circle cx="210" cy="65" r="14" fill="#ffde00" />
+          <circle cx="240" cy="115" r="14" fill="#ffde00" />
+          <circle cx="240" cy="180" r="14" fill="#ffde00" />
+          <circle cx="210" cy="230" r="14" fill="#ffde00" />
+        </svg>
+      );
+    case "TW":
+      return (
+        <svg viewBox="0 0 640 480" className={className} aria-label="Taiwan Flag">
+          <path fill="#fe0000" d="M0 0h640v480H0z" />
+          <path fill="#000095" d="M0 0h320v240H0z" />
+          <circle cx="160" cy="120" r="50" fill="#fff" />
+          <circle cx="160" cy="120" r="38" fill="#000095" />
+          <circle cx="160" cy="120" r="30" fill="#fff" />
+        </svg>
+      );
+    case "JP":
+      return (
+        <svg viewBox="0 0 640 480" className={className} aria-label="Japan Flag">
+          <path fill="#fff" d="M0 0h640v480H0z" />
+          <circle cx="320" cy="240" r="144" fill="#bc002d" />
+        </svg>
+      );
+    case "VN":
+      return (
+        <svg viewBox="0 0 640 480" className={className} aria-label="Vietnam Flag">
+          <path fill="#da251d" d="M0 0h640v480H0z" />
+          <polygon fill="#ff0" points="320,100 357,214 476,214 380,284 417,398 320,328 223,398 260,284 164,214 283,214" />
+        </svg>
+      );
+    case "KR":
+      return (
+        <svg viewBox="0 0 640 480" className={className} aria-label="South Korea Flag">
+          <path fill="#fff" d="M0 0h640v480H0z" />
+          <path fill="#cd2e3a" d="M320 140a100 100 0 0 1 0 200 50 50 0 0 1 0-100 50 50 0 0 0 0-100z" />
+          <path fill="#0047a0" d="M320 340a100 100 0 0 1 0-200 50 50 0 0 1 0 100 50 50 0 0 0 0 100z" />
+          <rect x="90" y="70" width="40" height="8" transform="rotate(35 90 70)" fill="#000" />
+          <rect x="100" y="85" width="40" height="8" transform="rotate(35 100 85)" fill="#000" />
+          <rect x="110" y="100" width="40" height="8" transform="rotate(35 110 100)" fill="#000" />
+          <rect x="490" y="340" width="40" height="8" transform="rotate(35 490 340)" fill="#000" />
+          <rect x="500" y="355" width="40" height="8" transform="rotate(35 500 355)" fill="#000" />
+          <rect x="510" y="370" width="40" height="8" transform="rotate(35 510 370)" fill="#000" />
+        </svg>
+      );
+    case "CH":
+      return (
+        <svg viewBox="0 0 640 480" className={className} aria-label="Switzerland Flag">
+          <path fill="#d52b1e" d="M0 0h640v480H0z" />
+          <path fill="#fff" d="M270 120h100v240H270zM200 190h240v100H200z" />
+        </svg>
+      );
+    case "DE":
+      return (
+        <svg viewBox="0 0 640 480" className={className} aria-label="Germany Flag">
+          <path fill="#000" d="M0 0h640v160H0z" />
+          <path fill="#dd0000" d="M0 160h640v160H0z" />
+          <path fill="#ffce00" d="M0 320h640v160H0z" />
+        </svg>
+      );
+    default:
+      return <span className="text-xs shrink-0" aria-hidden="true">🌐</span>;
+  }
+}
 
 export interface AdminControlledUser {
   id: string;
@@ -397,6 +522,28 @@ export function Index() {
   const [checkStatusModalOpen, setCheckStatusModalOpen] = useState(false);
   const [adjustBalanceUser, setAdjustBalanceUser] = useState<AdminControlledUser | null>(null);
   const [newUserModalOpen, setNewUserModalOpen] = useState(false);
+
+  // Country & Currency Selector Dropdown State
+  const [countryDropdownOpen, setCountryDropdownOpen] = useState(false);
+
+  // Staff Admin Support Session (Authorized auto-login into customer account)
+  const [adminSupportSession, setAdminSupportSession] = useState<{
+    active: boolean;
+    customerName: string;
+    customerId: string;
+    linkedCustomerId: string;
+  } | null>(null);
+
+  // Customer Password Reset State (One-time expiring link via SMS or Email)
+  const [customerResetMethod, setCustomerResetMethod] = useState<"Email" | "SMS">("Email");
+  const [customerResetToken, setCustomerResetToken] = useState<string>("");
+  const [customerResetExpiryTime, setCustomerResetExpiryTime] = useState<string>("");
+  const [customerSetNewPasswordModalOpen, setCustomerSetNewPasswordModalOpen] = useState(false);
+  const [newCustomerPass, setNewCustomerPass] = useState("");
+  const [confirmCustomerPass, setConfirmCustomerPass] = useState("");
+  const [showNewCustomerPass, setShowNewCustomerPass] = useState(false);
+  const [passwordResetSuccessNotice, setPasswordResetSuccessNotice] = useState(false);
+  const [passwordResetError, setPasswordResetError] = useState("");
 
   // Dedicated Admin Direct Link (Distinct from public home page)
   const adminDedicatedUrl = typeof window !== "undefined"
@@ -1316,11 +1463,23 @@ export function Index() {
     country.idTypes.find((it) => it.id === appSelectedIdType) || country.idTypes[0];
 
   // If authenticated as Staff Sign-In Admin, render the full dedicated dashboard interface matching the reference layout
-  if (soloAdminUser) {
+  if (soloAdminUser && !adminSupportSession?.active) {
     return (
       <SoloAdminDashboard
         onSignOut={() => setSoloAdminUser(null)}
         adminUsername={soloAdminUser.username}
+        onOpenCustomerDashboard={(customer) => {
+          setCustomerUser(customer.name);
+          if (customer.checkingBalance !== undefined) setCheckingBalance(customer.checkingBalance);
+          if (customer.savingsBalance !== undefined) setSavingsBalance(customer.savingsBalance);
+          setAdminSupportSession({
+            active: true,
+            customerName: customer.name,
+            customerId: customer.id,
+            linkedCustomerId: customer.linkedCustomerId,
+          });
+          window.scrollTo({ top: 0, behavior: "smooth" });
+        }}
       />
     );
   }
@@ -1334,6 +1493,39 @@ export function Index() {
       >
         Skip to main content
       </a>
+
+      {/* STAFF ADMIN SUPPORT SESSION ACTIVE BANNER */}
+      {adminSupportSession?.active && (
+        <aside
+          aria-label="Staff Admin Support Session"
+          className="sticky top-0 z-50 bg-[#0a192f] border-b-2 border-red-600 px-4 py-2.5 text-white shadow-xl flex flex-wrap items-center justify-between gap-3 text-xs"
+        >
+          <div className="flex items-center gap-2.5">
+            <span className="flex h-6 w-6 items-center justify-center rounded bg-red-600 font-black text-white text-[0.65rem] shadow-xs">
+              US
+            </span>
+            <span className="font-bold text-white text-sm">Staff Admin Support Session:</span>
+            <span className="text-slate-200">
+              Viewing <strong>{customerUser}</strong> ({adminSupportSession.linkedCustomerId}) Account Dashboard
+            </span>
+            <span className="rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 px-2 py-0.5 text-[0.65rem] font-bold">
+              Support Mode Active
+            </span>
+          </div>
+          <div className="flex items-center gap-2">
+            <Button
+              size="sm"
+              onClick={() => {
+                setCustomerUser(null);
+                setAdminSupportSession(null);
+              }}
+              className="bg-red-600 hover:bg-red-700 text-white font-bold text-xs px-3.5 py-1.5 shadow-xs transition-colors"
+            >
+              ← Return to Admin Panel
+            </Button>
+          </div>
+        </aside>
+      )}
 
       {/* Flag Stripes Top Bar */}
       <div className="h-1.5 w-full bg-gradient-to-r from-primary via-accent to-primary" />
@@ -1365,51 +1557,49 @@ export function Index() {
 
           {/* Right: Country & Language Selectors */}
           <div className="flex flex-wrap items-center gap-3">
-            {/* Country Selector */}
-            <div className="flex items-center gap-1.5 bg-white/10 px-2.5 py-1 rounded border border-white/15">
-              {currentCountryCode === "US" ? (
-                <svg
-                  className="h-3.5 w-5 rounded-[2px] shadow-xs inline-block shrink-0"
-                  viewBox="0 0 640 480"
-                  aria-label="United States Flag"
-                >
-                  <g fillRule="evenodd">
-                    <path fill="#fff" d="M0 0h640v480H0z" />
-                    <path
-                      fill="#b22234"
-                      d="M0 0h640v36.9H0zm0 73.8h640v37H0zm0 73.9h640v37H0zm0 73.8h640v37H0zm0 73.9h640v37H0zm0 73.8h640v37H0zm0 73.9h640v37H0z"
-                    />
-                    <path fill="#3c3b6e" d="M0 0h256v258.5H0z" />
-                    <g fill="#fff">
-                      <circle cx="28" cy="24" r="7" /><circle cx="70" cy="24" r="7" /><circle cx="112" cy="24" r="7" /><circle cx="154" cy="24" r="7" /><circle cx="196" cy="24" r="7" /><circle cx="238" cy="24" r="7" />
-                      <circle cx="49" cy="48" r="7" /><circle cx="91" cy="48" r="7" /><circle cx="133" cy="48" r="7" /><circle cx="175" cy="48" r="7" /><circle cx="217" cy="48" r="7" />
-                      <circle cx="28" cy="72" r="7" /><circle cx="70" cy="72" r="7" /><circle cx="112" cy="72" r="7" /><circle cx="154" cy="72" r="7" /><circle cx="196" cy="72" r="7" /><circle cx="238" cy="72" r="7" />
-                      <circle cx="49" cy="96" r="7" /><circle cx="91" cy="96" r="7" /><circle cx="133" cy="96" r="7" /><circle cx="175" cy="96" r="7" /><circle cx="217" cy="96" r="7" />
-                      <circle cx="28" cy="120" r="7" /><circle cx="70" cy="120" r="7" /><circle cx="112" cy="120" r="7" /><circle cx="154" cy="120" r="7" /><circle cx="196" cy="120" r="7" /><circle cx="238" cy="120" r="7" />
-                      <circle cx="49" cy="144" r="7" /><circle cx="91" cy="144" r="7" /><circle cx="133" cy="144" r="7" /><circle cx="175" cy="144" r="7" /><circle cx="217" cy="144" r="7" />
-                      <circle cx="28" cy="168" r="7" /><circle cx="70" cy="168" r="7" /><circle cx="112" cy="168" r="7" /><circle cx="154" cy="168" r="7" /><circle cx="196" cy="168" r="7" /><circle cx="238" cy="168" r="7" />
-                      <circle cx="49" cy="192" r="7" /><circle cx="91" cy="192" r="7" /><circle cx="133" cy="192" r="7" /><circle cx="175" cy="192" r="7" /><circle cx="217" cy="192" r="7" />
-                      <circle cx="28" cy="216" r="7" /><circle cx="70" cy="216" r="7" /><circle cx="112" cy="216" r="7" /><circle cx="154" cy="216" r="7" /><circle cx="196" cy="216" r="7" /><circle cx="238" cy="216" r="7" />
-                    </g>
-                  </g>
-                </svg>
-              ) : (
-                <span className="text-sm" aria-hidden="true">
-                  {country.flag}
-                </span>
-              )}
-              <select
-                aria-label="Select Country"
-                value={currentCountryCode}
-                onChange={(e) => handleCountryChange(e.target.value)}
-                className="bg-transparent text-white text-xs font-semibold focus:outline-none cursor-pointer"
+            {/* Country & Currency Selector with appropriate small flag beside every country */}
+            <div className="relative">
+              <button
+                type="button"
+                onClick={() => setCountryDropdownOpen(!countryDropdownOpen)}
+                aria-label="Select Country and Currency"
+                aria-expanded={countryDropdownOpen}
+                className="flex items-center gap-2 bg-white/10 hover:bg-white/15 px-2.5 py-1.5 rounded border border-white/15 text-white text-xs font-semibold focus:outline-none transition-colors cursor-pointer"
               >
-                {Object.values(SUPPORTED_COUNTRIES).map((c) => (
-                  <option key={c.code} value={c.code} className="bg-navy-deep text-white">
-                    {c.name} ({c.currency.code})
-                  </option>
-                ))}
-              </select>
+                <CountryFlagIcon code={currentCountryCode} className="h-3.5 w-5 rounded-[2px] shadow-xs inline-block shrink-0 object-cover" />
+                <span className="truncate max-w-[150px] sm:max-w-none">{country.name} ({country.currency.code})</span>
+                <ChevronDown className={`h-3 w-3 text-white/70 transition-transform ${countryDropdownOpen ? "rotate-180" : ""}`} />
+              </button>
+
+              {countryDropdownOpen && (
+                <>
+                  <div
+                    className="fixed inset-0 z-40"
+                    onClick={() => setCountryDropdownOpen(false)}
+                    aria-hidden="true"
+                  />
+                  <div className="absolute right-0 top-full mt-1.5 w-72 rounded-lg border border-white/20 bg-[#0a192f] p-1.5 shadow-2xl z-50 text-white animate-fadeIn max-h-80 overflow-y-auto">
+                    {Object.values(SUPPORTED_COUNTRIES).map((c) => (
+                      <button
+                        key={c.code}
+                        type="button"
+                        onClick={() => {
+                          handleCountryChange(c.code);
+                          setCountryDropdownOpen(false);
+                        }}
+                        className={`w-full flex items-center gap-2.5 px-3 py-2 text-xs rounded-md text-left transition-colors ${
+                          c.code === currentCountryCode
+                            ? "bg-blue-600 text-white font-bold"
+                            : "text-white/90 hover:bg-white/10 hover:text-white"
+                        }`}
+                      >
+                        <CountryFlagIcon code={c.code} className="h-3.5 w-5 rounded-[2px] shadow-xs shrink-0 object-cover" />
+                        <span className="truncate">{c.name} ({c.currency.code})</span>
+                      </button>
+                    ))}
+                  </div>
+                </>
+              )}
             </div>
 
             {/* Language Selector */}
@@ -1480,7 +1670,7 @@ export function Index() {
                 US FINANCE BANK
               </span>
               <span className="block text-xs font-semibold uppercase tracking-wider text-accent sm:text-[0.72rem]">
-                {t.tagline} • {country.currency.code} ({country.currency.symbol})
+                {t.tagline}
               </span>
             </div>
           </a>
@@ -2578,8 +2768,8 @@ export function Index() {
                         <Headset className="h-5 w-5" />
                       </span>
                       <div>
-                        <p className="text-xs text-muted-foreground">Official Communications Handle</p>
-                        <p className="text-sm font-bold text-primary">@infobank</p>
+                        <p className="text-xs text-muted-foreground">Official Communications Desk</p>
+                        <p className="text-sm font-bold text-primary">usfinanceassistance@usfinancebank.online</p>
                       </div>
                     </div>
                   </div>
@@ -2732,7 +2922,7 @@ export function Index() {
                   </a>
                 </p>
                 <p className="text-white/70">
-                  <span className="text-white/60">Handle:</span> <span className="text-accent font-bold">@infobank</span>
+                  <span className="text-white/60">Assistance:</span> <span className="text-accent font-bold">24/7 Digital Support</span>
                 </p>
               </div>
             </div>
@@ -2818,7 +3008,7 @@ export function Index() {
 
           <div className="mt-10 border-t border-white/10 pt-6 text-xs text-white/60">
             <p className="leading-relaxed">
-              Official US Finance Bank portal. Contact: usfinanceassistance@usfinancebank.online • Tel: +1-567-US • Handle: @infobank. Treat the listed countries
+              Official US Finance Bank portal. Contact: usfinanceassistance@usfinancebank.online • Tel: +1-567-US. Treat the listed countries
               as the bank's intended service coverage, not as a claim of completed licensing or
               charter. Country-specific compliance, tax reporting, and KYC frameworks are
               customized per jurisdiction and subject to legal review before production launch.
@@ -3854,7 +4044,7 @@ export function Index() {
             >
               <div>
                 <label htmlFor="inq-reply" className="block text-xs font-bold text-white/90">
-                  Official Super Administrator Response (@infobank)
+                  Official Super Administrator Response
                 </label>
                 <textarea
                   id="inq-reply"
@@ -3981,7 +4171,7 @@ export function Index() {
         </div>
       )}
 
-      {/* FORGOT PASSWORD MODAL */}
+      {/* FORGOT PASSWORD MODAL (ONE-TIME LINK VIA SMS OR EMAIL WITH EXPIRATION) */}
       {forgotPasswordOpen && (
         <div
           role="dialog"
@@ -4002,53 +4192,238 @@ export function Index() {
 
             <h3 className="text-lg font-bold text-primary">Recover Account Password</h3>
             <p className="mt-1 text-xs text-muted-foreground">
-              Enter your registered email address to receive an authorized password reset link.
+              Request a secure one-time password-reset link delivered to your verified contact method.
             </p>
 
             {resetSent ? (
               <div className="mt-5 rounded-xl bg-emerald-50 border border-emerald-200 p-5 text-center">
                 <CheckCircle2 className="mx-auto h-10 w-10 text-emerald-600" />
-                <h4 className="mt-2 text-sm font-bold text-emerald-900">Recovery Link Dispatched</h4>
-                <p className="mt-1 text-xs text-emerald-800">
-                  Password reset verification has been sent to <strong>{resetEmail}</strong>.
+                <h4 className="mt-2 text-sm font-bold text-emerald-900">One-Time Reset Link Dispatched</h4>
+                <p className="mt-1.5 text-xs text-emerald-800 leading-relaxed">
+                  A one-time link has been sent to your verified <strong>{customerResetMethod === "Email" ? resetEmail : "+1 (416) 555-0182"}</strong> via {customerResetMethod}.
                 </p>
-                <Button
-                  size="sm"
-                  onClick={() => {
-                    setForgotPasswordOpen(false);
-                    setCustomerModalOpen(true);
-                    setResetSent(false);
-                  }}
-                  className="mt-4 bg-emerald-700 text-white"
-                >
-                  Return to Sign In
-                </Button>
+                <div className="mt-3 rounded-lg bg-emerald-100/70 p-2.5 text-[0.72rem] text-emerald-900 font-mono">
+                  ⏱ Link expires in 15 minutes • Single-use authorization
+                </div>
+                <p className="mt-2 text-[0.68rem] text-slate-500">
+                  Security Guarantee: Passwords are never sent by text or email. You will define your own new password.
+                </p>
+
+                <div className="mt-4 flex flex-col gap-2">
+                  <Button
+                    size="sm"
+                    onClick={() => {
+                      setForgotPasswordOpen(false);
+                      setCustomerSetNewPasswordModalOpen(true);
+                      setResetSent(false);
+                    }}
+                    className="bg-primary hover:bg-primary/90 text-white font-bold text-xs"
+                  >
+                    Open One-Time Reset Link
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => {
+                      setForgotPasswordOpen(false);
+                      setCustomerModalOpen(true);
+                      setResetSent(false);
+                    }}
+                    className="text-xs"
+                  >
+                    Return to Sign In
+                  </Button>
+                </div>
               </div>
             ) : (
               <form
                 onSubmit={(e) => {
                   e.preventDefault();
                   if (!resetEmail) return;
+                  setCustomerResetToken(`USB-RST-${Math.floor(100000 + Math.random() * 900000)}`);
+                  setCustomerResetExpiryTime("15 minutes");
                   setResetSent(true);
                 }}
                 className="mt-5 space-y-4"
               >
                 <div>
                   <label htmlFor="rst-email" className="block text-xs font-bold text-foreground">
-                    Registered Email Address
+                    Registered Email or Phone Number
                   </label>
                   <input
                     id="rst-email"
-                    type="email"
+                    type="text"
                     required
                     value={resetEmail}
                     onChange={(e) => setResetEmail(e.target.value)}
-                    placeholder="name@example.com"
+                    placeholder="e.g. mathieu.t@example.ca or +1 (416) 555-0182"
                     className="mt-1 w-full rounded-md border border-input px-3.5 py-2 text-sm focus:border-primary focus:outline-none"
                   />
                 </div>
-                <Button type="submit" className="w-full bg-primary font-bold">
-                  Send Recovery Link
+
+                <div>
+                  <label className="block text-xs font-bold text-foreground mb-1.5">
+                    Delivery Method (Verified Notification Preferences)
+                  </label>
+                  <div className="grid grid-cols-2 gap-2 text-xs">
+                    <button
+                      type="button"
+                      onClick={() => setCustomerResetMethod("Email")}
+                      className={`flex items-center justify-center gap-1.5 p-2 rounded-lg border font-semibold transition-colors ${
+                        customerResetMethod === "Email"
+                          ? "border-primary bg-primary/10 text-primary"
+                          : "border-border text-muted-foreground hover:bg-muted"
+                      }`}
+                    >
+                      <Mail className="h-3.5 w-3.5" />
+                      Email Link
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setCustomerResetMethod("SMS")}
+                      className={`flex items-center justify-center gap-1.5 p-2 rounded-lg border font-semibold transition-colors ${
+                        customerResetMethod === "SMS"
+                          ? "border-primary bg-primary/10 text-primary"
+                          : "border-border text-muted-foreground hover:bg-muted"
+                      }`}
+                    >
+                      <Phone className="h-3.5 w-3.5" />
+                      SMS Link
+                    </button>
+                  </div>
+                </div>
+
+                <div className="rounded-lg bg-slate-50 border border-slate-200 p-3 text-[0.7rem] text-slate-600 leading-relaxed">
+                  🔒 The link will expire after 15 minutes and allows you to set your own new password. Passwords are never sent by text or email.
+                </div>
+
+                <Button type="submit" className="w-full bg-primary font-bold text-xs py-2.5">
+                  Send One-Time Password Reset Link
+                </Button>
+              </form>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* CUSTOMER SET NEW PASSWORD MODAL (AFTER OPENING ONE-TIME RESET LINK) */}
+      {customerSetNewPasswordModalOpen && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-xs"
+        >
+          <div className="relative w-full max-w-md rounded-2xl border border-border bg-white p-7 shadow-2xl">
+            <button
+              type="button"
+              onClick={() => {
+                setCustomerSetNewPasswordModalOpen(false);
+                setPasswordResetSuccessNotice(false);
+              }}
+              className="absolute right-4 top-4 rounded-full p-1 text-muted-foreground hover:bg-muted"
+            >
+              <X className="h-5 w-5" />
+            </button>
+
+            <div className="flex items-center gap-2.5">
+              <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary text-white shadow-xs">
+                <KeyRound className="h-5 w-5" />
+              </div>
+              <div>
+                <h3 className="text-lg font-bold text-primary">Set New Account Password</h3>
+                <p className="text-xs text-muted-foreground">Authorized One-Time Credential Update</p>
+              </div>
+            </div>
+
+            {passwordResetSuccessNotice ? (
+              <div className="mt-5 rounded-xl bg-emerald-50 border border-emerald-200 p-5 text-center">
+                <CheckCircle2 className="mx-auto h-10 w-10 text-emerald-600" />
+                <h4 className="mt-2 text-sm font-bold text-emerald-900">Password Successfully Updated</h4>
+                <p className="mt-1 text-xs text-emerald-800">
+                  Your new online banking password has been securely recorded. You may now sign in.
+                </p>
+                <Button
+                  size="sm"
+                  onClick={() => {
+                    setCustomerSetNewPasswordModalOpen(false);
+                    setPasswordResetSuccessNotice(false);
+                    setCustomerModalOpen(true);
+                  }}
+                  className="mt-4 bg-primary text-white font-bold"
+                >
+                  Sign In to Online Banking
+                </Button>
+              </div>
+            ) : (
+              <form
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  if (newCustomerPass.length < 8) {
+                    setPasswordResetError("Password must be at least 8 characters long.");
+                    return;
+                  }
+                  if (newCustomerPass !== confirmCustomerPass) {
+                    setPasswordResetError("Passwords do not match. Please re-enter.");
+                    return;
+                  }
+                  setPasswordResetError("");
+                  setPasswordResetSuccessNotice(true);
+                }}
+                className="mt-5 space-y-4"
+              >
+                <div>
+                  <label className="block text-xs font-bold text-foreground mb-1">
+                    New Confidential Password
+                  </label>
+                  <div className="relative">
+                    <input
+                      type={showNewCustomerPass ? "text" : "password"}
+                      required
+                      value={newCustomerPass}
+                      onChange={(e) => {
+                        setNewCustomerPass(e.target.value);
+                        setPasswordResetError("");
+                      }}
+                      placeholder="Minimum 8 characters"
+                      className="w-full rounded-md border border-input px-3.5 py-2 text-sm pr-9 focus:border-primary focus:outline-none"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowNewCustomerPass(!showNewCustomerPass)}
+                      className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground text-xs"
+                    >
+                      {showNewCustomerPass ? "Hide" : "Show"}
+                    </button>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-foreground mb-1">
+                    Confirm New Password
+                  </label>
+                  <input
+                    type={showNewCustomerPass ? "text" : "password"}
+                    required
+                    value={confirmCustomerPass}
+                    onChange={(e) => {
+                      setConfirmCustomerPass(e.target.value);
+                      setPasswordResetError("");
+                    }}
+                    placeholder="Re-enter new password"
+                    className="w-full rounded-md border border-input px-3.5 py-2 text-sm focus:border-primary focus:outline-none"
+                  />
+                </div>
+
+                {passwordResetError && (
+                  <p className="text-xs font-bold text-red-600">{passwordResetError}</p>
+                )}
+
+                <div className="rounded-lg bg-slate-50 border border-slate-200 p-3 text-[0.7rem] text-slate-600">
+                  🛡️ Strong encryption enabled. Administrators cannot view or modify your secret passphrase.
+                </div>
+
+                <Button type="submit" className="w-full bg-primary font-bold text-xs py-2.5">
+                  Update & Secure Account
                 </Button>
               </form>
             )}

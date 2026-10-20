@@ -76,14 +76,22 @@ import {
   type SoloAdminAuditEntry,
 } from "./adminData";
 
-interface SoloAdminDashboardProps {
+export interface SoloAdminDashboardProps {
   onSignOut: () => void;
   adminUsername?: string;
+  onOpenCustomerDashboard?: (customer: {
+    name: string;
+    id: string;
+    linkedCustomerId: string;
+    checkingBalance?: number | undefined;
+    savingsBalance?: number | undefined;
+  }) => void;
 }
 
 export function SoloAdminDashboard({
   onSignOut,
   adminUsername = "Solo Master Administrator",
+  onOpenCustomerDashboard,
 }: SoloAdminDashboardProps) {
   // Navigation
   const [activeSection, setActiveSection] = useState<
@@ -159,6 +167,14 @@ export function SoloAdminDashboard({
   const [pendingProfileInspectionUser, setPendingProfileInspectionUser] = useState<AdminUserRecord | null>(null);
   const [profileAuthReason, setProfileAuthReason] = useState("Customer requested account assistance & transfer verification");
   const [profileAuthError, setProfileAuthError] = useState("");
+
+  // Password Reset Management States (One-time expiring links & Admin Reset Oversight)
+  const [passwordResetConfirmUser, setPasswordResetConfirmUser] = useState<AdminUserRecord | null>(null);
+  const [passwordResetConfirmMethod, setPasswordResetConfirmMethod] = useState<"Email" | "SMS">("Email");
+  const [adminResetPasswordModalUser, setAdminResetPasswordModalUser] = useState<AdminUserRecord | null>(null);
+  const [adminResetPasswordOption, setAdminResetPasswordOption] = useState<"link" | "enforce_next" | "revoke_sessions">("link");
+  const [adminResetPasswordReason, setAdminResetPasswordReason] = useState("Customer account recovery and verified support request");
+  const [adminResetPasswordError, setAdminResetPasswordError] = useState("");
 
   // Action / Confirmation States
   const [createUserModalOpen, setCreateUserModalOpen] = useState(false);
@@ -565,6 +581,28 @@ export function SoloAdminDashboard({
 
   // Open Customer Profile in Support Mode (Strict Authorization & Activity History Log)
   const handleInitiateOpenCustomerProfile = (user: AdminUserRecord) => {
+    // Record profile access in the admin activity history
+    appendAuditLog(
+      "Users",
+      "Authorized Administrator Support Session",
+      `Staff Admin (${adminUsername}) initiated support session and logged into customer main bank account profile dashboard for ${user.name} (${user.id}, ${user.linkedCustomerId}) automatically. Impersonation/credentials bypassed.`,
+      user.id
+    );
+
+    if (onOpenCustomerDashboard) {
+      const userAccounts = accounts.filter((a) => a.customerId === user.linkedCustomerId);
+      const checkingAcc = userAccounts.find((a) => a.accountType.toLowerCase().includes("checking"));
+      const savingsAcc = userAccounts.find((a) => a.accountType.toLowerCase().includes("savings"));
+      onOpenCustomerDashboard({
+        name: user.name,
+        id: user.id,
+        linkedCustomerId: user.linkedCustomerId,
+        checkingBalance: checkingAcc?.balance,
+        savingsBalance: savingsAcc?.balance,
+      });
+      return;
+    }
+
     setPendingProfileInspectionUser(user);
     setProfileAuthReason("Customer requested account assistance & transfer verification");
     setProfileAuthError("");
@@ -590,6 +628,83 @@ export function SoloAdminDashboard({
     setCustomerProfileInspectionUser(pendingProfileInspectionUser);
     setProfileAuthModalOpen(false);
     setPendingProfileInspectionUser(null);
+  };
+
+  // Dispatch One-Time Password Reset Link (via SMS or Email based on preferences)
+  const handleConfirmSendPasswordResetLink = (user: AdminUserRecord, method: "Email" | "SMS") => {
+    const destination = method === "Email" ? user.email : user.phone;
+    appendAuditLog(
+      "Users",
+      "Dispatched One-Time Password Reset Link",
+      `Staff Admin (${adminUsername}) dispatched 15-minute one-time password reset link to ${user.name} (${user.id}) via ${method} (${destination}). Passwords are never sent by text or email, and administrators cannot view customer passwords.`,
+      user.id
+    );
+
+    setPasswordResetConfirmUser(null);
+    setActionNotification(`One-time password reset link safely dispatched to ${user.name} via ${method}.`);
+    setTimeout(() => setActionNotification(""), 5000);
+  };
+
+  // Reset Customer Password from Admin Dashboard
+  const handleExecuteAdminPasswordReset = (
+    user: AdminUserRecord,
+    option: "link" | "enforce_next" | "revoke_sessions",
+    reason: string
+  ) => {
+    if (!reason.trim()) {
+      setAdminResetPasswordError("Please enter an official audit justification for this credential reset.");
+      return;
+    }
+
+    if (option === "enforce_next") {
+      setAdminUsers((prev) =>
+        prev.map((u) =>
+          u.id === user.id
+            ? {
+                ...u,
+                security: {
+                  ...u.security,
+                  passwordResetRequired: true,
+                },
+              }
+            : u
+        )
+      );
+    } else if (option === "revoke_sessions") {
+      setAdminUsers((prev) =>
+        prev.map((u) =>
+          u.id === user.id
+            ? {
+                ...u,
+                security: {
+                  ...u.security,
+                  activeSessionsCount: 0,
+                  passwordResetRequired: true,
+                },
+              }
+            : u
+        )
+      );
+    }
+
+    appendAuditLog(
+      "Users",
+      "Reset Customer Password",
+      `Staff Admin (${adminUsername}) executed password reset for ${user.name} (${user.id}). Action: ${
+        option === "link"
+          ? "Sent One-Time 15-minute Reset Link"
+          : option === "enforce_next"
+          ? "Enforced Mandatory Password Reset on Next Login"
+          : "Revoked Active Sessions & Enforced Credential Reset"
+      }. Justification: "${reason.trim()}". Administrator did not view or set password directly.`,
+      user.id
+    );
+
+    setAdminResetPasswordModalUser(null);
+    setAdminResetPasswordReason("");
+    setAdminResetPasswordError("");
+    setActionNotification(`Customer password reset action successfully applied to ${user.name}.`);
+    setTimeout(() => setActionNotification(""), 5000);
   };
 
   // Safe User Deletion with Audit Trail
@@ -2048,14 +2163,28 @@ export function SoloAdminDashboard({
                           size="sm"
                           variant="outline"
                           onClick={() => {
-                            appendAuditLog("Users", "Sent Password Reset Link", `Sent password reset email link to ${selectedUser.email}.`, selectedUser.id);
-                            setActionNotification(`Password reset link safely dispatched to ${selectedUser.email}.`);
-                            setTimeout(() => setActionNotification(""), 4000);
+                            setPasswordResetConfirmMethod(selectedUser.communicationPreferences.smsNotifications ? "SMS" : "Email");
+                            setPasswordResetConfirmUser(selectedUser);
                           }}
-                          className="border-slate-200 bg-white text-slate-700 hover:bg-slate-50 text-xs font-bold shadow-xs"
+                          className="border-slate-300 bg-white text-slate-800 hover:bg-slate-50 text-xs font-bold shadow-xs flex items-center gap-1.5"
                         >
-                          <Mail className="mr-1.5 h-3.5 w-3.5 text-blue-500" />
-                          Send Password Reset Link
+                          <Mail className="h-3.5 w-3.5 text-blue-600" />
+                          Send password reset
+                        </Button>
+
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => {
+                            setAdminResetPasswordModalUser(selectedUser);
+                            setAdminResetPasswordOption("link");
+                            setAdminResetPasswordReason("Customer account recovery and verified support request");
+                            setAdminResetPasswordError("");
+                          }}
+                          className="border-red-300 text-red-700 bg-red-50/60 hover:bg-red-600 hover:text-white text-xs font-bold shadow-xs flex items-center gap-1.5 transition-colors"
+                        >
+                          <KeyRound className="h-3.5 w-3.5" />
+                          Reset Customer Password
                         </Button>
 
                         <Button
@@ -4381,6 +4510,239 @@ export function SoloAdminDashboard({
           </div>
         );
       })()}
+
+      {/* ============================================================ */}
+      {/* 6. SEND PASSWORD RESET CONFIRMATION MODAL */}
+      {/* ============================================================ */}
+      {passwordResetConfirmUser && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4 backdrop-blur-sm"
+        >
+          <div className="relative w-full max-w-md rounded-2xl border border-slate-700 bg-slate-900 p-6 text-slate-200 shadow-2xl">
+            <div className="flex items-center gap-3 border-b border-slate-800 pb-4">
+              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-blue-600 text-white shadow-md">
+                <Mail className="h-5 w-5" />
+              </div>
+              <div>
+                <h3 className="font-bold text-white text-base">Send One-Time Password Reset</h3>
+                <p className="text-xs text-slate-400">Verified Contact Delivery Confirmation</p>
+              </div>
+            </div>
+
+            <div className="mt-4 rounded-xl border border-slate-800 bg-slate-950 p-3.5 text-xs text-slate-300 leading-relaxed">
+              <p className="font-semibold text-white">
+                Customer: {passwordResetConfirmUser.name} ({passwordResetConfirmUser.id})
+              </p>
+              <p className="mt-1 text-[0.7rem] text-slate-400">
+                A secure one-time password-reset link will be delivered to the customer's verified channel. The link expires after <strong>15 minutes</strong>.
+              </p>
+            </div>
+
+            <div className="mt-4">
+              <label className="block text-xs font-bold text-slate-300 mb-1.5">
+                Delivery Channel (Verified Preferences):
+              </label>
+              <div className="grid grid-cols-2 gap-2 text-xs">
+                <button
+                  type="button"
+                  onClick={() => setPasswordResetConfirmMethod("Email")}
+                  className={`flex items-center justify-center gap-1.5 p-2 rounded-lg border font-semibold transition-colors ${
+                    passwordResetConfirmMethod === "Email"
+                      ? "border-blue-500 bg-blue-950 text-blue-300"
+                      : "border-slate-800 text-slate-400 hover:bg-slate-800"
+                  }`}
+                >
+                  <Mail className="h-3.5 w-3.5" />
+                  Email ({passwordResetConfirmUser.email.slice(0, 3)}...ca)
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setPasswordResetConfirmMethod("SMS")}
+                  className={`flex items-center justify-center gap-1.5 p-2 rounded-lg border font-semibold transition-colors ${
+                    passwordResetConfirmMethod === "SMS"
+                      ? "border-blue-500 bg-blue-950 text-blue-300"
+                      : "border-slate-800 text-slate-400 hover:bg-slate-800"
+                  }`}
+                >
+                  <Phone className="h-3.5 w-3.5" />
+                  SMS (+1 ...{passwordResetConfirmUser.phone.slice(-4)})
+                </button>
+              </div>
+            </div>
+
+            <div className="mt-4 rounded-lg bg-amber-950/20 border border-amber-500/30 p-3 text-[0.7rem] text-amber-300">
+              🛡️ <strong>Security Standard:</strong> Passwords are never sent by text or email. Administrators cannot view or define customer passwords. Action is logged in activity history.
+            </div>
+
+            <div className="mt-5 flex items-center justify-end gap-2.5">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setPasswordResetConfirmUser(null)}
+                className="border-slate-700 text-xs text-slate-300 hover:bg-slate-800"
+              >
+                Cancel
+              </Button>
+              <Button
+                type="button"
+                onClick={() => handleConfirmSendPasswordResetLink(passwordResetConfirmUser, passwordResetConfirmMethod)}
+                className="bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold shadow-md flex items-center gap-1.5"
+              >
+                <Send className="h-3.5 w-3.5" />
+                Dispatch Reset Link
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ============================================================ */}
+      {/* 7. RESET CUSTOMER PASSWORD FROM ADMIN DASHBOARD MODAL */}
+      {/* ============================================================ */}
+      {adminResetPasswordModalUser && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4 backdrop-blur-sm"
+        >
+          <div className="relative w-full max-w-lg rounded-2xl border border-slate-700 bg-slate-900 p-6 text-slate-200 shadow-2xl">
+            <div className="flex items-center gap-3 border-b border-slate-800 pb-4">
+              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-red-600 text-white shadow-md">
+                <KeyRound className="h-5 w-5" />
+              </div>
+              <div>
+                <h3 className="font-bold text-white text-base">Reset Customer Password</h3>
+                <p className="text-xs text-slate-400">Admin Dashboard Credential Governance</p>
+              </div>
+            </div>
+
+            <div className="mt-4 rounded-xl border border-slate-800 bg-slate-950 p-3.5 text-xs text-slate-300 leading-relaxed">
+              <p className="font-semibold text-white">
+                Customer: {adminResetPasswordModalUser.name} ({adminResetPasswordModalUser.id})
+              </p>
+              <p className="mt-1 text-[0.7rem] text-slate-400">
+                Email: {adminResetPasswordModalUser.email} • Phone: {adminResetPasswordModalUser.phone}
+              </p>
+            </div>
+
+            <div className="mt-4 space-y-2">
+              <label className="block text-xs font-bold text-slate-300 mb-1">
+                Select Password Reset Strategy:
+              </label>
+
+              <label className={`flex items-start gap-3 p-3 rounded-xl border cursor-pointer transition-colors ${
+                adminResetPasswordOption === "link"
+                  ? "border-red-500 bg-red-950/20 text-white"
+                  : "border-slate-800 bg-slate-950/60 text-slate-300 hover:bg-slate-850"
+              }`}>
+                <input
+                  type="radio"
+                  name="admin-reset-strategy"
+                  checked={adminResetPasswordOption === "link"}
+                  onChange={() => setAdminResetPasswordOption("link")}
+                  className="mt-0.5 text-red-600 focus:ring-red-500"
+                />
+                <div>
+                  <p className="text-xs font-bold text-white">Dispatch One-Time Password Reset Link</p>
+                  <p className="text-[0.68rem] text-slate-400 mt-0.5">
+                    Sends an encrypted 15-minute one-time link to customer's verified channel for them to choose a new password.
+                  </p>
+                </div>
+              </label>
+
+              <label className={`flex items-start gap-3 p-3 rounded-xl border cursor-pointer transition-colors ${
+                adminResetPasswordOption === "enforce_next"
+                  ? "border-red-500 bg-red-950/20 text-white"
+                  : "border-slate-800 bg-slate-950/60 text-slate-300 hover:bg-slate-850"
+              }`}>
+                <input
+                  type="radio"
+                  name="admin-reset-strategy"
+                  checked={adminResetPasswordOption === "enforce_next"}
+                  onChange={() => setAdminResetPasswordOption("enforce_next")}
+                  className="mt-0.5 text-red-600 focus:ring-red-500"
+                />
+                <div>
+                  <p className="text-xs font-bold text-white">Enforce Mandatory Reset on Next Sign-In</p>
+                  <p className="text-[0.68rem] text-slate-400 mt-0.5">
+                    Marks credential expired. Upon their next portal sign-in, the customer is immediately required to define a new password.
+                  </p>
+                </div>
+              </label>
+
+              <label className={`flex items-start gap-3 p-3 rounded-xl border cursor-pointer transition-colors ${
+                adminResetPasswordOption === "revoke_sessions"
+                  ? "border-red-500 bg-red-950/20 text-white"
+                  : "border-slate-800 bg-slate-950/60 text-slate-300 hover:bg-slate-850"
+              }`}>
+                <input
+                  type="radio"
+                  name="admin-reset-strategy"
+                  checked={adminResetPasswordOption === "revoke_sessions"}
+                  onChange={() => setAdminResetPasswordOption("revoke_sessions")}
+                  className="mt-0.5 text-red-600 focus:ring-red-500"
+                />
+                <div>
+                  <p className="text-xs font-bold text-white">Revoke Active Sessions & Enforce Credential Reset</p>
+                  <p className="text-[0.68rem] text-slate-400 mt-0.5">
+                    Immediately terminates all live mobile and web sessions, expiring the password for instant re-establishment.
+                  </p>
+                </div>
+              </label>
+            </div>
+
+            <div className="mt-4">
+              <label className="block text-xs font-bold text-slate-300 mb-1">
+                Administrative Audit Justification (Required):
+              </label>
+              <textarea
+                rows={2}
+                value={adminResetPasswordReason}
+                onChange={(e) => {
+                  setAdminResetPasswordReason(e.target.value);
+                  setAdminResetPasswordError("");
+                }}
+                placeholder="Enter justification for audit log..."
+                className="w-full rounded-xl border border-slate-700 bg-slate-950 p-2.5 text-xs text-white placeholder-slate-500 focus:border-red-500 focus:outline-none"
+              />
+              {adminResetPasswordError && (
+                <p className="mt-1 text-xs text-red-400 font-bold">{adminResetPasswordError}</p>
+              )}
+            </div>
+
+            <div className="mt-3 rounded-lg bg-amber-950/20 border border-amber-500/30 p-2.5 text-[0.68rem] text-amber-300">
+              🔒 <strong>Compliance Safeguard:</strong> Administrators cannot view or set customer passwords directly. The action will be permanently recorded in the Admin Activity History.
+            </div>
+
+            <div className="mt-5 flex items-center justify-end gap-2.5">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setAdminResetPasswordModalUser(null)}
+                className="border-slate-700 text-xs text-slate-300 hover:bg-slate-800"
+              >
+                Cancel
+              </Button>
+              <Button
+                type="button"
+                onClick={() =>
+                  handleExecuteAdminPasswordReset(
+                    adminResetPasswordModalUser,
+                    adminResetPasswordOption,
+                    adminResetPasswordReason
+                  )
+                }
+                className="bg-red-600 hover:bg-red-700 text-white text-xs font-bold shadow-md flex items-center gap-1.5"
+              >
+                <KeyRound className="h-3.5 w-3.5" />
+                Execute Password Reset
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
