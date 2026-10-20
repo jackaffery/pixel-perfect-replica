@@ -1204,12 +1204,12 @@ export function Index() {
               <div className="flex items-center gap-2">
                 <span className="rounded bg-accent px-2 py-0.5 text-xs font-bold text-white shadow-xs flex items-center gap-1">
                   <SlidersHorizontal className="h-3 w-3" />
-                  Super Administrator Active
+                  Staff Admin Active
                 </span>
                 <button
                   type="button"
                   onClick={() => setSoloAdminUser(null)}
-                  className="text-xs text-white/80 hover:text-white underline"
+                  className="text-xs text-white/80 hover:text-white underline font-medium"
                 >
                   Exit Session
                 </button>
@@ -1218,12 +1218,11 @@ export function Index() {
               <button
                 type="button"
                 onClick={() => setAdminModalOpen(true)}
-                className="flex items-center gap-1.5 font-semibold text-white/90 underline-offset-4 hover:text-white hover:underline focus:outline-none"
+                className="flex items-center gap-1.5 rounded-md bg-white/10 hover:bg-white/20 border border-white/20 px-2.5 py-1 text-xs font-bold text-white transition-all shadow-xs"
                 title="Staff Sign-In Admin Dashboard"
               >
-                <SlidersHorizontal className="h-3 w-3 text-accent shrink-0" />
-                <span className="hidden xl:inline">Staff Sign-In Admin Dashboard</span>
-                <span className="xl:hidden">Staff Sign-In Admin</span>
+                <SlidersHorizontal className="h-3.5 w-3.5 text-accent shrink-0" />
+                <span>Staff Sign-In Admin</span>
               </button>
             )}
           </div>
@@ -3473,18 +3472,35 @@ export function Index() {
               </form>
             )}
 
-            <div className="mt-5 border-t border-border pt-4 text-center text-xs text-muted-foreground">
-              New customer in {country.name}?{" "}
-              <button
-                type="button"
-                onClick={() => {
-                  setCustomerModalOpen(false);
-                  setOpenAccountModalOpen(true);
-                }}
-                className="font-bold text-accent hover:underline"
-              >
-                Apply for an Account
-              </button>
+            <div className="mt-5 border-t border-border pt-4 flex flex-col gap-2 text-center text-xs text-muted-foreground">
+              <div>
+                New customer in {country.name}?{" "}
+                <button
+                  type="button"
+                  onClick={() => {
+                    setCustomerModalOpen(false);
+                    setOpenAccountModalOpen(true);
+                  }}
+                  className="font-bold text-accent hover:underline"
+                >
+                  Apply for an Account
+                </button>
+              </div>
+
+              {/* Staff Sign-In Admin Direct Link inside Sign In dialog */}
+              <div className="pt-2 border-t border-dashed border-border/80">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setCustomerModalOpen(false);
+                    setAdminModalOpen(true);
+                  }}
+                  className="inline-flex items-center gap-1.5 font-bold text-red-600 hover:text-red-700 hover:underline bg-red-50 hover:bg-red-100 px-3 py-1.5 rounded-lg border border-red-200 transition-colors"
+                >
+                  <SlidersHorizontal className="h-3.5 w-3.5" />
+                  Staff Sign-In Admin Dashboard
+                </button>
+              </div>
             </div>
           </div>
         </div>
