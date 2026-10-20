@@ -618,7 +618,7 @@ export function Index() {
       } else {
         setCustomerUser(
           customerLoginEmail.includes("@")
-            ? customerLoginEmail.split("@")[0]
+            ? (customerLoginEmail.split("@")[0] ?? null)
             : customerLoginEmail
         );
       }
