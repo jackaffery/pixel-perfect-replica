@@ -1,0 +1,679 @@
+// Mock data types and realistic banking records for US Finance Bank Solo Admin Workspace
+// Designed strictly for fictional administrative simulation
+
+export interface AdminCustomer {
+  id: string;
+  name: string;
+  email: string;
+  phone: string;
+  country: string;
+  countryCode: string;
+  verificationStatus: "Verified" | "Pending Review" | "Action Required" | "Rejected";
+  riskLevel: "Low" | "Medium" | "High" | "Flagged";
+  status: "Active" | "Restricted" | "Suspended" | "Frozen";
+  idType: string;
+  idNumberMasked: string;
+  address: string;
+  joinedDate: string;
+  adminNotes: string;
+  linkedAccountIds: string[];
+}
+
+export interface BankAccountRecord {
+  id: string;
+  customerId: string;
+  customerName: string;
+  accountType: "Advantage Checking" | "High-Yield Savings" | "Treasury Money Market" | "Commercial Operations";
+  accountNumberMasked: string;
+  routingNumber: string;
+  currency: string;
+  balance: number;
+  availableBalance: number;
+  status: "Active" | "Frozen" | "Dormant" | "Under Review";
+  openedDate: string;
+  lastActivity: string;
+}
+
+export interface BankTransactionRecord {
+  id: string;
+  accountId: string;
+  accountMasked: string;
+  customerId: string;
+  customerName: string;
+  type: "Direct Deposit" | "Wire Transfer" | "Card Settlement" | "Bill Pay" | "Internal Transfer" | "ACH Debit";
+  amount: number;
+  currency: string;
+  direction: "credit" | "debit";
+  counterparty: string;
+  timestamp: string;
+  status: "Completed" | "Pending Clearing" | "Flagged" | "Blocked" | "Resolved";
+  flagReason?: string;
+  reviewNotes?: string;
+  reviewedAt?: string;
+  reviewedBy?: string;
+}
+
+export interface ComplianceReviewItem {
+  id: string;
+  targetType: "Customer Identity" | "Transaction Alert" | "Jurisdiction Compliance" | "KYC Document";
+  targetId: string;
+  targetName: string;
+  priority: "Urgent" | "High" | "Medium" | "Low";
+  status: "Pending Review" | "In Review" | "Approved" | "Escalated" | "Dismissed";
+  ageHours: number;
+  submittedAt: string;
+  summary: string;
+  details: string;
+  reviewer?: string;
+  decision?: string;
+  decisionReason?: string;
+  decisionTimestamp?: string;
+}
+
+export interface SupportCase {
+  id: string;
+  ticketNumber: string;
+  customerId: string;
+  customerName: string;
+  customerEmail: string;
+  subject: string;
+  category: "Account Access" | "Wire Settlement" | "Card Dispute" | "KYC / ID Update" | "General";
+  priority: "Critical" | "High" | "Normal" | "Low";
+  status: "Open" | "In Progress" | "Pending Customer" | "Resolved" | "Closed";
+  assignedTo: string; // Solo Admin
+  createdAt: string;
+  updatedAt: string;
+  internalNotes: string[];
+  conversation: {
+    sender: "customer" | "admin" | "system";
+    senderName: string;
+    message: string;
+    timestamp: string;
+  }[];
+}
+
+export interface OperationalAlert {
+  id: string;
+  severity: "critical" | "warning" | "info";
+  title: string;
+  description: string;
+  timestamp: string;
+  category: "Security" | "Compliance" | "System" | "Transaction";
+  resolved: boolean;
+  actionRequired?: string;
+}
+
+export interface SoloAdminAuditEntry {
+  id: string;
+  timestamp: string;
+  actor: string;
+  section: "Overview" | "Customers" | "Accounts" | "Transactions" | "Compliance" | "Support" | "Reports" | "Settings" | "Security";
+  action: string;
+  targetId?: string;
+  details: string;
+  ipAddress: string;
+}
+
+// -------------------------------------------------------------
+// INITIAL FAKE DATA (Fictional records only)
+// -------------------------------------------------------------
+
+export const MOCK_CUSTOMERS: AdminCustomer[] = [
+  {
+    id: "CUST-109283",
+    name: "Eleanor Vance",
+    email: "eleanor.vance@example.com",
+    phone: "+1 (555) 234-8901",
+    country: "United States",
+    countryCode: "US",
+    verificationStatus: "Verified",
+    riskLevel: "Low",
+    status: "Active",
+    idType: "Social Security Number (SSN)",
+    idNumberMasked: "•••-••-4892",
+    address: "742 Evergreen Terrace, Springfield, IL",
+    joinedDate: "Oct 12, 2025",
+    adminNotes: "Client verified via tier-1 domestic documents. Preferred priority routing enabled.",
+    linkedAccountIds: ["ACC-US-001", "ACC-US-002"],
+  },
+  {
+    id: "CUST-401928",
+    name: "Liam Davies",
+    email: "liam.davies@example.co.uk",
+    phone: "+44 20 7946 0912",
+    country: "United Kingdom",
+    countryCode: "GB",
+    verificationStatus: "Verified",
+    riskLevel: "Low",
+    status: "Active",
+    idType: "National Insurance (NI) Number",
+    idNumberMasked: "•• •• •• 89 C",
+    address: "14 Belgrave Square, Westminster, London SW1X 8PS",
+    joinedDate: "Nov 03, 2025",
+    adminNotes: "London cross-border treasury cleared. Verified proof of address Oct 2026.",
+    linkedAccountIds: ["ACC-GB-101"],
+  },
+  {
+    id: "CUST-884910",
+    name: "Mathieu Tremblay",
+    email: "mathieu.t@example.ca",
+    phone: "+1 (416) 555-0182",
+    country: "Canada",
+    countryCode: "CA",
+    verificationStatus: "Pending Review",
+    riskLevel: "Medium",
+    status: "Restricted",
+    idType: "Social Insurance Number (SIN)",
+    idNumberMasked: "••• ••• 419",
+    address: "88 Bay Street, Toronto, ON M5J 2R8",
+    joinedDate: "Yesterday",
+    adminNotes: "SIN document verification match awaiting solo admin confirmation.",
+    linkedAccountIds: ["ACC-CA-201"],
+  },
+  {
+    id: "CUST-301924",
+    name: "Sofia Rodriguez",
+    email: "sofia.rodriguez@example.mx",
+    phone: "+52 55 1234 5678",
+    country: "Mexico",
+    countryCode: "MX",
+    verificationStatus: "Verified",
+    riskLevel: "Low",
+    status: "Active",
+    idType: "CURP / RFC",
+    idNumberMasked: "ROMS850215••••••",
+    address: "Paseo de la Reforma 222, Cuauhtémoc, CDMX",
+    joinedDate: "Dec 18, 2025",
+    adminNotes: "Dual RFC verified for commercial accounts.",
+    linkedAccountIds: ["ACC-MX-301", "ACC-MX-302"],
+  },
+  {
+    id: "CUST-662914",
+    name: "Lukas Weber",
+    email: "lukas.weber@example.de",
+    phone: "+49 30 1234567",
+    country: "Germany",
+    countryCode: "DE",
+    verificationStatus: "Action Required",
+    riskLevel: "High",
+    status: "Frozen",
+    idType: "Personalausweis / Steuer-ID",
+    idNumberMasked: "T2200••••",
+    address: "Friedrichstraße 43, 10117 Berlin",
+    joinedDate: "Jan 10, 2026",
+    adminNotes: "Account frozen due to 3 consecutive unusual offshore wire attempts.",
+    linkedAccountIds: ["ACC-DE-401"],
+  },
+  {
+    id: "CUST-994102",
+    name: "Kenji Takahashi",
+    email: "kenji.takahashi@example.jp",
+    phone: "+81 3 5555 0143",
+    country: "Japan",
+    countryCode: "JP",
+    verificationStatus: "Rejected",
+    riskLevel: "Flagged",
+    status: "Suspended",
+    idType: "My Number (Individual Number)",
+    idNumberMasked: "•••• •••• 9201",
+    address: "Minato-ku, Roppongi 6-10-1, Tokyo",
+    joinedDate: "Feb 01, 2026",
+    adminNotes: "Identity documents failed biometric match test. Account administratively suspended.",
+    linkedAccountIds: ["ACC-JP-501"],
+  },
+];
+
+export const MOCK_ACCOUNTS: BankAccountRecord[] = [
+  {
+    id: "ACC-US-001",
+    customerId: "CUST-109283",
+    customerName: "Eleanor Vance",
+    accountType: "Advantage Checking",
+    accountNumberMasked: "••••••••4819",
+    routingNumber: "021000089",
+    currency: "USD",
+    balance: 14850.50,
+    availableBalance: 14850.50,
+    status: "Active",
+    openedDate: "Oct 12, 2025",
+    lastActivity: "Today, 10:14 AM",
+  },
+  {
+    id: "ACC-US-002",
+    customerId: "CUST-109283",
+    customerName: "Eleanor Vance",
+    accountType: "High-Yield Savings",
+    accountNumberMasked: "••••••••7721",
+    routingNumber: "021000089",
+    currency: "USD",
+    balance: 48200.00,
+    availableBalance: 48200.00,
+    status: "Active",
+    openedDate: "Oct 12, 2025",
+    lastActivity: "Oct 14, 2026",
+  },
+  {
+    id: "ACC-GB-101",
+    customerId: "CUST-401928",
+    customerName: "Liam Davies",
+    accountType: "Advantage Checking",
+    accountNumberMasked: "••••••••9302",
+    routingNumber: "123456 (Sort Code)",
+    currency: "GBP",
+    balance: 12400.00,
+    availableBalance: 12400.00,
+    status: "Active",
+    openedDate: "Nov 03, 2025",
+    lastActivity: "Yesterday, 04:30 PM",
+  },
+  {
+    id: "ACC-CA-201",
+    customerId: "CUST-884910",
+    customerName: "Mathieu Tremblay",
+    accountType: "Commercial Operations",
+    accountNumberMasked: "••••••••5519",
+    routingNumber: "00010992",
+    currency: "CAD",
+    balance: 8500.00,
+    availableBalance: 2500.00,
+    status: "Under Review",
+    openedDate: "Yesterday",
+    lastActivity: "Yesterday, 08:30 AM",
+  },
+  {
+    id: "ACC-MX-301",
+    customerId: "CUST-301924",
+    customerName: "Sofia Rodriguez",
+    accountType: "Advantage Checking",
+    accountNumberMasked: "••••••••6612",
+    routingNumber: "012180004",
+    currency: "MXN",
+    balance: 68400.00,
+    availableBalance: 68400.00,
+    status: "Active",
+    openedDate: "Dec 18, 2025",
+    lastActivity: "Oct 18, 2026",
+  },
+  {
+    id: "ACC-MX-302",
+    customerId: "CUST-301924",
+    customerName: "Sofia Rodriguez",
+    accountType: "Treasury Money Market",
+    accountNumberMasked: "••••••••8814",
+    routingNumber: "012180004",
+    currency: "MXN",
+    balance: 180000.00,
+    availableBalance: 180000.00,
+    status: "Active",
+    openedDate: "Dec 18, 2025",
+    lastActivity: "Oct 15, 2026",
+  },
+  {
+    id: "ACC-DE-401",
+    customerId: "CUST-662914",
+    customerName: "Lukas Weber",
+    accountType: "High-Yield Savings",
+    accountNumberMasked: "••••••••1109",
+    routingNumber: "DEUTDEDDXXX",
+    currency: "EUR",
+    balance: 22650.00,
+    availableBalance: 0.00,
+    status: "Frozen",
+    openedDate: "Jan 10, 2026",
+    lastActivity: "Oct 17, 2026",
+  },
+  {
+    id: "ACC-JP-501",
+    customerId: "CUST-994102",
+    customerName: "Kenji Takahashi",
+    accountType: "Advantage Checking",
+    accountNumberMasked: "••••••••3311",
+    routingNumber: "0001-992",
+    currency: "JPY",
+    balance: 5250000.00,
+    availableBalance: 0.00,
+    status: "Frozen",
+    openedDate: "Feb 01, 2026",
+    lastActivity: "Oct 05, 2026",
+  },
+];
+
+export const MOCK_TRANSACTIONS: BankTransactionRecord[] = [
+  {
+    id: "TX-90214",
+    accountId: "ACC-US-001",
+    accountMasked: "••••••••4819",
+    customerId: "CUST-109283",
+    customerName: "Eleanor Vance",
+    type: "Direct Deposit",
+    amount: 3450.00,
+    currency: "USD",
+    direction: "credit",
+    counterparty: "Global Enterprise Payroll Inc.",
+    timestamp: "Today, 10:14 AM",
+    status: "Completed",
+  },
+  {
+    id: "TX-90213",
+    accountId: "ACC-GB-101",
+    accountMasked: "••••••••9302",
+    customerId: "CUST-401928",
+    customerName: "Liam Davies",
+    type: "Wire Transfer",
+    amount: 8500.00,
+    currency: "GBP",
+    direction: "credit",
+    counterparty: "Barclays Commercial Clearing",
+    timestamp: "Today, 09:30 AM",
+    status: "Completed",
+  },
+  {
+    id: "TX-90212",
+    accountId: "ACC-DE-401",
+    accountMasked: "••••••••1109",
+    customerId: "CUST-662914",
+    customerName: "Lukas Weber",
+    type: "Wire Transfer",
+    amount: 14200.00,
+    currency: "EUR",
+    direction: "debit",
+    counterparty: "Offshore Vault Ltd. (CY)",
+    timestamp: "Oct 17, 2026, 02:10 PM",
+    status: "Flagged",
+    flagReason: "Unusual velocity and high-risk counterparty jurisdiction.",
+    reviewNotes: "Requires Solo Admin secondary clearance before routing.",
+  },
+  {
+    id: "TX-90211",
+    accountId: "ACC-CA-201",
+    accountMasked: "••••••••5519",
+    customerId: "CUST-884910",
+    customerName: "Mathieu Tremblay",
+    type: "ACH Debit",
+    amount: 6000.00,
+    currency: "CAD",
+    direction: "debit",
+    counterparty: "Ontario Commercial Services",
+    timestamp: "Yesterday, 08:35 AM",
+    status: "Pending Clearing",
+  },
+  {
+    id: "TX-90210",
+    accountId: "ACC-MX-301",
+    accountMasked: "••••••••6612",
+    customerId: "CUST-301924",
+    customerName: "Sofia Rodriguez",
+    type: "Card Settlement",
+    amount: 320.50,
+    currency: "MXN",
+    direction: "debit",
+    counterparty: "AeroMexico Booking",
+    timestamp: "Oct 18, 2026, 03:15 PM",
+    status: "Completed",
+  },
+  {
+    id: "TX-90209",
+    accountId: "ACC-US-001",
+    accountMasked: "••••••••4819",
+    customerId: "CUST-109283",
+    customerName: "Eleanor Vance",
+    type: "Bill Pay",
+    amount: 184.20,
+    currency: "USD",
+    direction: "debit",
+    counterparty: "Consolidated Edison Utility",
+    timestamp: "Oct 16, 2026, 05:40 PM",
+    status: "Completed",
+  },
+  {
+    id: "TX-90208",
+    accountId: "ACC-US-002",
+    accountMasked: "••••••••7721",
+    customerId: "CUST-109283",
+    customerName: "Eleanor Vance",
+    type: "Internal Transfer",
+    amount: 1200.00,
+    currency: "USD",
+    direction: "credit",
+    counterparty: "Checking Transfer (ACC-US-001)",
+    timestamp: "Oct 14, 2026, 08:00 AM",
+    status: "Completed",
+  },
+];
+
+export const MOCK_COMPLIANCE_REVIEWS: ComplianceReviewItem[] = [
+  {
+    id: "REV-104",
+    targetType: "Transaction Alert",
+    targetId: "TX-90212",
+    targetName: "EUR 14,200.00 Wire - Lukas Weber",
+    priority: "Urgent",
+    status: "Pending Review",
+    ageHours: 4,
+    submittedAt: "Oct 17, 2026, 02:15 PM",
+    summary: "High-value cross-border wire to non-EEA account flagged by AML heuristics.",
+    details: "Origin: Account ACC-DE-401. Beneficiary: Offshore Vault Ltd. Transaction value represents 65% of account balance.",
+  },
+  {
+    id: "REV-103",
+    targetType: "KYC Document",
+    targetId: "CUST-884910",
+    targetName: "Mathieu Tremblay (Canada)",
+    priority: "High",
+    status: "Pending Review",
+    ageHours: 18,
+    submittedAt: "Yesterday, 08:30 AM",
+    summary: "New Commercial Treasury application KYC validation.",
+    details: "Canada Social Insurance Number and corporate registration documents submitted for verification.",
+  },
+  {
+    id: "REV-102",
+    targetType: "Customer Identity",
+    targetId: "CUST-994102",
+    targetName: "Kenji Takahashi (Japan)",
+    priority: "Urgent",
+    status: "Approved",
+    ageHours: 48,
+    submittedAt: "Oct 05, 2026",
+    summary: "Biometric ID mismatch review.",
+    details: "Facial scan threshold fell below compliance confidence interval.",
+    reviewer: "Solo Administrator",
+    decision: "Suspended",
+    decisionReason: "Documents could not be verified by jurisdictional database.",
+    decisionTimestamp: "Oct 05, 2026, 04:30 PM",
+  },
+  {
+    id: "REV-101",
+    targetType: "Jurisdiction Compliance",
+    targetId: "CUST-401928",
+    targetName: "Liam Davies (UK)",
+    priority: "Low",
+    status: "Approved",
+    ageHours: 72,
+    submittedAt: "Oct 15, 2026",
+    summary: "Annual UK HMRC proof-of-residence review.",
+    details: "Utility statement and National Insurance record matched.",
+    reviewer: "Solo Administrator",
+    decision: "Cleared",
+    decisionReason: "All proof-of-address documents valid and authentic.",
+    decisionTimestamp: "Oct 15, 2026, 11:30 AM",
+  },
+];
+
+export const MOCK_SUPPORT_CASES: SupportCase[] = [
+  {
+    id: "SUP-8491",
+    ticketNumber: "TKT-8491",
+    customerId: "CUST-109283",
+    customerName: "Eleanor Vance",
+    customerEmail: "eleanor.vance@example.com",
+    subject: "Wire transfer clearing speed to London branch",
+    category: "Wire Settlement",
+    priority: "Normal",
+    status: "Open",
+    assignedTo: "Solo Administrator",
+    createdAt: "Today, 09:14 AM",
+    updatedAt: "Today, 09:14 AM",
+    internalNotes: ["Customer asking regarding standard settlement window for GBP conversion."],
+    conversation: [
+      {
+        sender: "customer",
+        senderName: "Eleanor Vance",
+        message: "Could you confirm the typical settlement speed for USD to GBP wire transfers initiated on weekends?",
+        timestamp: "Today, 09:14 AM",
+      },
+    ],
+  },
+  {
+    id: "SUP-3920",
+    ticketNumber: "TKT-3920",
+    customerId: "CUST-301924",
+    customerName: "Sofia Rodriguez",
+    customerEmail: "sofia.rodriguez@example.mx",
+    subject: "CURP / RFC document validation status",
+    category: "KYC / ID Update",
+    priority: "High",
+    status: "In Progress",
+    assignedTo: "Solo Administrator",
+    createdAt: "Oct 18, 2026, 03:22 PM",
+    updatedAt: "Oct 18, 2026, 05:40 PM",
+    internalNotes: ["Checked RFC registry with Mexico tax authority. Match confirmed."],
+    conversation: [
+      {
+        sender: "customer",
+        senderName: "Sofia Rodriguez",
+        message: "I submitted my RFC and CURP documents yesterday. Wanted to confirm if any further notarized forms are required.",
+        timestamp: "Oct 18, 2026, 03:22 PM",
+      },
+      {
+        sender: "admin",
+        senderName: "Solo Administrator",
+        message: "Your documentation has been validated against regional compliance. No notarized physical papers are required at this stage.",
+        timestamp: "Oct 18, 2026, 05:40 PM",
+      },
+    ],
+  },
+  {
+    id: "SUP-1102",
+    ticketNumber: "TKT-1102",
+    customerId: "CUST-662914",
+    customerName: "Lukas Weber",
+    customerEmail: "lukas.weber@example.de",
+    subject: "Notice regarding account freeze",
+    category: "Account Access",
+    priority: "Critical",
+    status: "In Progress",
+    assignedTo: "Solo Administrator",
+    createdAt: "Oct 17, 2026, 03:00 PM",
+    updatedAt: "Oct 17, 2026, 03:45 PM",
+    internalNotes: ["Client notified of administrative freeze under AML Article 14."],
+    conversation: [
+      {
+        sender: "customer",
+        senderName: "Lukas Weber",
+        message: "I am unable to access my online banking checking or wire terminal. Please advise immediately.",
+        timestamp: "Oct 17, 2026, 03:00 PM",
+      },
+      {
+        sender: "admin",
+        senderName: "Solo Administrator",
+        message: "Your account is temporarily placed under review by bank administration due to an anomalous transfer pattern. Compliance review REV-104 is currently active.",
+        timestamp: "Oct 17, 2026, 03:45 PM",
+      },
+    ],
+  },
+];
+
+export const MOCK_ALERTS: OperationalAlert[] = [
+  {
+    id: "ALT-01",
+    severity: "critical",
+    title: "Suspicious Wire Activity Flagged",
+    description: "Transaction TX-90212 (EUR 14,200.00) triggered automated AML velocity threshold.",
+    timestamp: "2 hours ago",
+    category: "Security",
+    resolved: false,
+    actionRequired: "Review in Compliance queue",
+  },
+  {
+    id: "ALT-02",
+    severity: "warning",
+    title: "Overdue KYC Document Review",
+    description: "Application for Mathieu Tremblay (CUST-884910) has exceeded the 12-hour turnaround target.",
+    timestamp: "6 hours ago",
+    category: "Compliance",
+    resolved: false,
+    actionRequired: "Verify Social Insurance Number",
+  },
+  {
+    id: "ALT-03",
+    severity: "info",
+    title: "Scheduled Maintenance Window",
+    description: "Routine internal ledger audit and backup scheduled for 02:00 UTC Sunday.",
+    timestamp: "1 day ago",
+    category: "System",
+    resolved: true,
+  },
+  {
+    id: "ALT-04",
+    severity: "warning",
+    title: "Failed Authentication Surge (IP: 198.51.100.44)",
+    description: "5 failed administrative sign-in attempts recorded from an unregistered network.",
+    timestamp: "Yesterday, 11:40 PM",
+    category: "Security",
+    resolved: false,
+    actionRequired: "Confirm IP ban in Security Settings",
+  },
+];
+
+export const MOCK_AUDIT_LOGS: SoloAdminAuditEntry[] = [
+  {
+    id: "AUD-9912",
+    timestamp: "Today, 10:15 AM",
+    actor: "Solo Administrator",
+    section: "Customers",
+    action: "Viewed Sensitive ID",
+    targetId: "CUST-109283",
+    details: "Unmasked SSN view for customer Eleanor Vance (reason: support case SUP-8491).",
+    ipAddress: "127.0.0.1 (Internal Console)",
+  },
+  {
+    id: "AUD-9911",
+    timestamp: "Today, 09:15 AM",
+    actor: "Solo Administrator",
+    section: "Security",
+    action: "Session Authenticated",
+    details: "Master Solo Administrator logged into workspace terminal with high privilege.",
+    ipAddress: "127.0.0.1 (Internal Console)",
+  },
+  {
+    id: "AUD-9910",
+    timestamp: "Yesterday, 05:42 PM",
+    actor: "Solo Administrator",
+    section: "Support",
+    action: "Case Response Dispatched",
+    targetId: "TKT-3920",
+    details: "Dispatched compliance confirmation to Sofia Rodriguez regarding RFC documents.",
+    ipAddress: "127.0.0.1 (Internal Console)",
+  },
+  {
+    id: "AUD-9909",
+    timestamp: "Oct 17, 2026, 02:20 PM",
+    actor: "Solo Administrator",
+    section: "Accounts",
+    action: "Account Status Changed",
+    targetId: "ACC-DE-401",
+    details: "Account frozen following AML flag TX-90212. Available balance locked.",
+    ipAddress: "127.0.0.1 (Internal Console)",
+  },
+  {
+    id: "AUD-9908",
+    timestamp: "Oct 15, 2026, 11:35 AM",
+    actor: "Solo Administrator",
+    section: "Compliance",
+    action: "Identity Review Cleared",
+    targetId: "REV-101",
+    details: "Approved proof of address for Liam Davies (UK Jurisdiction).",
+    ipAddress: "127.0.0.1 (Internal Console)",
+  },
+];
