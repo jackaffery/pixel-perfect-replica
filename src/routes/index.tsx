@@ -88,6 +88,18 @@ export const Route = createFileRoute("/")({
   component: Index,
 });
 
+export const LANGUAGE_FLAG_CODES: Record<string, string> = {
+  en: "US",
+  es: "ES",
+  fr: "FR",
+  de: "DE",
+  "zh-CN": "CN",
+  "zh-TW": "TW",
+  ja: "JP",
+  vi: "VN",
+  ko: "KR",
+};
+
 export function CountryFlagIcon({
   code,
   className = "h-3.5 w-5 rounded-[2px] shadow-xs inline-block shrink-0 object-cover",
@@ -205,6 +217,23 @@ export function CountryFlagIcon({
           <path fill="#000" d="M0 0h640v160H0z" />
           <path fill="#dd0000" d="M0 160h640v160H0z" />
           <path fill="#ffce00" d="M0 320h640v160H0z" />
+        </svg>
+      );
+    case "ES":
+      return (
+        <svg viewBox="0 0 640 480" className={className} aria-label="Spain Flag">
+          <path fill="#aa151b" d="M0 0h640v120H0zm0 360h640v120H0z" />
+          <path fill="#f1bf00" d="M0 120h640v240H0z" />
+          <circle cx="180" cy="240" r="34" fill="#aa151b" opacity="0.9" />
+          <circle cx="180" cy="240" r="22" fill="#f1bf00" />
+        </svg>
+      );
+    case "FR":
+      return (
+        <svg viewBox="0 0 640 480" className={className} aria-label="France Flag">
+          <path fill="#002654" d="M0 0h213.3v480H0z" />
+          <path fill="#fff" d="M213.3 0h213.4v480H213.3z" />
+          <path fill="#ce1126" d="M426.7 0H640v480H426.7z" />
         </svg>
       );
     default:
@@ -523,8 +552,9 @@ export function Index() {
   const [adjustBalanceUser, setAdjustBalanceUser] = useState<AdminControlledUser | null>(null);
   const [newUserModalOpen, setNewUserModalOpen] = useState(false);
 
-  // Country & Currency Selector Dropdown State
+  // Country & Currency and Language Selector Dropdown States
   const [countryDropdownOpen, setCountryDropdownOpen] = useState(false);
+  const [langDropdownOpen, setLangDropdownOpen] = useState(false);
 
   // Staff Admin Support Session (Authorized auto-login into customer account)
   const [adminSupportSession, setAdminSupportSession] = useState<{
@@ -1614,25 +1644,75 @@ export function Index() {
               </div>
             </div>
 
-            {/* Language Spot with explicit specification label */}
+            {/* Language Spot with explicit specification label and true SVG country flags */}
             <div className="flex items-center gap-1.5">
               <span className="text-[11px] font-bold text-white/90 uppercase tracking-wider shrink-0 flex items-center gap-1">
                 <Globe2 className="h-3 w-3 text-accent shrink-0" />
                 <span>Language:</span>
               </span>
-              <div className="flex items-center gap-1.5 bg-white/10 hover:bg-white/15 px-2.5 py-1.5 rounded border border-white/20 transition-colors shadow-xs">
-                <select
+              <div className="relative">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setLangDropdownOpen(!langDropdownOpen);
+                    setCountryDropdownOpen(false);
+                  }}
                   aria-label="Specify Language"
-                  value={currentLangCode}
-                  onChange={(e) => setCurrentLangCode(e.target.value)}
-                  className="bg-transparent text-white text-xs font-semibold focus:outline-none cursor-pointer"
+                  aria-expanded={langDropdownOpen}
+                  className="flex items-center gap-2 bg-white/10 hover:bg-white/15 px-2.5 py-1.5 rounded border border-white/20 text-white text-xs font-semibold focus:outline-none transition-colors cursor-pointer shadow-xs"
                 >
-                  {Object.values(SUPPORTED_LANGUAGES).map((l) => (
-                    <option key={l.code} value={l.code} className="bg-navy-deep text-white">
-                      {l.flag} {l.nativeName}
-                    </option>
-                  ))}
-                </select>
+                  <CountryFlagIcon
+                    code={LANGUAGE_FLAG_CODES[currentLangCode] || "US"}
+                    className="h-3.5 w-5 rounded-[2px] shadow-xs inline-block shrink-0 object-cover"
+                  />
+                  <span>{(SUPPORTED_LANGUAGES[currentLangCode] || SUPPORTED_LANGUAGES["en"])?.nativeName || "English (US)"}</span>
+                  <ChevronDown
+                    className={`h-3 w-3 text-white/70 transition-transform ${
+                      langDropdownOpen ? "rotate-180" : ""
+                    }`}
+                  />
+                </button>
+
+                {langDropdownOpen && (
+                  <>
+                    <div
+                      className="fixed inset-0 z-40"
+                      onClick={() => setLangDropdownOpen(false)}
+                      aria-hidden="true"
+                    />
+                    <div className="absolute right-0 top-full mt-1.5 w-64 rounded-lg border border-white/20 bg-[#0a192f] p-1.5 shadow-2xl z-50 text-white animate-fadeIn max-h-80 overflow-y-auto">
+                      <div className="px-3 py-1.5 border-b border-white/10 text-[10px] font-bold uppercase tracking-wider text-accent flex items-center justify-between">
+                        <span>Specify Language</span>
+                        <span className="text-white/50 text-[9px]">
+                          {Object.keys(SUPPORTED_LANGUAGES).length} Languages
+                        </span>
+                      </div>
+                      <div className="mt-1 space-y-0.5">
+                        {Object.values(SUPPORTED_LANGUAGES).map((l) => (
+                          <button
+                            key={l.code}
+                            type="button"
+                            onClick={() => {
+                              setCurrentLangCode(l.code);
+                              setLangDropdownOpen(false);
+                            }}
+                            className={`w-full flex items-center gap-2.5 px-3 py-2 text-xs rounded-md text-left transition-colors ${
+                              l.code === currentLangCode
+                                ? "bg-blue-600 text-white font-bold"
+                                : "text-white/90 hover:bg-white/10 hover:text-white"
+                            }`}
+                          >
+                            <CountryFlagIcon
+                              code={LANGUAGE_FLAG_CODES[l.code] || "US"}
+                              className="h-3.5 w-5 rounded-[2px] shadow-xs shrink-0 object-cover"
+                            />
+                            <span className="truncate">{l.nativeName} ({l.name})</span>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  </>
+                )}
               </div>
             </div>
 
@@ -1867,49 +1947,65 @@ export function Index() {
                 </Button>
               </li>
 
-              {/* Mobile Dedicated Currency & Language Selection */}
+              {/* Mobile Dedicated Currency & Language Selection with Graphic SVG Flags */}
               <li className="pt-3 border-t border-border/80">
                 <div className="space-y-3 bg-slate-50 dark:bg-slate-900/50 p-3 rounded-lg border border-border/60">
                   <div>
-                    <span className="block text-[11px] font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-1 flex items-center gap-1">
+                    <span className="block text-[11px] font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-1.5 flex items-center gap-1">
                       <DollarSign className="h-3.5 w-3.5 text-accent" />
-                      Specify Currency:
+                      Specify Currency & Region:
                     </span>
-                    <select
-                      aria-label="Specify Currency"
-                      value={currentCountryCode}
-                      onChange={(e) => {
-                        handleCountryChange(e.target.value);
-                      }}
-                      className="w-full bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 text-xs font-semibold py-2 px-3 rounded-md border border-input focus:outline-none shadow-xs"
-                    >
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5 max-h-48 overflow-y-auto pr-1">
                       {Object.values(SUPPORTED_COUNTRIES).map((c) => (
-                        <option key={c.code} value={c.code}>
-                          {c.name} ({c.currency.code} - {c.currency.symbol})
-                        </option>
+                        <button
+                          key={c.code}
+                          type="button"
+                          onClick={() => {
+                            handleCountryChange(c.code);
+                          }}
+                          className={`flex items-center gap-2.5 px-3 py-2 rounded-md text-xs text-left transition-colors border ${
+                            c.code === currentCountryCode
+                              ? "bg-blue-600 text-white font-bold border-blue-600 shadow-xs"
+                              : "bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 border-border hover:bg-slate-100"
+                          }`}
+                        >
+                          <CountryFlagIcon
+                            code={c.code}
+                            className="h-3.5 w-5 rounded-[2px] shadow-xs shrink-0 object-cover"
+                          />
+                          <span className="truncate">{c.name} ({c.currency.code})</span>
+                        </button>
                       ))}
-                    </select>
+                    </div>
                   </div>
 
                   <div>
-                    <span className="block text-[11px] font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-1 flex items-center gap-1">
+                    <span className="block text-[11px] font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-1.5 flex items-center gap-1">
                       <Globe2 className="h-3.5 w-3.5 text-accent" />
                       Specify Language:
                     </span>
-                    <select
-                      aria-label="Specify Language"
-                      value={currentLangCode}
-                      onChange={(e) => {
-                        setCurrentLangCode(e.target.value);
-                      }}
-                      className="w-full bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 text-xs font-semibold py-2 px-3 rounded-md border border-input focus:outline-none shadow-xs"
-                    >
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5 max-h-48 overflow-y-auto pr-1">
                       {Object.values(SUPPORTED_LANGUAGES).map((l) => (
-                        <option key={l.code} value={l.code}>
-                          {l.flag} {l.nativeName} ({l.name})
-                        </option>
+                        <button
+                          key={l.code}
+                          type="button"
+                          onClick={() => {
+                            setCurrentLangCode(l.code);
+                          }}
+                          className={`flex items-center gap-2.5 px-3 py-2 rounded-md text-xs text-left transition-colors border ${
+                            l.code === currentLangCode
+                              ? "bg-blue-600 text-white font-bold border-blue-600 shadow-xs"
+                              : "bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 border-border hover:bg-slate-100"
+                          }`}
+                        >
+                          <CountryFlagIcon
+                            code={LANGUAGE_FLAG_CODES[l.code] || "US"}
+                            className="h-3.5 w-5 rounded-[2px] shadow-xs shrink-0 object-cover"
+                          />
+                          <span className="truncate">{l.nativeName} ({l.name})</span>
+                        </button>
                       ))}
-                    </select>
+                    </div>
                   </div>
                 </div>
               </li>
