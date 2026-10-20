@@ -674,7 +674,7 @@ export function Index() {
     setAuditLogs((prev) => [newLog, ...prev]);
   };
 
-  // Solo Admin Authentication
+  // Staff Sign In Admin Authentication
   const handleSoloAdminSignIn = (e: React.FormEvent) => {
     e.preventDefault();
     setAdminAuthError("");
@@ -1188,7 +1188,7 @@ export function Index() {
               </select>
             </div>
 
-            {/* Solo Admin Shortcut */}
+            {/* Staff Sign In Admin Shortcut */}
             {soloAdminUser ? (
               <div className="flex items-center gap-2">
                 <span className="rounded bg-accent px-2 py-0.5 text-xs font-bold text-white shadow-xs flex items-center gap-1">
@@ -1208,11 +1208,11 @@ export function Index() {
                 type="button"
                 onClick={() => setAdminModalOpen(true)}
                 className="flex items-center gap-1.5 font-semibold text-white/90 underline-offset-4 hover:text-white hover:underline focus:outline-none"
-                title="Solo Admin Portal — Centralized Super Administrator Dashboard"
+                title="Staff Sign In Admin — Centralized Super Administrator Dashboard"
               >
                 <SlidersHorizontal className="h-3 w-3 text-accent shrink-0" />
-                <span className="hidden xl:inline">Solo Admin Portal — Centralized Super Administrator Dashboard</span>
-                <span className="xl:hidden">Solo Admin Portal</span>
+                <span className="hidden xl:inline">Staff Sign In Admin — Centralized Super Administrator Dashboard</span>
+                <span className="xl:hidden">Staff Sign In Admin</span>
               </button>
             )}
           </div>
@@ -1439,7 +1439,7 @@ export function Index() {
                   }}
                 >
                   <SlidersHorizontal className="mr-1.5 h-3.5 w-3.5 text-accent shrink-0" />
-                  Solo Admin Portal — Centralized Super Administrator Dashboard
+                  Staff Sign In Admin — Centralized Super Administrator Dashboard
                 </Button>
               </li>
             </ul>
@@ -1600,7 +1600,7 @@ export function Index() {
           </section>
         )}
 
-        {/* SOLO ADMIN PORTAL — CENTRALIZED SUPER ADMINISTRATOR DASHBOARD */}
+        {/* STAFF SIGN IN ADMIN — CENTRALIZED SUPER ADMINISTRATOR DASHBOARD */}
         {soloAdminUser && (
           <section
             aria-labelledby="solo-admin-title"
@@ -1612,7 +1612,7 @@ export function Index() {
                 <div>
                   <div className="flex flex-wrap items-center gap-2">
                     <span className="rounded bg-accent px-2.5 py-0.5 text-xs font-black text-white uppercase tracking-wider">
-                      SOLO SUPER ADMINISTRATOR
+                      STAFF SIGN IN ADMIN
                     </span>
                     <span className="rounded bg-emerald-500/20 px-2 py-0.5 text-xs font-semibold text-emerald-300 border border-emerald-500/30">
                       Master Clearance Active
@@ -1625,7 +1625,7 @@ export function Index() {
                     id="solo-admin-title"
                     className="mt-2 font-display text-2xl font-bold text-white sm:text-3xl"
                   >
-                    Solo Admin Portal — Centralized Super Administrator Dashboard
+                    Staff Sign In Admin — Centralized Super Administrator Dashboard
                   </h1>
                   <p className="text-sm text-white/70">
                     Unified central administration for customer accounts, banking applications, client inquiries (@infobank), and security audit logs.
@@ -3262,7 +3262,7 @@ export function Index() {
                     onClick={() => setAdminModalOpen(true)}
                     className="hover:text-white flex items-center gap-1.5 text-white font-medium underline-offset-2 hover:underline"
                   >
-                    <SlidersHorizontal className="h-3 w-3 text-accent" /> Solo Admin Portal — Centralized Super Administrator Dashboard
+                    <SlidersHorizontal className="h-3 w-3 text-accent" /> Staff Sign In Admin — Centralized Super Administrator Dashboard
                   </button>
                 </li>
               </ul>
@@ -3844,7 +3844,7 @@ export function Index() {
         </div>
       )}
 
-      {/* SOLO ADMIN PORTAL LOGIN MODAL */}
+      {/* STAFF SIGN IN ADMIN PORTAL LOGIN MODAL */}
       {adminModalOpen && (
         <div
           role="dialog"
@@ -3865,7 +3865,7 @@ export function Index() {
                 <SlidersHorizontal className="h-6 w-6" />
               </div>
               <div>
-                <h3 className="text-base font-bold text-white sm:text-lg">Solo Admin Portal — Centralized Super Administrator Dashboard</h3>
+                <h3 className="text-base font-bold text-white sm:text-lg">Staff Sign In Admin — Centralized Super Administrator Dashboard</h3>
                 <p className="text-xs text-white/60">Unified Master System • Control All Users, Applications & Inquiries</p>
               </div>
             </div>
@@ -3884,7 +3884,7 @@ export function Index() {
                 }}
                 className="w-full rounded-md border border-accent/40 bg-accent/15 px-3 py-1.5 text-xs font-bold text-accent hover:bg-accent/25 transition-colors"
               >
-                ⚡ Quick Auto-Fill Solo Admin Credentials (admin / admin)
+                ⚡ Quick Auto-Fill Staff Sign In Admin Credentials (admin / admin)
               </button>
             </div>
 
@@ -3901,7 +3901,7 @@ export function Index() {
             <form onSubmit={handleSoloAdminSignIn} className="mt-4 space-y-4">
               <div>
                 <label htmlFor="adm-id" className="block text-xs font-bold text-white/90">
-                  Solo Admin Identifier
+                  Staff Sign In Admin Identifier
                 </label>
                 <input
                   id="adm-id"
@@ -3943,7 +3943,7 @@ export function Index() {
                 disabled={adminAuthLoading}
                 className="w-full bg-accent font-bold text-accent-foreground hover:bg-accent/90"
               >
-                {adminAuthLoading ? "Verifying Master Authority..." : "Access Solo Admin Control Center"}
+                {adminAuthLoading ? "Verifying Master Authority..." : "Access Staff Sign In Admin Control Center"}
               </Button>
             </form>
 
