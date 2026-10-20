@@ -32,6 +32,14 @@ import {
   FileCheck2,
   HelpCircle,
   ShieldAlert,
+  UserCheck,
+  UserX,
+  ShieldBan,
+  SlidersHorizontal,
+  RefreshCw,
+  Trash2,
+  PlusCircle,
+  Edit3,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import usFinanceBuildingHero from "@/assets/us-finance-bank-building.jpg";
@@ -68,6 +76,115 @@ export const Route = createFileRoute("/")({
   component: Index,
 });
 
+export interface AdminControlledUser {
+  id: string;
+  name: string;
+  email: string;
+  phone: string;
+  country: string;
+  countryCode: string;
+  accountType: string;
+  checkingBalance: number;
+  savingsBalance: number;
+  status: "active" | "frozen" | "pending_kyc" | "suspended";
+  idType: string;
+  idNumber: string;
+  createdAt: string;
+}
+
+const INITIAL_USERS: AdminControlledUser[] = [
+  {
+    id: "USB-US-109283",
+    name: "Eleanor Vance",
+    email: "eleanor.vance@example.com",
+    phone: "+1 (555) 234-8901",
+    country: "United States",
+    countryCode: "US",
+    accountType: "Advantage Checking & Savings",
+    checkingBalance: 12450.8,
+    savingsBalance: 48200.0,
+    status: "active",
+    idType: "Social Security Number (SSN)",
+    idNumber: "•••-••-4892",
+    createdAt: "Oct 12, 2026",
+  },
+  {
+    id: "USB-GB-401928",
+    name: "Liam Davies",
+    email: "liam.davies@example.co.uk",
+    phone: "+44 20 7946 0912",
+    country: "United Kingdom",
+    countryCode: "GB",
+    accountType: "Advantage Checking",
+    checkingBalance: 8640.0,
+    savingsBalance: 22100.0,
+    status: "active",
+    idType: "National Insurance (NI) Number",
+    idNumber: "•• •• •• 89 C",
+    createdAt: "Oct 15, 2026",
+  },
+  {
+    id: "USB-CA-884910",
+    name: "Mathieu Tremblay",
+    email: "mathieu.t@example.ca",
+    phone: "+1 (416) 555-0182",
+    country: "Canada",
+    countryCode: "CA",
+    accountType: "Commercial Treasury",
+    checkingBalance: 3200.0,
+    savingsBalance: 15000.0,
+    status: "pending_kyc",
+    idType: "Social Insurance Number (SIN)",
+    idNumber: "••• ••• 419",
+    createdAt: "Today, 08:30 AM",
+  },
+  {
+    id: "USB-MX-301924",
+    name: "Sofia Rodriguez",
+    email: "sofia.rodriguez@example.mx",
+    phone: "+52 55 1234 5678",
+    country: "Mexico",
+    countryCode: "MX",
+    accountType: "Advantage Checking & Savings",
+    checkingBalance: 45800.0,
+    savingsBalance: 120000.0,
+    status: "active",
+    idType: "CURP / RFC",
+    idNumber: "ROMS850215••••••",
+    createdAt: "Oct 17, 2026",
+  },
+  {
+    id: "USB-DE-662914",
+    name: "Lukas Weber",
+    email: "lukas.weber@example.de",
+    phone: "+49 30 1234567",
+    country: "Germany",
+    countryCode: "DE",
+    accountType: "High-Yield Savings",
+    checkingBalance: 4250.0,
+    savingsBalance: 18400.0,
+    status: "frozen",
+    idType: "Personalausweis / Steuer-ID",
+    idNumber: "T2200••••",
+    createdAt: "Oct 10, 2026",
+  },
+  {
+    id: "USB-JP-994102",
+    name: "Kenji Takahashi",
+    email: "kenji.takahashi@example.jp",
+    phone: "+81 3 5555 0143",
+    country: "Japan",
+    countryCode: "JP",
+    accountType: "Advantage Checking",
+    checkingBalance: 1450000.0,
+    savingsBalance: 3800000.0,
+    status: "suspended",
+    idType: "My Number (Individual Number)",
+    idNumber: "•••• •••• 9201",
+    createdAt: "Oct 05, 2026",
+  },
+];
+
 export function Index() {
   // Localization State
   const [currentCountryCode, setCurrentCountryCode] = useState<string>("US");
@@ -80,10 +197,12 @@ export function Index() {
 
   // Modals & Panels
   const [customerModalOpen, setCustomerModalOpen] = useState(false);
-  const [staffModalOpen, setStaffModalOpen] = useState(false);
+  const [adminModalOpen, setAdminModalOpen] = useState(false);
   const [forgotPasswordOpen, setForgotPasswordOpen] = useState(false);
   const [openAccountModalOpen, setOpenAccountModalOpen] = useState(false);
   const [checkStatusModalOpen, setCheckStatusModalOpen] = useState(false);
+  const [adjustBalanceUser, setAdjustBalanceUser] = useState<AdminControlledUser | null>(null);
+  const [newUserModalOpen, setNewUserModalOpen] = useState(false);
 
   // Customer Authentication & Multi-Factor Authentication (MFA)
   const [customerUser, setCustomerUser] = useState<string | null>(null);
@@ -138,18 +257,36 @@ export function Index() {
   const [transferRecipient, setTransferRecipient] = useState("");
   const [transferSuccess, setTransferSuccess] = useState("");
 
-  // Staff Session State
-  const [staffUser, setStaffUser] = useState<{
-    name: string;
+  // Solo Master Admin & User Management State
+  const [soloAdminUser, setSoloAdminUser] = useState<{
+    username: string;
     role: string;
-    id: string;
+    authenticatedAt: string;
   } | null>(null);
-  const [staffEmail, setStaffEmail] = useState("");
-  const [staffPassword, setStaffPassword] = useState("");
-  const [showStaffPassword, setShowStaffPassword] = useState(false);
-  const [staffDept, setStaffDept] = useState("Operations");
-  const [staffAuthLoading, setStaffAuthLoading] = useState(false);
-  const [staffAuthError, setStaffAuthError] = useState("");
+  const [adminUsername, setAdminUsername] = useState("admin");
+  const [adminPassword, setAdminPassword] = useState("admin");
+  const [showAdminPassword, setShowAdminPassword] = useState(false);
+  const [adminAuthLoading, setAdminAuthLoading] = useState(false);
+  const [adminAuthError, setAdminAuthError] = useState("");
+
+  // Controlled Users Registry
+  const [adminUsers, setAdminUsers] = useState<AdminControlledUser[]>(INITIAL_USERS);
+  const [adminSearchQuery, setAdminSearchQuery] = useState("");
+  const [adminStatusFilter, setAdminStatusFilter] = useState<string>("all");
+  const [adminActionNotice, setAdminActionNotice] = useState<string>("");
+
+  // Balance Adjustment Modal State
+  const [adjustCheckingAmt, setAdjustCheckingAmt] = useState("");
+  const [adjustSavingsAmt, setAdjustSavingsAmt] = useState("");
+
+  // Provision New User State
+  const [newUserName, setNewUserName] = useState("");
+  const [newUserEmail, setNewUserEmail] = useState("");
+  const [newUserPhone, setNewUserPhone] = useState("");
+  const [newUserCountry, setNewUserCountry] = useState("US");
+  const [newUserAccountType, setNewUserAccountType] = useState("Advantage Checking & Savings");
+  const [newUserChecking, setNewUserChecking] = useState("5000");
+  const [newUserSavings, setNewUserSavings] = useState("10000");
 
   // Password Recovery State
   const [resetEmail, setResetEmail] = useState("");
@@ -204,10 +341,40 @@ export function Index() {
   const handleCustomerLoginSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setCustomerAuthError("");
-    if (!customerLoginEmail.trim() || !customerLoginPassword.trim()) {
+    const identifier = customerLoginEmail.trim();
+    if (!identifier || !customerLoginPassword.trim()) {
       setCustomerAuthError("Please provide both email/username and password.");
       return;
     }
+
+    // Check if user is controlled by Admin and has active restrictions
+    const matchingUser = adminUsers.find(
+      (u) =>
+        u.email.toLowerCase() === identifier.toLowerCase() ||
+        u.name.toLowerCase() === identifier.toLowerCase()
+    );
+
+    if (matchingUser) {
+      if (matchingUser.status === "frozen") {
+        setCustomerAuthError(
+          "ACCOUNT FROZEN: This customer account has been temporarily frozen by the Solo Bank Administrator. Contact administration."
+        );
+        return;
+      }
+      if (matchingUser.status === "suspended") {
+        setCustomerAuthError(
+          "ACCOUNT SUSPENDED: Administrative access revoked by the Solo Bank Administrator."
+        );
+        return;
+      }
+      if (matchingUser.status === "pending_kyc") {
+        setCustomerAuthError(
+          "KYC REVIEW PENDING: Your account registration is awaiting verification and approval from the Solo Bank Administrator."
+        );
+        return;
+      }
+    }
+
     setCustomerAuthLoading(true);
     setTimeout(() => {
       setCustomerAuthLoading(false);
@@ -228,11 +395,26 @@ export function Index() {
     setTimeout(() => {
       setCustomerAuthLoading(false);
       setMfaStep(false);
-      setCustomerUser(
-        customerLoginEmail.includes("@")
-          ? customerLoginEmail.split("@")[0]
-          : customerLoginEmail
+
+      const identifier = customerLoginEmail.trim();
+      const matchingUser = adminUsers.find(
+        (u) =>
+          u.email.toLowerCase() === identifier.toLowerCase() ||
+          u.name.toLowerCase() === identifier.toLowerCase()
       );
+
+      if (matchingUser) {
+        setCheckingBalance(matchingUser.checkingBalance);
+        setSavingsBalance(matchingUser.savingsBalance);
+        setCustomerUser(matchingUser.name);
+      } else {
+        setCustomerUser(
+          customerLoginEmail.includes("@")
+            ? customerLoginEmail.split("@")[0]
+            : customerLoginEmail
+        );
+      }
+
       setCustomerModalOpen(false);
       setCustomerLoginPassword("");
       setMfaCode("");
@@ -267,24 +449,163 @@ export function Index() {
     setTimeout(() => setTransferSuccess(""), 4000);
   };
 
-  const handleStaffSignIn = (e: React.FormEvent) => {
+  // Solo Admin Authentication & User Controls
+  const handleSoloAdminSignIn = (e: React.FormEvent) => {
     e.preventDefault();
-    setStaffAuthError("");
-    if (!staffEmail.trim() || !staffPassword.trim()) {
-      setStaffAuthError("Staff Email / ID and Password are required.");
+    setAdminAuthError("");
+    if (!adminUsername.trim() || !adminPassword.trim()) {
+      setAdminAuthError("Master Administrator credentials are required.");
       return;
     }
-    setStaffAuthLoading(true);
+    setAdminAuthLoading(true);
     setTimeout(() => {
-      setStaffAuthLoading(false);
-      setStaffUser({
-        name: staffEmail.includes("@") ? staffEmail.split("@")[0].toUpperCase() : staffEmail.toUpperCase(),
-        role: `${staffDept} Officer`,
-        id: `STF-${Math.floor(1000 + Math.random() * 9000)}`,
+      setAdminAuthLoading(false);
+      setSoloAdminUser({
+        username: "Solo Master Admin",
+        role: "Supreme Bank Controller",
+        authenticatedAt: "Today, " + new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
       });
-      setStaffModalOpen(false);
-      setStaffPassword("");
-    }, 700);
+      setAdminModalOpen(false);
+      setAdminPassword("");
+      setAdminActionNotice("Solo Admin authenticated. Full control over all users is active.");
+      setTimeout(() => setAdminActionNotice(""), 6000);
+    }, 500);
+  };
+
+  const handleToggleFreezeUser = (userId: string) => {
+    setAdminUsers((prev) =>
+      prev.map((u) => {
+        if (u.id === userId) {
+          const nextStatus = u.status === "frozen" ? "active" : "frozen";
+          setAdminActionNotice(`Account ${u.name} (${u.id}) is now ${nextStatus.toUpperCase()}.`);
+          setTimeout(() => setAdminActionNotice(""), 4000);
+          return { ...u, status: nextStatus };
+        }
+        return u;
+      })
+    );
+  };
+
+  const handleToggleSuspendUser = (userId: string) => {
+    setAdminUsers((prev) =>
+      prev.map((u) => {
+        if (u.id === userId) {
+          const nextStatus = u.status === "suspended" ? "active" : "suspended";
+          setAdminActionNotice(`Account ${u.name} (${u.id}) is now ${nextStatus.toUpperCase()}.`);
+          setTimeout(() => setAdminActionNotice(""), 4000);
+          return { ...u, status: nextStatus };
+        }
+        return u;
+      })
+    );
+  };
+
+  const handleApproveKycUser = (userId: string) => {
+    setAdminUsers((prev) =>
+      prev.map((u) => {
+        if (u.id === userId) {
+          setAdminActionNotice(`KYC Approved: ${u.name} is now ACTIVE with full banking privileges.`);
+          setTimeout(() => setAdminActionNotice(""), 4000);
+          return { ...u, status: "active" };
+        }
+        return u;
+      })
+    );
+  };
+
+  const handleDeleteUser = (userId: string) => {
+    const target = adminUsers.find((u) => u.id === userId);
+    if (!target) return;
+    if (confirm(`Are you sure you want to permanently delete user account ${target.name} (${target.id})?`)) {
+      setAdminUsers((prev) => prev.filter((u) => u.id !== userId));
+      setAdminActionNotice(`User account ${target.name} has been permanently deleted.`);
+      setTimeout(() => setAdminActionNotice(""), 4000);
+    }
+  };
+
+  const handleResetUserPassword = (userId: string) => {
+    const target = adminUsers.find((u) => u.id === userId);
+    if (!target) return;
+    const tempPass = `USB#${Math.floor(100000 + Math.random() * 900000)}`;
+    alert(`Temporary one-time password generated for ${target.name} (${target.email}):\n\n${tempPass}\n\nThis temporary pass has been saved.`);
+    setAdminActionNotice(`Password reset for ${target.name}. Temporary key dispatched.`);
+    setTimeout(() => setAdminActionNotice(""), 4000);
+  };
+
+  const handleOpenAdjustBalanceModal = (user: AdminControlledUser) => {
+    setAdjustBalanceUser(user);
+    setAdjustCheckingAmt(user.checkingBalance.toString());
+    setAdjustSavingsAmt(user.savingsBalance.toString());
+  };
+
+  const handleSaveBalanceAdjustment = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!adjustBalanceUser) return;
+    const newChecking = parseFloat(adjustCheckingAmt);
+    const newSavings = parseFloat(adjustSavingsAmt);
+    if (isNaN(newChecking) || isNaN(newSavings)) {
+      alert("Please enter valid numeric balance amounts.");
+      return;
+    }
+    setAdminUsers((prev) =>
+      prev.map((u) => {
+        if (u.id === adjustBalanceUser.id) {
+          return { ...u, checkingBalance: newChecking, savingsBalance: newSavings };
+        }
+        return u;
+      })
+    );
+    if (customerUser && adjustBalanceUser.name.toLowerCase() === customerUser.toLowerCase()) {
+      setCheckingBalance(newChecking);
+      setSavingsBalance(newSavings);
+    }
+    setAdminActionNotice(
+      `Balances updated for ${adjustBalanceUser.name}: Checking: $${newChecking.toFixed(2)}, Savings: $${newSavings.toFixed(2)}.`
+    );
+    setAdjustBalanceUser(null);
+    setTimeout(() => setAdminActionNotice(""), 4000);
+  };
+
+  const handleCreateNewUser = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newUserName.trim() || !newUserEmail.trim()) {
+      alert("Name and email are required.");
+      return;
+    }
+    const countryObj = SUPPORTED_COUNTRIES[newUserCountry] || SUPPORTED_COUNTRIES.US;
+    const newId = `USB-${countryObj.code}-${Math.floor(100000 + Math.random() * 900000)}`;
+    const createdUser: AdminControlledUser = {
+      id: newId,
+      name: newUserName.trim(),
+      email: newUserEmail.trim(),
+      phone: newUserPhone.trim() || "+1 (555) 000-0000",
+      country: countryObj.name,
+      countryCode: countryObj.code,
+      accountType: newUserAccountType,
+      checkingBalance: parseFloat(newUserChecking) || 0.0,
+      savingsBalance: parseFloat(newUserSavings) || 0.0,
+      status: "active",
+      idType: countryObj.idTypes[0]?.label || "Passport / ID",
+      idNumber: `ID-${Math.floor(100000 + Math.random() * 900000)}`,
+      createdAt: "Today",
+    };
+    setAdminUsers((prev) => [createdUser, ...prev]);
+    setNewUserModalOpen(false);
+    setNewUserName("");
+    setNewUserEmail("");
+    setNewUserPhone("");
+    setAdminActionNotice(`New customer account ${createdUser.name} (${createdUser.id}) provisioned successfully.`);
+    setTimeout(() => setAdminActionNotice(""), 4000);
+  };
+
+  const handleLoginAsCustomer = (user: AdminControlledUser) => {
+    setCustomerUser(user.name);
+    setCheckingBalance(user.checkingBalance);
+    setSavingsBalance(user.savingsBalance);
+    setCustomerModalOpen(false);
+    setAdminActionNotice(`Switched view to customer: ${user.name}`);
+    setTimeout(() => setAdminActionNotice(""), 4000);
+    window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
   const handleApplicationSubmit = (e: React.FormEvent) => {
@@ -294,6 +615,24 @@ export function Index() {
       return;
     }
     const newId = `USB-${country.code}-${Math.floor(100000 + Math.random() * 900000)}`;
+    
+    // Automatically add to Solo Admin registry as pending KYC review!
+    const newUserRecord: AdminControlledUser = {
+      id: newId,
+      name: appFullName,
+      email: appEmail,
+      phone: appPhone,
+      country: country.name,
+      countryCode: country.code,
+      accountType: `${appAccountType} (${country.currency.code})`,
+      checkingBalance: 0.0,
+      savingsBalance: 0.0,
+      status: "pending_kyc",
+      idType: appSelectedIdType || country.idTypes[0]?.label || "Identity Document",
+      idNumber: appIdNumber,
+      createdAt: "Just now",
+    };
+    setAdminUsers((prev) => [newUserRecord, ...prev]);
     setAppSubmissionSuccess(newId);
   };
 
@@ -321,6 +660,26 @@ export function Index() {
       setContactMessage("");
     }, 800);
   };
+
+  const filteredUsers = adminUsers.filter((u) => {
+    const q = adminSearchQuery.toLowerCase();
+    const matchesSearch =
+      u.name.toLowerCase().includes(q) ||
+      u.email.toLowerCase().includes(q) ||
+      u.country.toLowerCase().includes(q) ||
+      u.id.toLowerCase().includes(q);
+    if (adminStatusFilter === "all") return matchesSearch;
+    return matchesSearch && u.status === adminStatusFilter;
+  });
+
+  const totalDeposits = adminUsers.reduce(
+    (sum, u) => sum + u.checkingBalance + u.savingsBalance,
+    0
+  );
+  const pendingKycCount = adminUsers.filter((u) => u.status === "pending_kyc").length;
+  const activeCount = adminUsers.filter((u) => u.status === "active").length;
+  const frozenUsersCount = adminUsers.filter((u) => u.status === "frozen").length;
+  const suspendedUsersCount = adminUsers.filter((u) => u.status === "suspended").length;
 
   const currentIdConfig =
     country.idTypes.find((it) => it.id === appSelectedIdType) || country.idTypes[0];
@@ -391,19 +750,28 @@ export function Index() {
               </select>
             </div>
 
-            {/* Staff Sign-In Shortcut */}
-            {staffUser ? (
-              <span className="rounded bg-accent/40 px-2 py-0.5 text-xs font-bold text-white">
-                ID: {staffUser.id}
-              </span>
+            {/* Solo Admin Shortcut */}
+            {soloAdminUser ? (
+              <div className="flex items-center gap-2">
+                <span className="rounded bg-accent px-2 py-0.5 text-xs font-bold text-white shadow-xs">
+                  Solo Admin Active
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setSoloAdminUser(null)}
+                  className="text-xs text-white/80 hover:text-white underline"
+                >
+                  Exit Admin
+                </button>
+              </div>
             ) : (
               <button
                 type="button"
-                onClick={() => setStaffModalOpen(true)}
-                className="flex items-center gap-1 font-semibold text-white/90 underline-offset-4 hover:text-white hover:underline focus:outline-none"
+                onClick={() => setAdminModalOpen(true)}
+                className="flex items-center gap-1.5 font-semibold text-white/90 underline-offset-4 hover:text-white hover:underline focus:outline-none"
               >
-                <KeyRound className="h-3 w-3 text-accent" />
-                {t.staffPortal}
+                <SlidersHorizontal className="h-3 w-3 text-accent" />
+                {t.adminPortal || "Solo Admin Portal"}
               </button>
             )}
           </div>
@@ -623,14 +991,14 @@ export function Index() {
               <li className="pt-1">
                 <Button
                   variant="ghost"
-                  className="w-full text-xs text-muted-foreground"
+                  className="w-full text-xs text-muted-foreground justify-start"
                   onClick={() => {
                     setMobileMenuOpen(false);
-                    setStaffModalOpen(true);
+                    setAdminModalOpen(true);
                   }}
                 >
-                  <KeyRound className="mr-1.5 h-3.5 w-3.5 text-accent" />
-                  {t.staffPortal}
+                  <SlidersHorizontal className="mr-1.5 h-3.5 w-3.5 text-accent" />
+                  {t.adminPortal || "Solo Admin Portal"}
                 </Button>
               </li>
             </ul>
@@ -791,68 +1159,370 @@ export function Index() {
           </section>
         )}
 
-        {/* STAFF DASHBOARD VIEW */}
-        {staffUser && (
+        {/* SOLO MASTER ADMIN CONTROL CENTER (Full User Control) */}
+        {soloAdminUser && (
           <section
-            aria-labelledby="staff-portal-title"
-            className="border-b border-border bg-navy-deep text-primary-foreground py-10"
+            aria-labelledby="solo-admin-title"
+            className="border-b border-border bg-slate-950 text-white py-10 shadow-inner"
           >
             <div className="mx-auto max-w-7xl px-5">
-              <div className="flex flex-col justify-between gap-4 rounded-xl border border-white/10 bg-white/5 p-6 backdrop-blur-md md:flex-row md:items-center">
+              {/* Header Bar */}
+              <div className="flex flex-col justify-between gap-4 rounded-2xl border border-white/10 bg-white/5 p-6 backdrop-blur-md md:flex-row md:items-center">
                 <div>
                   <div className="flex items-center gap-2">
-                    <span className="rounded bg-accent px-2 py-0.5 text-xs font-bold text-white uppercase tracking-wider">
-                      Staff Administration Portal
+                    <span className="rounded bg-accent px-2.5 py-0.5 text-xs font-black text-white uppercase tracking-wider">
+                      SOLO MASTER ADMIN
                     </span>
-                    <span className="text-xs text-white/70">Role-Based Access Verified</span>
+                    <span className="rounded bg-emerald-500/20 px-2 py-0.5 text-xs font-semibold text-emerald-300 border border-emerald-500/30">
+                      Supreme Control Active
+                    </span>
+                    <span className="text-xs text-white/60">
+                      Logged in: {soloAdminUser.authenticatedAt}
+                    </span>
                   </div>
                   <h1
-                    id="staff-portal-title"
-                    className="mt-1 font-display text-2xl font-bold text-white sm:text-3xl"
+                    id="solo-admin-title"
+                    className="mt-2 font-display text-2xl font-bold text-white sm:text-3xl"
                   >
-                    Officer {staffUser.name} • {staffUser.role}
+                    User Management & System Control Center
                   </h1>
                   <p className="text-sm text-white/70">
-                    Employee ID: {staffUser.id} • Regional Compliance Oversight: {country.name}
+                    Full authority to manage all accounts, authorize KYC, adjust balances, and toggle security freezes across all 10 service territories.
                   </p>
                 </div>
-                <Button
-                  variant="outline"
-                  onClick={() => setStaffUser(null)}
-                  className="border-white/30 text-white hover:bg-white/10"
-                >
-                  <LogOut className="mr-1.5 h-4 w-4" /> Exit Staff Session
-                </Button>
+                <div className="flex flex-wrap items-center gap-3">
+                  <Button
+                    onClick={() => setNewUserModalOpen(true)}
+                    className="bg-accent text-accent-foreground font-bold hover:bg-accent/90 text-xs sm:text-sm"
+                  >
+                    <PlusCircle className="mr-1.5 h-4 w-4" /> Provision New User
+                  </Button>
+                  <Button
+                    variant="outline"
+                    onClick={() => setSoloAdminUser(null)}
+                    className="border-white/30 text-white hover:bg-white/10 text-xs sm:text-sm"
+                  >
+                    <LogOut className="mr-1.5 h-4 w-4" /> Exit Admin Session
+                  </Button>
+                </div>
               </div>
 
-              <div className="mt-6 grid gap-5 sm:grid-cols-3">
+              {/* Action Notice Alert */}
+              {adminActionNotice && (
+                <div className="mt-4 flex items-center gap-2 rounded-xl bg-emerald-500/15 border border-emerald-500/30 p-3 text-xs text-emerald-200">
+                  <CheckCircle2 className="h-4 w-4 text-emerald-400 shrink-0" />
+                  <span className="font-semibold">{adminActionNotice}</span>
+                </div>
+              )}
+
+              {/* Summary Metrics */}
+              <div className="mt-6 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
                 <div className="rounded-xl border border-white/10 bg-white/5 p-5">
-                  <div className="text-xs font-bold tracking-wider text-accent uppercase">
-                    Queue Status
+                  <div className="flex items-center justify-between text-xs font-bold tracking-wider text-accent uppercase">
+                    <span>Total Customers</span>
+                    <Users className="h-4 w-4 text-accent" />
                   </div>
-                  <div className="mt-2 text-2xl font-bold text-white">14 Pending KYC Verifications</div>
+                  <div className="mt-2 text-2xl font-black text-white">{adminUsers.length} Users</div>
                   <p className="mt-1 text-xs text-white/60">
-                    Identity cards & proof of address awaiting review
+                    {activeCount} active • {frozenUsersCount + suspendedUsersCount} restricted
                   </p>
                 </div>
+
                 <div className="rounded-xl border border-white/10 bg-white/5 p-5">
-                  <div className="text-xs font-bold tracking-wider text-accent uppercase">
-                    Handle Inquiries (@infobank)
+                  <div className="flex items-center justify-between text-xs font-bold tracking-wider text-emerald-400 uppercase">
+                    <span>Controlled Assets</span>
+                    <DollarSign className="h-4 w-4 text-emerald-400" />
                   </div>
-                  <div className="mt-2 text-2xl font-bold text-white">8 Incoming Inquiries</div>
-                  <p className="mt-1 text-xs text-white/60">
-                    Routing to regional specialists in {country.name}
-                  </p>
+                  <div className="mt-2 text-2xl font-black text-emerald-400">
+                    ${totalDeposits.toLocaleString("en-US", { minimumFractionDigits: 2 })}
+                  </div>
+                  <p className="mt-1 text-xs text-white/60">Across checking and high-yield savings</p>
                 </div>
+
                 <div className="rounded-xl border border-white/10 bg-white/5 p-5">
-                  <div className="text-xs font-bold tracking-wider text-accent uppercase">
-                    Cryptographic Status
+                  <div className="flex items-center justify-between text-xs font-bold tracking-wider text-amber-400 uppercase">
+                    <span>Pending KYC</span>
+                    <FileCheck2 className="h-4 w-4 text-amber-400" />
                   </div>
-                  <div className="mt-2 text-2xl font-bold text-emerald-400">100% Operational</div>
-                  <p className="mt-1 text-xs text-white/60">
-                    Zero plain-text passwords stored; Salted & hashed
-                  </p>
+                  <div className="mt-2 text-2xl font-black text-amber-400">{pendingKycCount} Awaiting</div>
+                  <p className="mt-1 text-xs text-white/60">Require Solo Admin document clearance</p>
                 </div>
+
+                <div className="rounded-xl border border-white/10 bg-white/5 p-5">
+                  <div className="flex items-center justify-between text-xs font-bold tracking-wider text-rose-400 uppercase">
+                    <span>Restricted Accounts</span>
+                    <ShieldBan className="h-4 w-4 text-rose-400" />
+                  </div>
+                  <div className="mt-2 text-2xl font-black text-rose-400">
+                    {frozenUsersCount + suspendedUsersCount} Blocked
+                  </div>
+                  <p className="mt-1 text-xs text-white/60">Frozen or administratively suspended</p>
+                </div>
+              </div>
+
+              {/* User Search & Filter Toolbar */}
+              <div className="mt-8 flex flex-col gap-4 rounded-xl border border-white/10 bg-white/5 p-4 sm:flex-row sm:items-center sm:justify-between">
+                <div className="relative flex-1 max-w-md">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-white/40" />
+                  <input
+                    type="text"
+                    value={adminSearchQuery}
+                    onChange={(e) => setAdminSearchQuery(e.target.value)}
+                    placeholder="Search by name, email, phone, ID, or country..."
+                    className="w-full rounded-lg border border-white/10 bg-slate-900/90 pl-9 pr-4 py-2 text-xs text-white placeholder-white/40 focus:border-accent focus:outline-none"
+                  />
+                  {adminSearchQuery && (
+                    <button
+                      type="button"
+                      onClick={() => setAdminSearchQuery("")}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-white/40 hover:text-white"
+                    >
+                      Clear
+                    </button>
+                  )}
+                </div>
+
+                <div className="flex flex-wrap items-center gap-1.5">
+                  <button
+                    type="button"
+                    onClick={() => setAdminStatusFilter("all")}
+                    className={`rounded-lg px-3 py-1.5 text-xs font-bold transition-colors ${
+                      adminStatusFilter === "all"
+                        ? "bg-accent text-white"
+                        : "bg-white/5 text-white/70 hover:bg-white/10 hover:text-white"
+                    }`}
+                  >
+                    All ({adminUsers.length})
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setAdminStatusFilter("active")}
+                    className={`rounded-lg px-3 py-1.5 text-xs font-bold transition-colors ${
+                      adminStatusFilter === "active"
+                        ? "bg-emerald-600 text-white"
+                        : "bg-white/5 text-emerald-300/80 hover:bg-white/10"
+                    }`}
+                  >
+                    Active ({activeCount})
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setAdminStatusFilter("pending_kyc")}
+                    className={`rounded-lg px-3 py-1.5 text-xs font-bold transition-colors ${
+                      adminStatusFilter === "pending_kyc"
+                        ? "bg-amber-600 text-white"
+                        : "bg-white/5 text-amber-300/80 hover:bg-white/10"
+                    }`}
+                  >
+                    Pending KYC ({pendingKycCount})
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setAdminStatusFilter("frozen")}
+                    className={`rounded-lg px-3 py-1.5 text-xs font-bold transition-colors ${
+                      adminStatusFilter === "frozen"
+                        ? "bg-cyan-600 text-white"
+                        : "bg-white/5 text-cyan-300/80 hover:bg-white/10"
+                    }`}
+                  >
+                    Frozen ({frozenUsersCount})
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setAdminStatusFilter("suspended")}
+                    className={`rounded-lg px-3 py-1.5 text-xs font-bold transition-colors ${
+                      adminStatusFilter === "suspended"
+                        ? "bg-rose-600 text-white"
+                        : "bg-white/5 text-rose-300/80 hover:bg-white/10"
+                    }`}
+                  >
+                    Suspended ({suspendedUsersCount})
+                  </button>
+                </div>
+              </div>
+
+              {/* Master Users Management Table */}
+              <div className="mt-4 overflow-x-auto rounded-xl border border-white/10 bg-slate-900/60 shadow-xl">
+                <table className="w-full text-left text-xs">
+                  <thead className="border-b border-white/10 bg-white/5 text-white/70 uppercase tracking-wider text-[0.7rem]">
+                    <tr>
+                      <th className="px-4 py-3.5 font-bold">Customer Profile</th>
+                      <th className="px-4 py-3.5 font-bold">Country & ID</th>
+                      <th className="px-4 py-3.5 font-bold">Account Balances</th>
+                      <th className="px-4 py-3.5 font-bold">Status</th>
+                      <th className="px-4 py-3.5 font-bold text-right">Master Admin Controls</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-white/5">
+                    {filteredUsers.length === 0 ? (
+                      <tr>
+                        <td colSpan={5} className="px-4 py-8 text-center text-white/50">
+                          No banking customers match the selected filter or search query.
+                        </td>
+                      </tr>
+                    ) : (
+                      filteredUsers.map((u) => (
+                        <tr key={u.id} className="hover:bg-white/5 transition-colors">
+                          {/* Profile */}
+                          <td className="px-4 py-3.5">
+                            <div className="font-bold text-white text-sm">{u.name}</div>
+                            <div className="text-white/60 text-[0.72rem]">{u.email}</div>
+                            <div className="text-white/40 text-[0.7rem] font-mono">
+                              ID: {u.id} • {u.phone}
+                            </div>
+                          </td>
+
+                          {/* Country & ID */}
+                          <td className="px-4 py-3.5">
+                            <div className="font-semibold text-white/90">
+                              {u.country}
+                            </div>
+                            <div className="text-white/60 text-[0.72rem]">{u.idType}</div>
+                            <div className="text-accent/90 text-[0.7rem] font-mono">{u.idNumber}</div>
+                          </td>
+
+                          {/* Balances */}
+                          <td className="px-4 py-3.5">
+                            <div className="font-bold text-white">
+                              Checking: <span className="text-emerald-400">${u.checkingBalance.toLocaleString("en-US", { minimumFractionDigits: 2 })}</span>
+                            </div>
+                            <div className="text-white/70 text-[0.72rem]">
+                              Savings: <span className="text-accent">${u.savingsBalance.toLocaleString("en-US", { minimumFractionDigits: 2 })}</span>
+                            </div>
+                            <div className="text-white/40 text-[0.68rem]">{u.accountType}</div>
+                          </td>
+
+                          {/* Status */}
+                          <td className="px-4 py-3.5">
+                            {u.status === "active" && (
+                              <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/20 px-2.5 py-0.5 font-bold text-emerald-300 border border-emerald-500/30">
+                                <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
+                                Active
+                              </span>
+                            )}
+                            {u.status === "pending_kyc" && (
+                              <span className="inline-flex items-center gap-1 rounded-full bg-amber-500/20 px-2.5 py-0.5 font-bold text-amber-300 border border-amber-500/30 animate-pulse">
+                                <span className="h-1.5 w-1.5 rounded-full bg-amber-400" />
+                                Pending KYC
+                              </span>
+                            )}
+                            {u.status === "frozen" && (
+                              <span className="inline-flex items-center gap-1 rounded-full bg-cyan-500/20 px-2.5 py-0.5 font-bold text-cyan-300 border border-cyan-500/30">
+                                <ShieldBan className="h-3 w-3 text-cyan-300" />
+                                Frozen
+                              </span>
+                            )}
+                            {u.status === "suspended" && (
+                              <span className="inline-flex items-center gap-1 rounded-full bg-rose-500/20 px-2.5 py-0.5 font-bold text-rose-300 border border-rose-500/30">
+                                <UserX className="h-3 w-3 text-rose-300" />
+                                Suspended
+                              </span>
+                            )}
+                          </td>
+
+                          {/* Action Controls */}
+                          <td className="px-4 py-3.5 text-right">
+                            <div className="flex flex-wrap items-center justify-end gap-1.5">
+                              {/* KYC Approval */}
+                              {u.status === "pending_kyc" && (
+                                <Button
+                                  size="sm"
+                                  onClick={() => handleApproveKycUser(u.id)}
+                                  className="h-7 bg-emerald-600 hover:bg-emerald-700 text-white text-[0.7rem] font-bold px-2.5"
+                                >
+                                  <UserCheck className="mr-1 h-3 w-3" /> Approve KYC
+                                </Button>
+                              )}
+
+                              {/* Freeze / Unfreeze */}
+                              {u.status === "frozen" ? (
+                                <Button
+                                  size="sm"
+                                  onClick={() => handleToggleFreezeUser(u.id)}
+                                  className="h-7 bg-cyan-600 hover:bg-cyan-700 text-white text-[0.7rem] font-bold px-2.5"
+                                >
+                                  <ShieldCheck className="mr-1 h-3 w-3" /> Unfreeze
+                                </Button>
+                              ) : u.status === "active" ? (
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => handleToggleFreezeUser(u.id)}
+                                  className="h-7 border-cyan-500/40 text-cyan-300 hover:bg-cyan-500/20 text-[0.7rem] px-2.5"
+                                >
+                                  <ShieldBan className="mr-1 h-3 w-3" /> Freeze
+                                </Button>
+                              ) : null}
+
+                              {/* Suspend / Reactivate */}
+                              {u.status === "suspended" ? (
+                                <Button
+                                  size="sm"
+                                  onClick={() => handleToggleSuspendUser(u.id)}
+                                  className="h-7 bg-emerald-600 hover:bg-emerald-700 text-white text-[0.7rem] font-bold px-2.5"
+                                >
+                                  <UserCheck className="mr-1 h-3 w-3" /> Reactivate
+                                </Button>
+                              ) : u.status === "active" ? (
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => handleToggleSuspendUser(u.id)}
+                                  className="h-7 border-rose-500/40 text-rose-300 hover:bg-rose-500/20 text-[0.7rem] px-2.5"
+                                >
+                                  <UserX className="mr-1 h-3 w-3" /> Suspend
+                                </Button>
+                              ) : null}
+
+                              {/* Adjust Funds */}
+                              <Button
+                                size="sm"
+                                variant="secondary"
+                                onClick={() => handleOpenAdjustBalanceModal(u)}
+                                className="h-7 text-[0.7rem] bg-white/10 text-white hover:bg-white/20 px-2.5"
+                              >
+                                <DollarSign className="mr-0.5 h-3 w-3 text-accent" /> Adjust Funds
+                              </Button>
+
+                              {/* Reset Password */}
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => handleResetUserPassword(u.id)}
+                                className="h-7 border-white/20 text-white/80 hover:bg-white/10 hover:text-white text-[0.7rem] px-2"
+                                title="Reset User Password"
+                              >
+                                <RefreshCw className="h-3 w-3" />
+                              </Button>
+
+                              {/* View / Switch to User */}
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                onClick={() => handleLoginAsCustomer(u)}
+                                className="h-7 text-white/70 hover:text-white hover:bg-white/10 text-[0.7rem] px-2"
+                                title="Switch View to Customer Dashboard"
+                              >
+                                <LogIn className="h-3 w-3" />
+                              </Button>
+
+                              {/* Delete User */}
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                onClick={() => handleDeleteUser(u.id)}
+                                className="h-7 text-rose-400 hover:text-rose-200 hover:bg-rose-500/20 text-[0.7rem] px-2"
+                                title="Delete Customer Account"
+                              >
+                                <Trash2 className="h-3 w-3" />
+                              </Button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
               </div>
             </div>
           </section>
@@ -1456,7 +2126,7 @@ export function Index() {
                     Security Notice
                   </p>
                   <p className="mt-1 leading-relaxed">
-                    US Finance Bank staff will never ask for your password, PIN, or one-time
+                    US Finance Bank officials will never ask for your password, PIN, or one-time
                     verification codes via unsolicited email or phone.
                   </p>
                 </div>
@@ -1641,10 +2311,10 @@ export function Index() {
                 <li>
                   <button
                     type="button"
-                    onClick={() => setStaffModalOpen(true)}
-                    className="hover:text-white flex items-center gap-1 text-white font-medium underline-offset-2 hover:underline"
+                    onClick={() => setAdminModalOpen(true)}
+                    className="hover:text-white flex items-center gap-1.5 text-white font-medium underline-offset-2 hover:underline"
                   >
-                    <KeyRound className="h-3 w-3 text-accent" /> Staff Sign In
+                    <SlidersHorizontal className="h-3 w-3 text-accent" /> {t.adminPortal || "Solo Admin Portal"}
                   </button>
                 </li>
               </ul>
@@ -2226,116 +2896,350 @@ export function Index() {
         </div>
       )}
 
-      {/* STAFF SIGN-IN PORTAL MODAL */}
-      {staffModalOpen && (
+      {/* SOLO ADMIN PORTAL LOGIN MODAL */}
+      {adminModalOpen && (
         <div
           role="dialog"
           aria-modal="true"
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 backdrop-blur-xs"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-4 backdrop-blur-sm"
         >
-          <div className="relative w-full max-w-md rounded-2xl border border-navy-deep/20 bg-white p-7 shadow-2xl">
+          <div className="relative w-full max-w-md rounded-2xl border border-slate-700 bg-slate-900 p-7 text-white shadow-2xl">
             <button
               type="button"
-              onClick={() => setStaffModalOpen(false)}
-              className="absolute right-4 top-4 rounded-full p-1 text-muted-foreground hover:bg-muted"
+              onClick={() => setAdminModalOpen(false)}
+              className="absolute right-4 top-4 rounded-full p-1 text-white/60 hover:bg-white/10 hover:text-white"
             >
               <X className="h-5 w-5" />
             </button>
 
             <div className="flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-navy-deep text-white">
-                <KeyRound className="h-5 w-5 text-accent" />
+              <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-accent text-white shadow-lg">
+                <SlidersHorizontal className="h-6 w-6" />
               </div>
               <div>
-                <h3 className="text-lg font-bold text-navy-deep">{t.staffPortal}</h3>
-                <p className="text-xs text-muted-foreground">Authorized Staff & Oversight Only</p>
+                <h3 className="text-lg font-bold text-white">Solo Administrator Portal</h3>
+                <p className="text-xs text-white/60">Unified Master System • Control All Users</p>
               </div>
             </div>
 
-            <div className="mt-3 rounded-md bg-amber-50 p-2.5 text-[0.7rem] leading-relaxed text-amber-800 border border-amber-200">
-              Internal staff credentials required. Public self-registration is strictly disallowed.
-              All administrative sessions are audited.
+            <div className="mt-4 rounded-lg bg-white/5 border border-white/10 p-3 text-xs text-white/80 leading-relaxed">
+              Master administrative credentials grant complete control over customer accounts, KYC approvals, balances, and global security flags.
             </div>
 
-            {staffAuthError && (
+            {/* Quick Auto-Fill Helper */}
+            <div className="mt-3">
+              <button
+                type="button"
+                onClick={() => {
+                  setAdminUsername("admin");
+                  setAdminPassword("admin");
+                }}
+                className="w-full rounded-md border border-accent/40 bg-accent/15 px-3 py-1.5 text-xs font-bold text-accent hover:bg-accent/25 transition-colors"
+              >
+                ⚡ Quick Auto-Fill Solo Admin Credentials (admin / admin)
+              </button>
+            </div>
+
+            {adminAuthError && (
               <div
                 role="alert"
-                className="mt-3 flex items-center gap-2 rounded-lg bg-red-50 p-2.5 text-xs text-red-700 border border-red-200"
+                className="mt-3 flex items-center gap-2 rounded-lg bg-rose-500/20 border border-rose-500/30 p-2.5 text-xs text-rose-200"
               >
                 <AlertCircle className="h-4 w-4 shrink-0" />
-                <span>{staffAuthError}</span>
+                <span>{adminAuthError}</span>
               </div>
             )}
 
-            <form onSubmit={handleStaffSignIn} className="mt-4 space-y-3.5">
+            <form onSubmit={handleSoloAdminSignIn} className="mt-4 space-y-4">
               <div>
-                <label htmlFor="stf-id" className="block text-xs font-bold text-foreground">
-                  Staff Email or Employee ID
+                <label htmlFor="adm-id" className="block text-xs font-bold text-white/90">
+                  Solo Admin Identifier
                 </label>
                 <input
-                  id="stf-id"
+                  id="adm-id"
                   type="text"
                   required
-                  value={staffEmail}
-                  onChange={(e) => setStaffEmail(e.target.value)}
-                  placeholder="e.g. officer.smith@usfinancebank.internal"
-                  className="mt-1 w-full rounded-md border border-input px-3.5 py-2 text-sm focus:border-primary focus:outline-none"
+                  value={adminUsername}
+                  onChange={(e) => setAdminUsername(e.target.value)}
+                  placeholder="e.g. admin or admin@usfinancebank.com"
+                  className="mt-1 w-full rounded-md border border-white/20 bg-slate-800 px-3.5 py-2 text-sm text-white placeholder-white/40 focus:border-accent focus:outline-none"
                 />
               </div>
 
               <div>
-                <label htmlFor="stf-dept" className="block text-xs font-bold text-foreground">
-                  Assignment / Role
-                </label>
-                <select
-                  id="stf-dept"
-                  value={staffDept}
-                  onChange={(e) => setStaffDept(e.target.value)}
-                  className="mt-1 w-full rounded-md border border-input bg-white px-3 py-2 text-sm focus:border-primary focus:outline-none"
-                >
-                  <option value="Operations">Regional Operations ({country.name})</option>
-                  <option value="Customer Relations">Member Relations (@infobank)</option>
-                  <option value="Underwriting">Credit & KYC Underwriting</option>
-                  <option value="Compliance">Security & Legal Compliance</option>
-                </select>
-              </div>
-
-              <div>
-                <label htmlFor="stf-pass" className="block text-xs font-bold text-foreground">
-                  Security Passphrase / Hardware Key
+                <label htmlFor="adm-pass" className="block text-xs font-bold text-white/90">
+                  Master Security Passphrase
                 </label>
                 <div className="relative mt-1">
                   <input
-                    id="stf-pass"
-                    type={showStaffPassword ? "text" : "password"}
+                    id="adm-pass"
+                    type={showAdminPassword ? "text" : "password"}
                     required
-                    value={staffPassword}
-                    onChange={(e) => setStaffPassword(e.target.value)}
-                    placeholder="Enter security passphrase"
-                    className="w-full rounded-md border border-input px-3.5 py-2 pr-10 text-sm focus:border-primary focus:outline-none"
+                    value={adminPassword}
+                    onChange={(e) => setAdminPassword(e.target.value)}
+                    placeholder="Enter admin passphrase"
+                    className="w-full rounded-md border border-white/20 bg-slate-800 px-3.5 py-2 pr-10 text-sm text-white placeholder-white/40 focus:border-accent focus:outline-none"
                   />
                   <button
                     type="button"
-                    onClick={() => setShowStaffPassword(!showStaffPassword)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                    onClick={() => setShowAdminPassword(!showAdminPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-white/60 hover:text-white"
                   >
-                    {showStaffPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    {showAdminPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                   </button>
                 </div>
               </div>
 
               <Button
                 type="submit"
-                disabled={staffAuthLoading}
-                className="w-full bg-navy-deep font-bold text-white hover:bg-navy-deep/90"
+                disabled={adminAuthLoading}
+                className="w-full bg-accent font-bold text-accent-foreground hover:bg-accent/90"
               >
-                {staffAuthLoading ? "Authenticating Staff..." : "Access Staff Dashboard"}
+                {adminAuthLoading ? "Verifying Master Authority..." : "Access Solo Admin Control Center"}
               </Button>
             </form>
 
-            <div className="mt-4 pt-3 border-t border-border text-center text-[0.72rem] text-muted-foreground">
-              Forgot staff credentials? Contact internal IT Security. Public registration is not permitted.
+            <div className="mt-4 pt-3 border-t border-white/10 text-center text-[0.7rem] text-white/50">
+              Only one solo administrator session is authorized per organization.
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* ADJUST USER BALANCE MODAL */}
+      {adjustBalanceUser && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-4 backdrop-blur-sm"
+        >
+          <div className="relative w-full max-w-md rounded-2xl border border-slate-700 bg-slate-900 p-7 text-white shadow-2xl">
+            <button
+              type="button"
+              onClick={() => setAdjustBalanceUser(null)}
+              className="absolute right-4 top-4 rounded-full p-1 text-white/60 hover:bg-white/10 hover:text-white"
+            >
+              <X className="h-5 w-5" />
+            </button>
+
+            <div className="flex items-center gap-3">
+              <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-emerald-600 text-white shadow-lg">
+                <DollarSign className="h-6 w-6" />
+              </div>
+              <div>
+                <h3 className="text-lg font-bold text-white">Adjust User Balances</h3>
+                <p className="text-xs text-white/60">
+                  {adjustBalanceUser.name} • {adjustBalanceUser.id}
+                </p>
+              </div>
+            </div>
+
+            <div className="mt-3 rounded-md bg-white/5 p-3 text-xs text-white/70">
+              User Jurisdiction: <strong className="text-white">{adjustBalanceUser.country}</strong> ({adjustBalanceUser.accountType})
+            </div>
+
+            <form onSubmit={handleSaveBalanceAdjustment} className="mt-4 space-y-4">
+              <div>
+                <label htmlFor="adj-check" className="block text-xs font-bold text-white/90">
+                  Checking Account Balance (USD $)
+                </label>
+                <input
+                  id="adj-check"
+                  type="number"
+                  step="0.01"
+                  required
+                  value={adjustCheckingAmt}
+                  onChange={(e) => setAdjustCheckingAmt(e.target.value)}
+                  className="mt-1 w-full rounded-md border border-white/20 bg-slate-800 px-3.5 py-2 text-sm text-white focus:border-accent focus:outline-none"
+                />
+              </div>
+
+              <div>
+                <label htmlFor="adj-save" className="block text-xs font-bold text-white/90">
+                  High-Yield Savings Balance (USD $)
+                </label>
+                <input
+                  id="adj-save"
+                  type="number"
+                  step="0.01"
+                  required
+                  value={adjustSavingsAmt}
+                  onChange={(e) => setAdjustSavingsAmt(e.target.value)}
+                  className="mt-1 w-full rounded-md border border-white/20 bg-slate-800 px-3.5 py-2 text-sm text-white focus:border-accent focus:outline-none"
+                />
+              </div>
+
+              <div className="flex items-center justify-end gap-3 pt-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setAdjustBalanceUser(null)}
+                  className="border-white/20 text-white hover:bg-white/10"
+                >
+                  Cancel
+                </Button>
+                <Button type="submit" className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold">
+                  Save & Apply Balances
+                </Button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* PROVISION NEW CUSTOMER MODAL */}
+      {newUserModalOpen && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-4 backdrop-blur-sm"
+        >
+          <div className="relative w-full max-w-lg rounded-2xl border border-slate-700 bg-slate-900 p-7 text-white shadow-2xl max-h-[90vh] overflow-y-auto">
+            <button
+              type="button"
+              onClick={() => setNewUserModalOpen(false)}
+              className="absolute right-4 top-4 rounded-full p-1 text-white/60 hover:bg-white/10 hover:text-white"
+            >
+              <X className="h-5 w-5" />
+            </button>
+
+            <div className="flex items-center gap-3">
+              <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-accent text-white shadow-lg">
+                <PlusCircle className="h-6 w-6" />
+              </div>
+              <div>
+                <h3 className="text-lg font-bold text-white">Provision New Customer Account</h3>
+                <p className="text-xs text-white/60">Admin Direct Account Creation</p>
+              </div>
+            </div>
+
+            <form onSubmit={handleCreateNewUser} className="mt-5 space-y-4">
+              <div>
+                <label htmlFor="nu-name" className="block text-xs font-bold text-white/90">
+                  Full Customer Name
+                </label>
+                <input
+                  id="nu-name"
+                  type="text"
+                  required
+                  value={newUserName}
+                  onChange={(e) => setNewUserName(e.target.value)}
+                  placeholder="e.g. David Sterling"
+                  className="mt-1 w-full rounded-md border border-white/20 bg-slate-800 px-3.5 py-2 text-sm text-white focus:border-accent focus:outline-none"
+                />
+              </div>
+
+              <div className="grid gap-3 sm:grid-cols-2">
+                <div>
+                  <label htmlFor="nu-email" className="block text-xs font-bold text-white/90">
+                    Email Address
+                  </label>
+                  <input
+                    id="nu-email"
+                    type="email"
+                    required
+                    value={newUserEmail}
+                    onChange={(e) => setNewUserEmail(e.target.value)}
+                    placeholder="david.s@example.com"
+                    className="mt-1 w-full rounded-md border border-white/20 bg-slate-800 px-3.5 py-2 text-sm text-white focus:border-accent focus:outline-none"
+                  />
+                </div>
+
+                <div>
+                  <label htmlFor="nu-phone" className="block text-xs font-bold text-white/90">
+                    Phone Number
+                  </label>
+                  <input
+                    id="nu-phone"
+                    type="text"
+                    value={newUserPhone}
+                    onChange={(e) => setNewUserPhone(e.target.value)}
+                    placeholder="+1 (555) 302-8921"
+                    className="mt-1 w-full rounded-md border border-white/20 bg-slate-800 px-3.5 py-2 text-sm text-white focus:border-accent focus:outline-none"
+                  />
+                </div>
+              </div>
+
+              <div className="grid gap-3 sm:grid-cols-2">
+                <div>
+                  <label htmlFor="nu-country" className="block text-xs font-bold text-white/90">
+                    Jurisdiction / Territory
+                  </label>
+                  <select
+                    id="nu-country"
+                    value={newUserCountry}
+                    onChange={(e) => setNewUserCountry(e.target.value)}
+                    className="mt-1 w-full rounded-md border border-white/20 bg-slate-800 px-3 py-2 text-sm text-white focus:border-accent focus:outline-none"
+                  >
+                    {Object.values(SUPPORTED_COUNTRIES).map((c) => (
+                      <option key={c.code} value={c.code}>
+                        {c.flag} {c.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label htmlFor="nu-type" className="block text-xs font-bold text-white/90">
+                    Account Classification
+                  </label>
+                  <select
+                    id="nu-type"
+                    value={newUserAccountType}
+                    onChange={(e) => setNewUserAccountType(e.target.value)}
+                    className="mt-1 w-full rounded-md border border-white/20 bg-slate-800 px-3 py-2 text-sm text-white focus:border-accent focus:outline-none"
+                  >
+                    <option value="Advantage Checking & Savings">Advantage Checking & Savings</option>
+                    <option value="Commercial Treasury">Commercial Treasury</option>
+                    <option value="High-Yield Savings">High-Yield Savings</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="grid gap-3 sm:grid-cols-2">
+                <div>
+                  <label htmlFor="nu-check" className="block text-xs font-bold text-white/90">
+                    Initial Checking Deposit ($)
+                  </label>
+                  <input
+                    id="nu-check"
+                    type="number"
+                    step="0.01"
+                    value={newUserChecking}
+                    onChange={(e) => setNewUserChecking(e.target.value)}
+                    className="mt-1 w-full rounded-md border border-white/20 bg-slate-800 px-3.5 py-2 text-sm text-white focus:border-accent focus:outline-none"
+                  />
+                </div>
+
+                <div>
+                  <label htmlFor="nu-save" className="block text-xs font-bold text-white/90">
+                    Initial Savings Deposit ($)
+                  </label>
+                  <input
+                    id="nu-save"
+                    type="number"
+                    step="0.01"
+                    value={newUserSavings}
+                    onChange={(e) => setNewUserSavings(e.target.value)}
+                    className="mt-1 w-full rounded-md border border-white/20 bg-slate-800 px-3.5 py-2 text-sm text-white focus:border-accent focus:outline-none"
+                  />
+                </div>
+              </div>
+
+              <div className="flex items-center justify-end gap-3 pt-3">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setNewUserModalOpen(false)}
+                  className="border-white/20 text-white hover:bg-white/10"
+                >
+                  Cancel
+                </Button>
+                <Button type="submit" className="bg-accent text-accent-foreground font-bold hover:bg-accent/90">
+                  Provision Customer Account
+                </Button>
+              </div>
+            </form>
           </div>
         </div>
       )}
