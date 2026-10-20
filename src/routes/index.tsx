@@ -1124,12 +1124,15 @@ export function Index() {
   const currentIdConfig =
     country.idTypes.find((it) => it.id === appSelectedIdType) || country.idTypes[0];
 
-  // If authenticated as Staff Sign-In Admin, render the full dedicated dashboard interface matching the reference layout
-  if (soloAdminUser) {
+  // If authenticated as Staff Sign-In Admin, render the full dedicated dashboard interface matching the reference layout.
+  // The session is read through a local alias so the state variable keeps its full type in the markup below
+  // (the inline admin panel further down is legacy markup that only renders when this branch is not taken).
+  const activeAdminSession = soloAdminUser;
+  if (activeAdminSession) {
     return (
       <SoloAdminDashboard
         onSignOut={() => setSoloAdminUser(null)}
-        adminUsername={soloAdminUser.username}
+        adminUsername={activeAdminSession.username}
       />
     );
   }
