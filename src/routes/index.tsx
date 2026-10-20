@@ -1208,11 +1208,11 @@ export function Index() {
                 type="button"
                 onClick={() => setAdminModalOpen(true)}
                 className="flex items-center gap-1.5 font-semibold text-white/90 underline-offset-4 hover:text-white hover:underline focus:outline-none"
-                title="Staff Sign In Admin — Centralized Super Administrator Dashboard"
+                title="Staff Sign-In Admin Dashboard"
               >
                 <SlidersHorizontal className="h-3 w-3 text-accent shrink-0" />
-                <span className="hidden xl:inline">Staff Sign In Admin — Centralized Super Administrator Dashboard</span>
-                <span className="xl:hidden">Staff Sign In Admin</span>
+                <span className="hidden xl:inline">Staff Sign-In Admin Dashboard</span>
+                <span className="xl:hidden">Staff Sign-In Admin</span>
               </button>
             )}
           </div>
@@ -1439,7 +1439,7 @@ export function Index() {
                   }}
                 >
                   <SlidersHorizontal className="mr-1.5 h-3.5 w-3.5 text-accent shrink-0" />
-                  Staff Sign In Admin — Centralized Super Administrator Dashboard
+                  Staff Sign-In Admin Dashboard
                 </Button>
               </li>
             </ul>
@@ -1600,7 +1600,7 @@ export function Index() {
           </section>
         )}
 
-        {/* STAFF SIGN IN ADMIN — CENTRALIZED SUPER ADMINISTRATOR DASHBOARD */}
+        {/* STAFF SIGN-IN ADMIN DASHBOARD */}
         {soloAdminUser && (
           <section
             aria-labelledby="solo-admin-title"
@@ -1612,10 +1612,10 @@ export function Index() {
                 <div>
                   <div className="flex flex-wrap items-center gap-2">
                     <span className="rounded bg-accent px-2.5 py-0.5 text-xs font-black text-white uppercase tracking-wider">
-                      STAFF SIGN IN ADMIN
+                      STAFF SIGN-IN ADMIN
                     </span>
                     <span className="rounded bg-emerald-500/20 px-2 py-0.5 text-xs font-semibold text-emerald-300 border border-emerald-500/30">
-                      Master Clearance Active
+                      Staff Authority Active
                     </span>
                     <span className="text-xs text-white/60">
                       Session Authenticated: {soloAdminUser.authenticatedAt}
@@ -1625,10 +1625,10 @@ export function Index() {
                     id="solo-admin-title"
                     className="mt-2 font-display text-2xl font-bold text-white sm:text-3xl"
                   >
-                    Staff Sign In Admin — Centralized Super Administrator Dashboard
+                    Staff Sign-In Admin Dashboard
                   </h1>
                   <p className="text-sm text-white/70">
-                    Unified central administration for customer accounts, banking applications, client inquiries (@infobank), and security audit logs.
+                    Administration console for customer accounts, banking applications, client inquiries (@infobank), and security audit logs.
                   </p>
                 </div>
                 <div className="flex flex-wrap items-center gap-3">
@@ -3262,7 +3262,7 @@ export function Index() {
                     onClick={() => setAdminModalOpen(true)}
                     className="hover:text-white flex items-center gap-1.5 text-white font-medium underline-offset-2 hover:underline"
                   >
-                    <SlidersHorizontal className="h-3 w-3 text-accent" /> Staff Sign In Admin — Centralized Super Administrator Dashboard
+                    <SlidersHorizontal className="h-3 w-3 text-accent" /> Staff Sign-In Admin Dashboard
                   </button>
                 </li>
               </ul>
@@ -3865,7 +3865,7 @@ export function Index() {
                 <SlidersHorizontal className="h-6 w-6" />
               </div>
               <div>
-                <h3 className="text-base font-bold text-white sm:text-lg">Staff Sign In Admin — Centralized Super Administrator Dashboard</h3>
+                <h3 className="text-base font-bold text-white sm:text-lg">Staff Sign-In Admin Dashboard</h3>
                 <p className="text-xs text-white/60">Unified Master System • Control All Users, Applications & Inquiries</p>
               </div>
             </div>

@@ -174,7 +174,7 @@ export function SoloAdminDashboard({
     const entry: SoloAdminAuditEntry = {
       id: `AUD-${Date.now().toString().slice(-4)}`,
       timestamp: "Today, " + new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
-      actor: "Solo Administrator",
+      actor: "Staff Admin",
       section,
       action,
       targetId,
@@ -199,11 +199,11 @@ export function SoloAdminDashboard({
     const historyEntry = {
       id: `HIS-${Date.now().toString().slice(-4)}`,
       timestamp: "Today, " + new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
-      actor: "Solo Administrator",
+      actor: "Staff Admin",
       action: `Online Access Status changed to ${newStatus}`,
       previousState: oldStatus,
       newState: newStatus,
-      reason: reason || "Administrative action executed by Solo Admin",
+      reason: reason || "Administrative action executed by Staff Admin",
     };
 
     setAdminUsers((prev) =>
@@ -255,7 +255,7 @@ export function SoloAdminDashboard({
     const historyEntry = {
       id: `HIS-${Date.now().toString().slice(-4)}`,
       timestamp: "Today, " + new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
-      actor: "Solo Administrator",
+      actor: "Staff Admin",
       action: "Revoked All Active Web & Mobile Sessions",
       previousState: `${user.security.activeSessionsCount} active sessions`,
       newState: "0 active sessions",
@@ -302,11 +302,11 @@ export function SoloAdminDashboard({
     const historyEntry = {
       id: `HIS-${Date.now().toString().slice(-4)}`,
       timestamp: "Today, " + new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
-      actor: "Solo Administrator",
+      actor: "Staff Admin",
       action: "Enforced Mandatory Password Reset on Next Login",
       previousState: user.security.passwordResetRequired ? "Reset Flagged" : "Standard",
       newState: "Reset Required",
-      reason: reason || "Credential rotation policy triggered by Solo Admin",
+      reason: reason || "Credential rotation policy triggered by Staff Admin",
     };
 
     setAdminUsers((prev) =>
@@ -378,7 +378,7 @@ export function SoloAdminDashboard({
     const historyEntry = {
       id: `HIS-${Date.now().toString().slice(-4)}`,
       timestamp: "Today, " + new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
-      actor: "Solo Administrator",
+      actor: "Staff Admin",
       action: "Updated Permitted User Profile Details",
       previousState: "Previous profile snapshot",
       newState: diffs.join(" | "),
@@ -426,7 +426,7 @@ export function SoloAdminDashboard({
 
   const handleAddInternalAdminNote = (userId: string) => {
     if (!newAdminNoteText.trim()) return;
-    const note = `[${new Date().toLocaleDateString([], { month: "short", day: "numeric", year: "numeric" })} - Solo Admin]: ${newAdminNoteText.trim()}`;
+    const note = `[${new Date().toLocaleDateString([], { month: "short", day: "numeric", year: "numeric" })} - Staff Admin]: ${newAdminNoteText.trim()}`;
 
     setAdminUsers((prev) =>
       prev.map((u) =>
@@ -503,7 +503,7 @@ export function SoloAdminDashboard({
               status: "Flagged",
               flagReason: reason,
               reviewedAt: "Today, " + new Date().toLocaleTimeString(),
-              reviewedBy: "Solo Administrator",
+              reviewedBy: "Staff Admin",
             }
           : t
       )
@@ -523,7 +523,7 @@ export function SoloAdminDashboard({
               status: "Resolved",
               reviewNotes: notes,
               reviewedAt: "Today, " + new Date().toLocaleTimeString(),
-              reviewedBy: "Solo Administrator",
+              reviewedBy: "Staff Admin",
             }
           : t
       )
@@ -548,7 +548,7 @@ export function SoloAdminDashboard({
               status: decision,
               decision,
               decisionReason: reason,
-              reviewer: "Solo Administrator",
+              reviewer: "Staff Admin",
               decisionTimestamp: "Today, " + new Date().toLocaleTimeString(),
             }
           : r
@@ -574,7 +574,7 @@ export function SoloAdminDashboard({
               ...sc.conversation,
               {
                 sender: "admin",
-                senderName: "Solo Administrator",
+                senderName: "Staff Admin",
                 message: replyMessage.trim(),
                 timestamp: "Today, " + new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
               },
@@ -879,7 +879,7 @@ export function SoloAdminDashboard({
               {showProfileMenu && (
                 <div className="absolute right-0 mt-2 w-48 rounded-xl border border-slate-200 bg-white py-1 shadow-xl z-50 text-slate-800 animate-fadeIn">
                   <div className="px-4 py-2 border-b border-slate-100">
-                    <p className="text-xs font-bold text-slate-800">Solo Administrator</p>
+                    <p className="text-xs font-bold text-slate-800">Staff Admin</p>
                     <p className="text-[0.68rem] text-slate-500">US Finance Bank Internal</p>
                   </div>
                   <button
@@ -1101,7 +1101,7 @@ export function SoloAdminDashboard({
                     </div>
                     <div>
                       <span className="text-xs font-semibold text-slate-500">Security Clearance</span>
-                      <p className="font-display text-sm font-bold text-emerald-600">Solo Admin Active</p>
+                      <p className="font-display text-sm font-bold text-emerald-600">Staff Admin Active</p>
                     </div>
                   </div>
                 </div>
@@ -1213,7 +1213,7 @@ export function SoloAdminDashboard({
                 <div className="flex items-center justify-between border-b border-slate-100 pb-4">
                   <div>
                     <h3 className="font-bold text-sm text-slate-800">Recent Core Administrative Activity</h3>
-                    <p className="text-xs text-slate-500">Append-only security log records performed by Solo Admin</p>
+                    <p className="text-xs text-slate-500">Append-only security log records performed by Staff Admin</p>
                   </div>
                   <Button
                     size="sm"
@@ -1261,7 +1261,7 @@ export function SoloAdminDashboard({
                   <div className="flex items-center gap-2">
                     <h2 className="font-display text-2xl font-black text-slate-800">User Management</h2>
                     <span className="rounded-full bg-red-100 px-2.5 py-0.5 text-xs font-bold text-red-700 border border-red-200">
-                      Solo Admin Authority
+                      Staff Admin Authority
                     </span>
                   </div>
                   <p className="text-xs text-slate-500 mt-1">
@@ -1315,7 +1315,7 @@ export function SoloAdminDashboard({
                 <div className="space-y-1">
                   <span className="font-bold text-red-900">Important Access & Safety Architecture Notice:</span>
                   <p className="text-[0.72rem] text-slate-600 leading-relaxed">
-                    Online Access status directly governs a user&apos;s digital credential authentication and mobile/web portal authorization. It is strictly separate from customer legal status and underlying financial account settlement. All password updates, credential revocations, and permitted profile edits are append-only logged with explicit audit reasons. Solo Administrators are barred from viewing passwords, impersonating users, or initiating funds transfers.
+                    Online Access status directly governs a user&apos;s digital credential authentication and mobile/web portal authorization. It is strictly separate from customer legal status and underlying financial account settlement. All password updates, credential revocations, and permitted profile edits are append-only logged with explicit audit reasons. Staff Admins are barred from viewing passwords, impersonating users, or initiating funds transfers.
                   </p>
                 </div>
               </div>
@@ -1596,7 +1596,7 @@ export function SoloAdminDashboard({
                       <div>
                         <h4 className="font-bold text-sm text-slate-900 flex items-center gap-2">
                           <Lock className="h-4 w-4 text-red-600" />
-                          Digital Online Access Controls (Solo Administrator)
+                          Digital Online Access Controls (Staff Admin)
                         </h4>
                         <p className="text-xs text-slate-500 mt-0.5">
                           Modifying digital access does not reverse or alter settled bank funds. Re-authentication password is required for audit confirmation.
@@ -1709,7 +1709,7 @@ export function SoloAdminDashboard({
                         Internal Administrator Notes
                       </h4>
                       <p className="text-xs text-slate-500 mt-0.5">
-                        Private administrative log entries visible only to the Solo Administrator.
+                        Private administrative log entries visible only to the Staff Admin.
                       </p>
 
                       <div className="mt-3 flex gap-2">
@@ -2768,7 +2768,7 @@ export function SoloAdminDashboard({
 
                       <div>
                         <label className="block text-xs font-bold text-slate-400 mb-1">
-                          Solo Admin Rationale / Compliance Decision Reason:
+                          Staff Admin Rationale / Compliance Decision Reason:
                         </label>
                         <textarea
                           rows={3}
@@ -2812,7 +2812,7 @@ export function SoloAdminDashboard({
                 <div>
                   <h2 className="font-display text-2xl font-black text-white">Client Support Cases</h2>
                   <p className="text-xs text-slate-400">
-                    Direct communications queue managed exclusively by the Solo Administrator.
+                    Direct communications queue managed exclusively by the Staff Admin.
                   </p>
                 </div>
                 <div className="flex items-center gap-2">
@@ -2981,7 +2981,7 @@ export function SoloAdminDashboard({
                 <div className="rounded-2xl border border-slate-800 bg-slate-900/60 p-5">
                   <span className="text-xs font-bold text-slate-400 uppercase">Support Resolution Rate</span>
                   <p className="text-2xl font-black text-white mt-2">92%</p>
-                  <span className="text-[0.7rem] text-purple-400">Solo Administrator response time: 28 min</span>
+                  <span className="text-[0.7rem] text-purple-400">Staff Admin response time: 28 min</span>
                 </div>
               </div>
             </div>
@@ -3064,7 +3064,7 @@ export function SoloAdminDashboard({
               <div>
                 <h2 className="font-display text-2xl font-black text-white">Security & Workspace Controls</h2>
                 <p className="text-xs text-slate-400">
-                  Solo Administrator identity controls, session governance, and credential safeguards.
+                  Staff Admin identity controls, session governance, and credential safeguards.
                 </p>
               </div>
 
@@ -3075,7 +3075,7 @@ export function SoloAdminDashboard({
                     SA
                   </div>
                   <div>
-                    <h3 className="font-bold text-white text-base">Designated Solo Administrator</h3>
+                    <h3 className="font-bold text-white text-base">Designated Staff Admin</h3>
                     <p className="text-xs text-teal-400 font-mono">ROLE: SOLO_ADMIN (Central Authority)</p>
                   </div>
                 </div>
@@ -3148,7 +3148,7 @@ export function SoloAdminDashboard({
               </div>
               <div>
                 <h3 className="font-bold text-white text-base">{confirmActionModal.title}</h3>
-                <p className="text-xs text-slate-400">Confirmation Required by Solo Admin</p>
+                <p className="text-xs text-slate-400">Confirmation Required by Staff Admin</p>
               </div>
             </div>
 
