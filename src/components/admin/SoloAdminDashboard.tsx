@@ -22,6 +22,7 @@ import {
   Filter,
   CheckCircle2,
   XCircle,
+  X,
   Clock,
   Download,
   AlertCircle,
@@ -98,6 +99,7 @@ export function SoloAdminDashboard({
     "overview" | "users" | "customers" | "accounts" | "transactions" | "compliance" | "support" | "reports" | "audit" | "settings"
   >("overview");
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   const [globalSearch, setGlobalSearch] = useState("");
   const [showNotifications, setShowNotifications] = useState(false);
   const [showProfileMenu, setShowProfileMenu] = useState(false);
@@ -1030,21 +1032,112 @@ export function SoloAdminDashboard({
   return (
     <div className="flex h-screen w-full bg-[#f4f6f9] font-sans text-slate-800 antialiased overflow-hidden">
       {/* ============================================================ */}
-      {/* 1. COLLAPSIBLE LEFT SIDEBAR (White clean with red accents) */}
+      {/* 1. MOBILE OVERLAY SIDEBAR DRAWER (< md) */}
       {/* ============================================================ */}
-      {/* Mobile Backdrop when sidebar is expanded on small screens */}
-      {!sidebarCollapsed && (
-        <div
-          className="fixed inset-0 z-25 bg-black/50 md:hidden"
-          onClick={() => setSidebarCollapsed(true)}
-          aria-hidden="true"
-        />
+      {mobileSidebarOpen && (
+        <>
+          <div
+            className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs md:hidden"
+            onClick={() => setMobileSidebarOpen(false)}
+            aria-hidden="true"
+          />
+          <aside
+            className="fixed inset-y-0 left-0 z-55 w-72 max-w-[85vw] bg-white shadow-2xl flex flex-col md:hidden animate-in slide-in-from-left duration-200"
+          >
+            {/* Mobile Sidebar Header */}
+            <div className="flex items-center justify-between border-b border-slate-100 p-4">
+              <div className="flex items-center gap-3">
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#0a192f] text-white font-bold text-sm border-2 border-red-600 shadow-sm">
+                  <User className="h-5 w-5" />
+                </div>
+                <div className="min-w-0 leading-tight">
+                  <span className="block font-bold text-slate-800 text-sm truncate">
+                    {adminUsername === "Solo Master Administrator" ? "admin admin" : adminUsername}
+                  </span>
+                  <span className="inline-block mt-0.5 rounded bg-red-600 px-2 py-0.5 text-[0.65rem] font-bold text-white">
+                    Admin
+                  </span>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setMobileSidebarOpen(false)}
+                className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-700"
+                aria-label="Close navigation"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            {/* Mobile Nav Links */}
+            <nav className="flex-1 space-y-1 overflow-y-auto px-3 py-4">
+              {[
+                { id: "overview", label: "Dashboard", icon: Home },
+                { id: "users", label: "Manage Users", icon: User },
+                { id: "compliance", label: "Grant Applications", icon: HandCoins, hasSubmenu: true },
+                { id: "create-user", label: "Create New user", icon: UserPlus },
+                { id: "applications", label: "New User Application(s)", icon: UserCheck },
+                { id: "transactions", label: "Transfer Transactions", icon: ArrowUpRight },
+                { id: "history", label: "Transaction History", icon: History, hasSubmenu: true },
+              ].map((item) => {
+                const Icon = item.icon;
+                const isActive =
+                  activeSection === item.id ||
+                  (item.id === "create-user" && createUserModalOpen) ||
+                  (item.id === "history" && activeSection === "transactions");
+                return (
+                  <button
+                    key={item.id}
+                    type="button"
+                    onClick={() => {
+                      setMobileSidebarOpen(false);
+                      if (item.id === "create-user") {
+                        setCreateUserModalOpen(true);
+                      } else if (item.id === "history") {
+                        setActiveSection("transactions");
+                        appendAuditLog("Overview", "Navigated to Transaction History", "Administrator accessed transaction history.");
+                      } else if (item.id === "applications") {
+                        setActiveSection("compliance");
+                        appendAuditLog("Overview", "Navigated to New User Applications", "Administrator opened applications queue.");
+                      } else {
+                        setActiveSection(item.id as any);
+                        appendAuditLog("Overview", `Navigated to ${item.label}`, `Administrator switched workspace view.`);
+                      }
+                    }}
+                    className={`flex w-full items-center gap-3 rounded-lg px-3.5 py-3 text-xs font-semibold transition-all ${
+                      isActive
+                        ? "bg-[#0a192f] text-white shadow-sm font-bold border-l-4 border-red-600 pl-2.5"
+                        : "text-slate-600 hover:bg-slate-100 hover:text-[#0a192f]"
+                    }`}
+                  >
+                    <Icon className={`h-4 w-4 shrink-0 ${isActive ? "text-white" : "text-slate-500"}`} />
+                    <span className="flex-1 text-left truncate">{item.label}</span>
+                  </button>
+                );
+              })}
+            </nav>
+
+            {/* Mobile Sidebar Footer */}
+            <div className="border-t border-slate-100 p-3">
+              <button
+                type="button"
+                onClick={onSignOut}
+                className="flex w-full items-center gap-2 rounded-lg p-2.5 text-xs font-semibold text-red-600 hover:bg-red-50 transition-colors"
+              >
+                <LogOut className="h-4 w-4 text-red-600" />
+                <span>Sign Out</span>
+              </button>
+            </div>
+          </aside>
+        </>
       )}
+
+      {/* ============================================================ */}
+      {/* 2. DESKTOP COLLAPSIBLE SIDEBAR (Hidden on mobile) */}
+      {/* ============================================================ */}
       <aside
-        className={`flex flex-col border-r border-slate-200 bg-white transition-all duration-300 shadow-xs ${
-          sidebarCollapsed
-            ? "hidden md:flex md:w-20 z-30"
-            : "fixed inset-y-0 left-0 z-30 w-64 md:relative md:flex md:w-64"
+        className={`hidden md:flex flex-col border-r border-slate-200 bg-white transition-all duration-300 shadow-xs z-30 shrink-0 ${
+          sidebarCollapsed ? "w-20" : "w-64"
         }`}
       >
         {/* Admin Profile Area in Left Sidebar matching visual reference */}
@@ -1133,29 +1226,36 @@ export function SoloAdminDashboard({
       </aside>
 
       {/* ============================================================ */}
-      {/* 2. MAIN WORKSPACE CONTAINER */}
+      {/* 3. MAIN WORKSPACE CONTAINER */}
       {/* ============================================================ */}
-      <div className="flex flex-1 flex-col overflow-hidden">
+      <div className="flex flex-1 flex-col overflow-hidden min-w-0 w-full">
         {/* TOP NAVIGATION BAR — Navy Blue, White, and Red Theme (US Flag Inspired) */}
-        <header className="flex h-16 items-center justify-between bg-[#0a192f] border-b-4 border-red-600 px-6 text-white shadow-md z-20">
+        <header className="flex h-16 items-center justify-between bg-[#0a192f] border-b-4 border-red-600 px-3 sm:px-6 text-white shadow-md z-20 shrink-0">
           {/* Left: Bank Name & Menu Toggle */}
-          <div className="flex items-center gap-4">
-            <div className="flex items-center gap-2.5">
-              <span className="flex h-7 w-7 items-center justify-center rounded bg-red-600 text-white font-black text-xs shadow-xs">
-                US
-              </span>
-              <span className="font-display text-lg font-black tracking-tight text-white select-none">
-                US Finance Bank
-              </span>
-            </div>
+          <div className="flex items-center gap-2 sm:gap-4 min-w-0">
             <button
               type="button"
-              onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
-              className="rounded-lg p-1.5 text-white/90 hover:bg-white/15 hover:text-white transition-colors"
-              title={sidebarCollapsed ? "Expand Sidebar" : "Collapse Sidebar"}
+              onClick={() => {
+                if (typeof window !== "undefined" && window.innerWidth < 768) {
+                  setMobileSidebarOpen(true);
+                } else {
+                  setSidebarCollapsed(!sidebarCollapsed);
+                }
+              }}
+              className="rounded-lg p-1.5 text-white/90 hover:bg-white/15 hover:text-white transition-colors shrink-0"
+              title="Toggle Menu"
+              aria-label="Toggle Menu"
             >
               <Menu className="h-5 w-5" />
             </button>
+            <div className="flex items-center gap-2 min-w-0">
+              <span className="flex h-7 w-7 items-center justify-center rounded bg-red-600 text-white font-black text-xs shadow-xs shrink-0">
+                US
+              </span>
+              <span className="font-display text-base sm:text-lg font-black tracking-tight text-white select-none truncate">
+                US Finance Bank
+              </span>
+            </div>
           </div>
 
           {/* Center: Search Field matching screenshot */}
@@ -1305,44 +1405,44 @@ export function SoloAdminDashboard({
         )}
 
         {/* Content View Area */}
-        <main className="flex-1 overflow-y-auto bg-[#f4f6f9] p-6">
+        <main className="flex-1 overflow-y-auto bg-[#f4f6f9] p-3 sm:p-6 min-w-0">
           {/* ======================================================== */}
           {/* VIEW 1: MAIN DASHBOARD (RED & WHITE THEME MATCHING SCREENSHOT) */}
           {/* ======================================================== */}
           {activeSection === "overview" && (
-            <div className="space-y-6 max-w-7xl mx-auto">
+            <div className="space-y-4 sm:space-y-6 max-w-7xl mx-auto w-full">
               {/* Top Banner Header: Navy Blue & Red accent matching US flag colors */}
-              <div className="rounded-t-2xl bg-gradient-to-r from-[#0a192f] via-[#102747] to-[#183964] border-b-4 border-red-600 p-6 sm:p-8 text-white shadow-md relative overflow-hidden pb-12">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                  <div>
-                    <h1 className="font-display text-2xl sm:text-3xl font-extrabold tracking-tight">
+              <div className="rounded-t-2xl bg-gradient-to-r from-[#0a192f] via-[#102747] to-[#183964] border-b-4 border-red-600 p-4 sm:p-8 text-white shadow-md relative overflow-hidden pb-10 sm:pb-12">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4">
+                  <div className="min-w-0">
+                    <h1 className="font-display text-xl sm:text-3xl font-extrabold tracking-tight truncate">
                       Dashboard
                     </h1>
-                    <p className="text-sm text-slate-200 mt-1">
+                    <p className="text-xs sm:text-sm text-slate-200 mt-1 truncate">
                       Welcome, {adminUsername === "Solo Master Administrator" ? "admin admin" : adminUsername}!
                     </p>
                   </div>
 
                   {/* 3 Quick Links Buttons matching screenshot */}
-                  <div className="flex flex-wrap items-center gap-2 sm:gap-3">
+                  <div className="grid grid-cols-3 sm:flex sm:flex-wrap items-center gap-2 sm:gap-3 w-full sm:w-auto">
                     <button
                       type="button"
                       onClick={() => setActiveSection("accounts")}
-                      className="rounded-lg bg-emerald-500 hover:bg-emerald-600 px-4 py-2 text-xs font-bold text-white shadow-sm transition-colors"
+                      className="rounded-lg bg-emerald-500 hover:bg-emerald-600 px-3 py-2 text-xs font-bold text-white shadow-sm transition-colors text-center"
                     >
                       Deposits
                     </button>
                     <button
                       type="button"
                       onClick={() => setActiveSection("transactions")}
-                      className="rounded-lg bg-sky-500 hover:bg-sky-600 px-4 py-2 text-xs font-bold text-white shadow-sm transition-colors"
+                      className="rounded-lg bg-sky-500 hover:bg-sky-600 px-3 py-2 text-xs font-bold text-white shadow-sm transition-colors text-center"
                     >
                       Transfers
                     </button>
                     <button
                       type="button"
                       onClick={() => setActiveSection("users")}
-                      className="rounded-lg bg-purple-600 hover:bg-purple-700 px-4 py-2 text-xs font-bold text-white shadow-sm transition-colors"
+                      className="rounded-lg bg-purple-600 hover:bg-purple-700 px-3 py-2 text-xs font-bold text-white shadow-sm transition-colors text-center"
                     >
                       Users
                     </button>
@@ -1351,75 +1451,75 @@ export function SoloAdminDashboard({
               </div>
 
               {/* SUMMARY CARDS GRID matching the 7 summary cards in screenshot */}
-              <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm -mt-8 relative z-10 mx-2 sm:mx-4">
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+              <div className="rounded-xl sm:rounded-2xl border border-slate-200 bg-white p-3.5 sm:p-6 shadow-sm -mt-6 sm:-mt-8 relative z-10 mx-0 sm:mx-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6">
                   {/* Card 1: Total Deposit */}
                   <div
                     onClick={() => setActiveSection("accounts")}
-                    className="flex items-center gap-4 p-4 rounded-xl border border-slate-100 hover:border-red-200 hover:bg-red-50/30 cursor-pointer transition-all"
+                    className="flex items-center gap-3.5 sm:gap-4 p-3 sm:p-4 rounded-xl border border-slate-100 hover:border-red-200 hover:bg-red-50/30 cursor-pointer transition-all min-w-0 shadow-2xs"
                   >
-                    <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-amber-50 text-amber-600">
-                      <ArrowDownToLine className="h-6 w-6" />
+                    <div className="flex h-10 w-10 sm:h-12 sm:w-12 shrink-0 items-center justify-center rounded-xl bg-amber-50 text-amber-600">
+                      <ArrowDownToLine className="h-5 w-5 sm:h-6 sm:w-6" />
                     </div>
-                    <div>
-                      <span className="text-xs font-semibold text-slate-500">Total Deposit</span>
-                      <p className="font-display text-lg font-black text-slate-800">$0.00</p>
+                    <div className="min-w-0">
+                      <span className="text-[11px] sm:text-xs font-semibold text-slate-500 block truncate">Total Deposit</span>
+                      <p className="font-display text-base sm:text-lg font-black text-slate-800 truncate">$0.00</p>
                     </div>
                   </div>
 
                   {/* Card 2: Pending Deposit(s) */}
                   <div
                     onClick={() => setActiveSection("compliance")}
-                    className="flex items-center gap-4 p-4 rounded-xl border border-slate-100 hover:border-red-200 hover:bg-red-50/30 cursor-pointer transition-all"
+                    className="flex items-center gap-3.5 sm:gap-4 p-3 sm:p-4 rounded-xl border border-slate-100 hover:border-red-200 hover:bg-red-50/30 cursor-pointer transition-all min-w-0 shadow-2xs"
                   >
-                    <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-sky-50 text-sky-500">
-                      <RefreshCw className="h-6 w-6" />
+                    <div className="flex h-10 w-10 sm:h-12 sm:w-12 shrink-0 items-center justify-center rounded-xl bg-sky-50 text-sky-500">
+                      <RefreshCw className="h-5 w-5 sm:h-6 sm:w-6" />
                     </div>
-                    <div>
-                      <span className="text-xs font-semibold text-slate-500">Pending Deposit(s)</span>
-                      <p className="font-display text-lg font-black text-slate-800">$0.00</p>
+                    <div className="min-w-0">
+                      <span className="text-[11px] sm:text-xs font-semibold text-slate-500 block truncate">Pending Deposit(s)</span>
+                      <p className="font-display text-base sm:text-lg font-black text-slate-800 truncate">$0.00</p>
                     </div>
                   </div>
 
                   {/* Card 3: Total Transfers */}
                   <div
                     onClick={() => setActiveSection("transactions")}
-                    className="flex items-center gap-4 p-4 rounded-xl border border-slate-100 hover:border-red-200 hover:bg-red-50/30 cursor-pointer transition-all"
+                    className="flex items-center gap-3.5 sm:gap-4 p-3 sm:p-4 rounded-xl border border-slate-100 hover:border-red-200 hover:bg-red-50/30 cursor-pointer transition-all min-w-0 shadow-2xs"
                   >
-                    <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-red-50 text-red-600">
-                      <ArrowUpRight className="h-6 w-6" />
+                    <div className="flex h-10 w-10 sm:h-12 sm:w-12 shrink-0 items-center justify-center rounded-xl bg-red-50 text-red-600">
+                      <ArrowUpRight className="h-5 w-5 sm:h-6 sm:w-6" />
                     </div>
-                    <div>
-                      <span className="text-xs font-semibold text-slate-500">Total Transfers</span>
-                      <p className="font-display text-lg font-black text-slate-800">$12,630,456</p>
+                    <div className="min-w-0">
+                      <span className="text-[11px] sm:text-xs font-semibold text-slate-500 block truncate">Total Transfers</span>
+                      <p className="font-display text-base sm:text-lg font-black text-slate-800 truncate">$12,630,456</p>
                     </div>
                   </div>
 
                   {/* Card 4: Pending Transfers */}
                   <div
                     onClick={() => setActiveSection("transactions")}
-                    className="flex items-center gap-4 p-4 rounded-xl border border-slate-100 hover:border-red-200 hover:bg-red-50/30 cursor-pointer transition-all"
+                    className="flex items-center gap-3.5 sm:gap-4 p-3 sm:p-4 rounded-xl border border-slate-100 hover:border-red-200 hover:bg-red-50/30 cursor-pointer transition-all min-w-0 shadow-2xs"
                   >
-                    <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-purple-50 text-purple-600">
-                      <ArrowRightLeft className="h-6 w-6" />
+                    <div className="flex h-10 w-10 sm:h-12 sm:w-12 shrink-0 items-center justify-center rounded-xl bg-purple-50 text-purple-600">
+                      <ArrowRightLeft className="h-5 w-5 sm:h-6 sm:w-6" />
                     </div>
-                    <div>
-                      <span className="text-xs font-semibold text-slate-500">Pending Transfers</span>
-                      <p className="font-display text-lg font-black text-slate-800">$0.00</p>
+                    <div className="min-w-0">
+                      <span className="text-[11px] sm:text-xs font-semibold text-slate-500 block truncate">Pending Transfers</span>
+                      <p className="font-display text-base sm:text-lg font-black text-slate-800 truncate">$0.00</p>
                     </div>
                   </div>
 
                   {/* Card 5: Total Users */}
                   <div
                     onClick={() => setActiveSection("users")}
-                    className="flex items-center gap-4 p-4 rounded-xl border border-slate-100 hover:border-red-200 hover:bg-red-50/30 cursor-pointer transition-all"
+                    className="flex items-center gap-3.5 sm:gap-4 p-3 sm:p-4 rounded-xl border border-slate-100 hover:border-red-200 hover:bg-red-50/30 cursor-pointer transition-all min-w-0 shadow-2xs"
                   >
-                    <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-emerald-50 text-emerald-600">
-                      <Users className="h-6 w-6" />
+                    <div className="flex h-10 w-10 sm:h-12 sm:w-12 shrink-0 items-center justify-center rounded-xl bg-emerald-50 text-emerald-600">
+                      <Users className="h-5 w-5 sm:h-6 sm:w-6" />
                     </div>
-                    <div>
-                      <span className="text-xs font-semibold text-slate-500">Total Users</span>
-                      <p className="font-display text-lg font-black text-slate-800">{adminUsers.length}</p>
+                    <div className="min-w-0">
+                      <span className="text-[11px] sm:text-xs font-semibold text-slate-500 block truncate">Total Users</span>
+                      <p className="font-display text-base sm:text-lg font-black text-slate-800 truncate">{adminUsers.length}</p>
                     </div>
                   </div>
 
@@ -1429,14 +1529,14 @@ export function SoloAdminDashboard({
                       setUserFilterStatus("suspended");
                       setActiveSection("users");
                     }}
-                    className="flex items-center gap-4 p-4 rounded-xl border border-slate-100 hover:border-red-200 hover:bg-red-50/30 cursor-pointer transition-all"
+                    className="flex items-center gap-3.5 sm:gap-4 p-3 sm:p-4 rounded-xl border border-slate-100 hover:border-red-200 hover:bg-red-50/30 cursor-pointer transition-all min-w-0 shadow-2xs"
                   >
-                    <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-red-50 text-red-500">
-                      <UserMinus className="h-6 w-6" />
+                    <div className="flex h-10 w-10 sm:h-12 sm:w-12 shrink-0 items-center justify-center rounded-xl bg-red-50 text-red-500">
+                      <UserMinus className="h-5 w-5 sm:h-6 sm:w-6" />
                     </div>
-                    <div>
-                      <span className="text-xs font-semibold text-slate-500">Block Users</span>
-                      <p className="font-display text-lg font-black text-slate-800">
+                    <div className="min-w-0">
+                      <span className="text-[11px] sm:text-xs font-semibold text-slate-500 block truncate">Block Users</span>
+                      <p className="font-display text-base sm:text-lg font-black text-slate-800 truncate">
                         {adminUsers.filter((u) => u.onlineAccessStatus === "Suspended" || u.onlineAccessStatus === "Closed").length}
                       </p>
                     </div>
@@ -1448,30 +1548,30 @@ export function SoloAdminDashboard({
                       setUserFilterStatus("active");
                       setActiveSection("users");
                     }}
-                    className="flex items-center gap-4 p-4 rounded-xl border border-slate-100 hover:border-red-200 hover:bg-red-50/30 cursor-pointer transition-all"
+                    className="flex items-center gap-3.5 sm:gap-4 p-3 sm:p-4 rounded-xl border border-slate-100 hover:border-red-200 hover:bg-red-50/30 cursor-pointer transition-all min-w-0 shadow-2xs"
                   >
-                    <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-emerald-50 text-emerald-600">
-                      <UserCheck className="h-6 w-6" />
+                    <div className="flex h-10 w-10 sm:h-12 sm:w-12 shrink-0 items-center justify-center rounded-xl bg-emerald-50 text-emerald-600">
+                      <UserCheck className="h-5 w-5 sm:h-6 sm:w-6" />
                     </div>
-                    <div>
-                      <span className="text-xs font-semibold text-slate-500">Active Users</span>
-                      <p className="font-display text-lg font-black text-slate-800">
+                    <div className="min-w-0">
+                      <span className="text-[11px] sm:text-xs font-semibold text-slate-500 block truncate">Active Users</span>
+                      <p className="font-display text-base sm:text-lg font-black text-slate-800 truncate">
                         {adminUsers.filter((u) => u.onlineAccessStatus === "Active" || u.onlineAccessStatus === "Reinstated").length}
                       </p>
                     </div>
                   </div>
 
-                  {/* Card 8: Network / System Hierarchy Icon matching screenshot */}
+                  {/* Card 8: Security Clearance */}
                   <div
                     onClick={() => setActiveSection("settings")}
-                    className="flex items-center gap-4 p-4 rounded-xl border border-slate-100 hover:border-red-200 hover:bg-red-50/30 cursor-pointer transition-all"
+                    className="flex items-center gap-3.5 sm:gap-4 p-3 sm:p-4 rounded-xl border border-slate-100 hover:border-red-200 hover:bg-red-50/30 cursor-pointer transition-all min-w-0 shadow-2xs"
                   >
-                    <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-amber-50 text-amber-600">
-                      <Network className="h-6 w-6" />
+                    <div className="flex h-10 w-10 sm:h-12 sm:w-12 shrink-0 items-center justify-center rounded-xl bg-amber-50 text-amber-600">
+                      <Network className="h-5 w-5 sm:h-6 sm:w-6" />
                     </div>
-                    <div>
-                      <span className="text-xs font-semibold text-slate-500">Security Clearance</span>
-                      <p className="font-display text-sm font-bold text-emerald-600">Staff Admin Active</p>
+                    <div className="min-w-0">
+                      <span className="text-[11px] sm:text-xs font-semibold text-slate-500 block truncate">Security Clearance</span>
+                      <p className="font-display text-xs sm:text-sm font-bold text-emerald-600 truncate">Staff Admin Active</p>
                     </div>
                   </div>
                 </div>
