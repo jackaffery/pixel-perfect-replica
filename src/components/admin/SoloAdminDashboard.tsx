@@ -49,6 +49,10 @@ import {
   FolderPlus,
   UserMinus,
   Check,
+  Home,
+  HandCoins,
+  ChevronDown,
+  Network,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -700,31 +704,50 @@ export function SoloAdminDashboard({
           </div>
         </div>
 
-        {/* Sidebar Navigation Items */}
+        {/* Sidebar Navigation Items matching exact labels from reference screenshot */}
         <nav className="flex-1 space-y-1 overflow-y-auto px-3 py-4">
           {[
-            { id: "overview", label: "Dashboard", icon: BarChart3, badge: unreadAlerts.length ? `${unreadAlerts.length}` : undefined },
-            { id: "users", label: "Manage Users", icon: Users, badge: adminUsers.length.toString() },
-            { id: "customers", label: "Customer Profiles", icon: UserCheck, badge: customers.length.toString() },
-            { id: "accounts", label: "Accounts & Balances", icon: CreditCard, badge: accounts.length.toString() },
-            { id: "transactions", label: "Transfer Transactions", icon: ArrowRightLeft, badge: flaggedTxCount > 0 ? `${flaggedTxCount}` : undefined, badgeColor: "bg-red-600" },
-            { id: "compliance", label: "Reviews & Compliance", icon: ShieldAlert, badge: pendingReviewsCount > 0 ? `${pendingReviewsCount}` : undefined, badgeColor: "bg-amber-500" },
-            { id: "support", label: "Support Cases", icon: Headset, badge: openCasesCount > 0 ? `${openCasesCount}` : undefined },
-            { id: "reports", label: "Reports & Analytics", icon: FileText },
-            { id: "audit", label: "Audit Ledger", icon: History, badge: auditLogs.length.toString() },
-            { id: "settings", label: "Security & Settings", icon: Settings },
+            { id: "overview", label: "Dashboard", icon: Home },
+            { id: "users", label: "Manage Users", icon: User },
+            { id: "compliance", label: "Grant Applications", icon: HandCoins, hasSubmenu: true },
+            { id: "create-user", label: "Create New user", icon: UserPlus },
+            { id: "applications", label: "New User Application(s)", icon: UserCheck },
+            { id: "transactions", label: "Transfer Transactions", icon: ArrowUpRight },
+            { id: "history", label: "Transaction History", icon: History, hasSubmenu: true },
           ].map((item) => {
             const Icon = item.icon;
-            const isActive = activeSection === item.id;
+            const isActive = activeSection === item.id || (item.id === "create-user" && userEditModalOpen) || (item.id === "history" && activeSection === "transactions");
             return (
               <button
                 key={item.id}
                 type="button"
                 onClick={() => {
-                  setActiveSection(item.id as any);
-                  appendAuditLog("Overview", `Navigated to ${item.label}`, `Administrator switched workspace view.`);
+                  if (item.id === "create-user") {
+                    setSelectedUser(null);
+                    setUserEditForm({
+                      name: "",
+                      phone: "+1 (555) 000-0000",
+                      mailingAddress: "New Registered Address",
+                      communicationPreferences: {
+                        emailAlerts: true,
+                        smsNotifications: true,
+                        paperlessStatements: true,
+                        marketingUpdates: false,
+                      },
+                    });
+                    setUserEditModalOpen(true);
+                  } else if (item.id === "history") {
+                    setActiveSection("transactions");
+                    appendAuditLog("Overview", "Navigated to Transaction History", "Administrator accessed transaction history.");
+                  } else if (item.id === "applications") {
+                    setActiveSection("compliance");
+                    appendAuditLog("Overview", "Navigated to New User Applications", "Administrator opened applications queue.");
+                  } else {
+                    setActiveSection(item.id as any);
+                    appendAuditLog("Overview", `Navigated to ${item.label}`, `Administrator switched workspace view.`);
+                  }
                 }}
-                className={`group flex w-full items-center gap-3 rounded-lg px-3.5 py-2.5 text-xs font-semibold transition-all ${
+                className={`group flex w-full items-center gap-3 rounded-lg px-3.5 py-3 text-xs font-semibold transition-all ${
                   isActive
                     ? "bg-red-600 text-white shadow-sm font-bold"
                     : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
@@ -735,16 +758,8 @@ export function SoloAdminDashboard({
                 {!sidebarCollapsed && (
                   <span className="flex-1 text-left truncate">{item.label}</span>
                 )}
-                {!sidebarCollapsed && item.badge && (
-                  <span
-                    className={`rounded-full px-2 py-0.5 text-[0.65rem] font-bold ${
-                      isActive
-                        ? "bg-white text-red-600"
-                        : item.badgeColor ? `${item.badgeColor} text-white` : "bg-slate-100 text-slate-600"
-                    }`}
-                  >
-                    {item.badge}
-                  </span>
+                {!sidebarCollapsed && (item as any).hasSubmenu && (
+                  <ChevronDown className={`h-3 w-3 shrink-0 ${isActive ? "text-white" : "text-slate-400"}`} />
                 )}
               </button>
             );
@@ -788,15 +803,15 @@ export function SoloAdminDashboard({
             </button>
           </div>
 
-          {/* Center: Search Field */}
+          {/* Center: Search Field matching screenshot */}
           <div className="relative w-72 md:w-96 mx-4">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
             <input
               type="text"
               value={globalSearch}
               onChange={(e) => setGlobalSearch(e.target.value)}
-              placeholder="Manage users, accounts, deposits..."
-              className="w-full rounded-md border-0 bg-white py-1.5 pl-9 pr-8 text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-white/50 shadow-inner"
+              placeholder="Manage users"
+              className="w-full rounded-md border-0 bg-white py-2 pl-9 pr-8 text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-white/50 shadow-inner"
             />
             {globalSearch && (
               <button
@@ -1091,13 +1106,13 @@ export function SoloAdminDashboard({
                     </div>
                   </div>
 
-                  {/* Card 8: Operational System Health */}
+                  {/* Card 8: Network / System Hierarchy Icon matching screenshot */}
                   <div
                     onClick={() => setActiveSection("settings")}
                     className="flex items-center gap-4 p-4 rounded-xl border border-slate-100 hover:border-red-200 hover:bg-red-50/30 cursor-pointer transition-all"
                   >
                     <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-amber-50 text-amber-600">
-                      <ShieldCheck className="h-6 w-6" />
+                      <Network className="h-6 w-6" />
                     </div>
                     <div>
                       <span className="text-xs font-semibold text-slate-500">Security Clearance</span>
