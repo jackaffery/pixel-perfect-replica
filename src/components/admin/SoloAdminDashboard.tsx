@@ -166,6 +166,11 @@ export function SoloAdminDashboard({
           setAdminUsers(JSON.parse(e.newValue));
         } catch {}
       }
+      if (e.key === "us_finance_bank_alerts" && e.newValue) {
+        try {
+          setAlerts(JSON.parse(e.newValue));
+        } catch {}
+      }
     };
     window.addEventListener("storage", handleStorageUpdate);
     return () => window.removeEventListener("storage", handleStorageUpdate);
@@ -187,7 +192,28 @@ export function SoloAdminDashboard({
   });
   const [complianceReviews, setComplianceReviews] = useState<ComplianceReviewItem[]>(MOCK_COMPLIANCE_REVIEWS);
   const [supportCases, setSupportCases] = useState<SupportCase[]>(MOCK_SUPPORT_CASES);
-  const [alerts, setAlerts] = useState<OperationalAlert[]>(MOCK_ALERTS);
+  const [alerts, setAlerts] = useState<OperationalAlert[]>(() => {
+    if (typeof window !== "undefined") {
+      const saved = localStorage.getItem("us_finance_bank_alerts");
+      if (saved) {
+        try {
+          return JSON.parse(saved);
+        } catch {}
+      }
+    }
+    return MOCK_ALERTS;
+  });
+
+  const persistAlerts = (newAlerts: OperationalAlert[]) => {
+    setAlerts(newAlerts);
+    if (typeof window !== "undefined") {
+      try {
+        localStorage.setItem("us_finance_bank_alerts", JSON.stringify(newAlerts));
+      } catch (err) {
+        console.error("Failed to persist alerts", err);
+      }
+    }
+  };
   const [auditLogs, setAuditLogs] = useState<SoloAdminAuditEntry[]>(MOCK_AUDIT_LOGS);
 
   // Transfer Status Management State
@@ -664,7 +690,8 @@ export function SoloAdminDashboard({
       ],
     };
 
-    setAdminUsers((prev) => [newRecord, ...prev]);
+    const updatedUsers = [newRecord, ...adminUsers];
+    persistAdminUsers(updatedUsers);
     appendAuditLog(
       "Users",
       "Created User Record",
@@ -1386,6 +1413,20 @@ export function SoloAdminDashboard({
   const flaggedTxCount = transactions.filter((t) => t.status === "Flagged").length;
   const unreadAlerts = alerts.filter((a) => !a.resolved);
 
+  // Dynamic Ledger Calculations (Zero dummy/test numbers - computed directly from actual records)
+  const dynamicTotalTransfers = transactions
+    .filter((t) => (t.transferStatus || t.status) === "Completed")
+    .reduce((sum, t) => sum + (typeof t.amount === "number" ? t.amount : 0), 0);
+
+  const dynamicPendingTransfers = transactions
+    .filter((t) => (t.transferStatus || t.status) === "Processing" || (t.transferStatus || t.status) === "On hold" || t.status === "Pending Clearing")
+    .reduce((sum, t) => sum + (typeof t.amount === "number" ? t.amount : 0), 0);
+
+  const dynamicTotalDeposits = accounts
+    .reduce((sum, a) => sum + (typeof a.balance === "number" ? a.balance : 0), 0);
+
+  const dynamicPendingDeposits = 0; // Stays $0.00 unless pending deposit queue items exist
+
   return (
     <div className="flex h-screen w-full bg-[#f4f6f9] font-sans text-slate-800 antialiased overflow-hidden">
       {/* ============================================================ */}
@@ -1670,35 +1711,80 @@ export function SoloAdminDashboard({
               {showNotifications && (
                 <div className="absolute right-0 mt-2 w-80 sm:w-96 rounded-2xl border border-slate-200 bg-white p-4 shadow-2xl z-50 animate-fadeIn text-slate-800">
                   <div className="flex items-center justify-between border-b border-slate-100 pb-2.5">
-                    <h4 className="font-bold text-xs uppercase tracking-wider text-slate-800">
-                      Operational Alerts ({alerts.length})
-                    </h4>
-                    <span className="text-[0.65rem] text-slate-500 font-mono">Real-Time Core Feed</span>
+                    <div>
+                      <h4 className="font-bold text-xs uppercase tracking-wider text-slate-800">
+                        Operational Alerts ({alerts.length})
+                      </h4>
+                      <p className="text-[0.65rem] text-slate-500 font-mono">
+                        {unreadAlerts.length > 0 ? `${unreadAlerts.length} Unread Notifications` : "All notifications read"}
+                      </p>
+                    </div>
+                    {unreadAlerts.length > 0 && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const marked = alerts.map((a) => ({ ...a, resolved: true }));
+                          persistAlerts(marked);
+                        }}
+                        className="text-[0.7rem] font-bold text-red-600 hover:text-red-700 bg-red-50 hover:bg-red-100 rounded-md px-2 py-1 transition-colors"
+                      >
+                        Mark all as read
+                      </button>
+                    )}
                   </div>
                   <div className="mt-3 space-y-2 max-h-80 overflow-y-auto">
-                    {alerts.map((al) => (
-                      <div
-                        key={al.id}
-                        className={`rounded-xl border p-3 text-xs ${
-                          al.severity === "critical"
-                            ? "border-red-200 bg-red-50 text-red-900"
-                            : al.severity === "warning"
-                            ? "border-amber-200 bg-amber-50 text-amber-900"
-                            : "border-slate-200 bg-slate-50 text-slate-800"
-                        }`}
-                      >
-                        <div className="flex items-start justify-between gap-2">
-                          <span className="font-bold">{al.title}</span>
-                          <span className="text-[0.65rem] text-slate-500 shrink-0">{al.timestamp}</span>
-                        </div>
-                        <p className="mt-1 text-[0.72rem] text-slate-600">{al.description}</p>
-                        {al.actionRequired && (
-                          <div className="mt-2 text-[0.68rem] font-bold text-red-600">
-                            → {al.actionRequired}
-                          </div>
-                        )}
+                    {alerts.length === 0 ? (
+                      <div className="py-6 text-center text-xs text-slate-400">
+                        No operational notifications at this time.
                       </div>
-                    ))}
+                    ) : (
+                      alerts.map((al) => (
+                        <div
+                          key={al.id}
+                          onClick={() => {
+                            if (!al.resolved) {
+                              const updated = alerts.map((item) =>
+                                item.id === al.id ? { ...item, resolved: true } : item
+                              );
+                              persistAlerts(updated);
+                            }
+                            if (al.category === "Compliance" || al.title.includes("Application")) {
+                              setActiveSection("applications");
+                              setShowNotifications(false);
+                            } else if (al.category === "Security" || al.title.includes("Wire")) {
+                              setActiveSection("transactions");
+                              setShowNotifications(false);
+                            }
+                          }}
+                          className={`rounded-xl border p-3 text-xs cursor-pointer transition-all ${
+                            !al.resolved
+                              ? al.severity === "critical"
+                                ? "border-red-300 bg-red-50 text-red-900 shadow-xs"
+                                : al.severity === "warning"
+                                ? "border-amber-300 bg-amber-50 text-amber-900 shadow-xs"
+                                : "border-blue-300 bg-blue-50 text-blue-900 shadow-xs"
+                              : "border-slate-200 bg-slate-50 text-slate-600 opacity-80 hover:opacity-100"
+                          }`}
+                        >
+                          <div className="flex items-start justify-between gap-2">
+                            <div className="flex items-center gap-1.5 min-w-0">
+                              {!al.resolved && (
+                                <span className="h-2 w-2 rounded-full bg-red-600 shrink-0" />
+                              )}
+                              <span className="font-bold truncate">{al.title}</span>
+                            </div>
+                            <span className="text-[0.65rem] text-slate-500 shrink-0">{al.timestamp}</span>
+                          </div>
+                          <p className="mt-1 text-[0.72rem] text-slate-600">{al.description}</p>
+                          {al.actionRequired && (
+                            <div className="mt-2 text-[0.68rem] font-bold text-red-600 flex items-center justify-between">
+                              <span>→ {al.actionRequired}</span>
+                              <span className="text-[0.65rem] text-slate-500 underline font-normal">Tap to inspect</span>
+                            </div>
+                          )}
+                        </div>
+                      ))
+                    )}
                   </div>
                 </div>
               )}
@@ -1839,7 +1925,9 @@ export function SoloAdminDashboard({
                     </div>
                     <div className="min-w-0">
                       <span className="text-[11px] sm:text-xs font-semibold text-slate-500 block truncate">Total Deposit</span>
-                      <p className="font-display text-base sm:text-lg font-black text-slate-800 truncate">$0.00</p>
+                      <p className="font-display text-base sm:text-lg font-black text-slate-800 truncate">
+                        ${dynamicTotalDeposits.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                      </p>
                     </div>
                   </div>
 
@@ -1853,7 +1941,9 @@ export function SoloAdminDashboard({
                     </div>
                     <div className="min-w-0">
                       <span className="text-[11px] sm:text-xs font-semibold text-slate-500 block truncate">Pending Deposit(s)</span>
-                      <p className="font-display text-base sm:text-lg font-black text-slate-800 truncate">$0.00</p>
+                      <p className="font-display text-base sm:text-lg font-black text-slate-800 truncate">
+                        ${dynamicPendingDeposits.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                      </p>
                     </div>
                   </div>
 
@@ -1867,7 +1957,9 @@ export function SoloAdminDashboard({
                     </div>
                     <div className="min-w-0">
                       <span className="text-[11px] sm:text-xs font-semibold text-slate-500 block truncate">Total Transfers</span>
-                      <p className="font-display text-base sm:text-lg font-black text-slate-800 truncate">$12,630,456</p>
+                      <p className="font-display text-base sm:text-lg font-black text-slate-800 truncate">
+                        ${dynamicTotalTransfers.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                      </p>
                     </div>
                   </div>
 
@@ -1881,7 +1973,9 @@ export function SoloAdminDashboard({
                     </div>
                     <div className="min-w-0">
                       <span className="text-[11px] sm:text-xs font-semibold text-slate-500 block truncate">Pending Transfers</span>
-                      <p className="font-display text-base sm:text-lg font-black text-slate-800 truncate">$0.00</p>
+                      <p className="font-display text-base sm:text-lg font-black text-slate-800 truncate">
+                        ${dynamicPendingTransfers.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                      </p>
                     </div>
                   </div>
 

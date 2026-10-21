@@ -1413,6 +1413,23 @@ export function Index() {
     if (typeof window !== "undefined") {
       try {
         localStorage.setItem("us_finance_bank_applications", JSON.stringify(updatedApps));
+
+        // Create administrative alert notification for Staff Admin Bell
+        const newAlert = {
+          id: `ALT-${Date.now().toString().slice(-4)}`,
+          severity: "warning",
+          title: `New Application: ${appFullName}`,
+          description: `Application ${newId} submitted via public portal for ${country.name} (${appAccountType}). Awaiting review.`,
+          timestamp: "Just now",
+          category: "Compliance",
+          resolved: false,
+          actionRequired: "Review application in New User Applications queue",
+        };
+
+        const existingAlertsRaw = localStorage.getItem("us_finance_bank_alerts");
+        const existingAlerts = existingAlertsRaw ? JSON.parse(existingAlertsRaw) : [];
+        localStorage.setItem("us_finance_bank_alerts", JSON.stringify([newAlert, ...existingAlerts]));
+
         window.dispatchEvent(new Event("storage"));
       } catch (err) {
         console.error("Failed to store application in localStorage", err);
