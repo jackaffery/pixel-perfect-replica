@@ -93,6 +93,7 @@ export const LANGUAGE_FLAG_CODES: Record<string, string> = {
   "en-GB": "GB",
   "en-CA": "CA",
   "es-MX": "MX",
+  "de-CH": "CH",
   es: "ES",
   fr: "FR",
   de: "DE",

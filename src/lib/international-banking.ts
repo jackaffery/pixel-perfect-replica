@@ -192,7 +192,7 @@ export const SUPPORTED_COUNTRIES: Record<string, CountryConfig> = {
       { id: "residence_permit", label: "Swiss Residence Permit (Ausländerausweis B/C)", placeholder: "Permit document number", reason: "Authorized identification for resident foreigners." }
     ],
     regulatoryNote: "Subject to Swiss Federal Act on Banks and FINMA compliance standards.",
-    languages: ["de", "fr", "en"]
+    languages: ["de-CH", "de", "fr", "en"]
   },
   DE: {
     code: "DE",
@@ -226,6 +226,7 @@ export const SUPPORTED_LANGUAGES: Record<string, LanguageConfig> = {
   "en-GB": { code: "en-GB", name: "United Kingdom", nativeName: "United Kingdom (English)", flag: "🇬🇧" },
   "en-CA": { code: "en-CA", name: "Canada", nativeName: "Canada (English)", flag: "🇨🇦" },
   "es-MX": { code: "es-MX", name: "Mexico", nativeName: "Mexico (Español)", flag: "🇲🇽" },
+  "de-CH": { code: "de-CH", name: "Switzerland", nativeName: "Switzerland (Schweiz)", flag: "🇨🇭" },
   es: { code: "es", name: "Spanish", nativeName: "Español", flag: "🇪🇸" },
   fr: { code: "fr", name: "French", nativeName: "Français", flag: "🇫🇷" },
   de: { code: "de", name: "German", nativeName: "Deutsch", flag: "🇩🇪" },
@@ -392,6 +393,37 @@ export const TRANSLATIONS: Record<string, TranslationDict> = {
     sendFunds: "Enviar Fondos",
     quickTransfer: "Transferencia Rápida",
     signOut: "Cerrar Sesión"
+  },
+  "de-CH": {
+    brandName: "US FINANCE BANK",
+    tagline: "Online-Banking",
+    motto: "Gemeinsam Stärker für eine Bessere Zukunft",
+    heroHeadline: "Banking Einfach Gemacht. Ihre Zukunft, Ihre Finanzen.",
+    heroSubheadline: "Erleben Sie modernes, sicheres und mehrsprachiges digitales Banking nach höchsten Schweizer Sicherheits- und Compliance-Standards.",
+    signIn: "Kunden-Login",
+    createAccount: "Konto Eröffnen / Antrag",
+    checkStatus: "Antragsstatus Prüfen",
+    exploreBanking: "Banking Entdecken",
+    contactUs: "Kontakt Aufnehmen",
+    adminPortal: "Staff Sign-In Admin Dashboard",
+    staffPortal: "Staff Sign-In Admin Dashboard",
+    selectCountry: "Land / Region Auswählen",
+    selectLanguage: "Sprache",
+    countryNotice: "Schweizer Servicegebiet. Finanzdienstleistungen und KYC-Anforderungen entsprechen den FINMA-Richtlinien.",
+    securityNotice: "256-Bit-Bankenverschlüsselung. Passwörter werden nie im Klartext gespeichert. Geben Sie niemals Ihre PIN oder OTP weiter.",
+    mfaTitle: "Zwei-Faktor-Authentifizierung (2FA)",
+    mfaPrompt: "Ein Einmalcode (OTP) wurde zur Sicherheitsbestätigung an Ihren autorisierten Kanal gesendet.",
+    personalBanking: "Privatkunden",
+    businessBanking: "Firmenkunden",
+    onlineBanking: "Digital Banking",
+    aboutUs: "Über Uns",
+    recentTransactions: "Letzte Buchungen",
+    welcomeBack: "Willkommen zurück",
+    checking: "Privatkonto (Girokonto)",
+    savings: "Sparkonto (CHF)",
+    sendFunds: "Geld Überweisen",
+    quickTransfer: "Schnellüberweisung",
+    signOut: "Abmelden"
   },
   es: {
     brandName: "US FINANCE BANK",
