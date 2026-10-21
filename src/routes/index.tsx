@@ -784,7 +784,17 @@ export function Index() {
   const [adminActionNotice, setAdminActionNotice] = useState<string>("");
 
   // Centralized Application Management State
-  const [applications, setApplications] = useState<BankApplication[]>(INITIAL_APPLICATIONS);
+  const [applications, setApplications] = useState<BankApplication[]>(() => {
+    if (typeof window !== "undefined") {
+      const saved = localStorage.getItem("us_finance_bank_applications");
+      if (saved) {
+        try {
+          return JSON.parse(saved);
+        } catch {}
+      }
+    }
+    return INITIAL_APPLICATIONS;
+  });
   const [appStatusFilter, setAppStatusFilter] = useState<string>("all");
   const [editingApp, setEditingApp] = useState<BankApplication | null>(null);
   const [appReviewNotes, setAppReviewNotes] = useState<string>("");
@@ -1272,13 +1282,31 @@ export function Index() {
         ? "Under active review by regulatory compliance desk."
         : "Application placed in review queue.");
 
-    setApplications((prev) =>
-      prev.map((app) =>
-        app.id === appId
-          ? { ...app, status: newStatus, reviewNotes: updatedNotes, updatedAt: "Just now" }
-          : app
-      )
+    let currentApps = applications;
+    if (typeof window !== "undefined") {
+      const saved = localStorage.getItem("us_finance_bank_applications");
+      if (saved) {
+        try {
+          currentApps = JSON.parse(saved);
+        } catch {}
+      }
+    }
+
+    const updated = currentApps.map((app) =>
+      app.id === appId
+        ? { ...app, status: newStatus, reviewNotes: updatedNotes, updatedAt: "Just now" }
+        : app
     );
+
+    setApplications(updated);
+    if (typeof window !== "undefined") {
+      try {
+        localStorage.setItem("us_finance_bank_applications", JSON.stringify(updated));
+        window.dispatchEvent(new Event("storage"));
+      } catch (err) {
+        console.error("Failed to persist updated application", err);
+      }
+    }
 
     // Synchronize user status in registry
     if (newStatus === "Approved") {
@@ -1371,7 +1399,26 @@ export function Index() {
       createdAt: "Today",
     };
 
-    setApplications((prev) => [newApp, ...prev]);
+    let currentApps: BankApplication[] = applications;
+    if (typeof window !== "undefined") {
+      const saved = localStorage.getItem("us_finance_bank_applications");
+      if (saved) {
+        try {
+          currentApps = JSON.parse(saved);
+        } catch {}
+      }
+    }
+    const updatedApps = [newApp, ...currentApps];
+    setApplications(updatedApps);
+    if (typeof window !== "undefined") {
+      try {
+        localStorage.setItem("us_finance_bank_applications", JSON.stringify(updatedApps));
+        window.dispatchEvent(new Event("storage"));
+      } catch (err) {
+        console.error("Failed to store application in localStorage", err);
+      }
+    }
+
     setAdminUsers((prev) => [newUserRecord, ...prev]);
     logAdminAction(
       "Application Submitted",
@@ -1386,7 +1433,17 @@ export function Index() {
     const query = statusSearchId.trim().toUpperCase();
     if (!query) return;
 
-    const foundApp = applications.find((a) => a.id.toUpperCase() === query);
+    let currentApps = applications;
+    if (typeof window !== "undefined") {
+      const saved = localStorage.getItem("us_finance_bank_applications");
+      if (saved) {
+        try {
+          currentApps = JSON.parse(saved);
+        } catch {}
+      }
+    }
+
+    const foundApp = currentApps.find((a) => a.id.toUpperCase() === query);
     if (foundApp) {
       setStatusSearchResult({
         id: foundApp.id,
@@ -1720,7 +1777,7 @@ export function Index() {
               </div>
             </div>
 
-            {/* Staff Sign In Admin Active Indicator (Only rendered when staff session is active) */}
+            {/* Staff Sign In Admin Active Indicator & Direct Link */}
             {soloAdminUser ? (
               <div className="flex items-center gap-2">
                 <span className="rounded bg-accent px-2 py-0.5 text-xs font-bold text-white shadow-xs flex items-center gap-1">
@@ -1735,7 +1792,17 @@ export function Index() {
                   Exit Session
                 </button>
               </div>
-            ) : null}
+            ) : (
+              <button
+                type="button"
+                onClick={() => setAdminModalOpen(true)}
+                className="flex items-center gap-1.5 rounded-md bg-white/10 hover:bg-white/20 border border-white/20 px-2.5 py-1 text-xs font-bold text-white transition-all shadow-xs"
+                title="Staff Sign-In Admin Dashboard"
+              >
+                <SlidersHorizontal className="h-3.5 w-3.5 text-accent shrink-0" />
+                <span>Staff Sign-In Admin</span>
+              </button>
+            )}
           </div>
         </div>
       </div>
@@ -1948,6 +2015,19 @@ export function Index() {
                   }}
                 >
                   {t.signIn}
+                </Button>
+              </li>
+              <li className="pt-1">
+                <Button
+                  variant="ghost"
+                  className="w-full text-xs text-muted-foreground justify-start"
+                  onClick={() => {
+                    setMobileMenuOpen(false);
+                    setAdminModalOpen(true);
+                  }}
+                >
+                  <SlidersHorizontal className="mr-1.5 h-3.5 w-3.5 text-accent shrink-0" />
+                  Staff Sign-In Admin Dashboard
                 </Button>
               </li>
 
@@ -3124,6 +3204,15 @@ export function Index() {
                     Check Application Status
                   </button>
                 </li>
+                <li>
+                  <button
+                    type="button"
+                    onClick={() => setAdminModalOpen(true)}
+                    className="hover:text-white flex items-center gap-1.5 text-white font-medium underline-offset-2 hover:underline"
+                  >
+                    <SlidersHorizontal className="h-3 w-3 text-accent" /> Staff Sign-In Admin Dashboard
+                  </button>
+                </li>
               </ul>
             </div>
 
@@ -3333,6 +3422,21 @@ export function Index() {
                   className="font-bold text-accent hover:underline"
                 >
                   Apply for an Account
+                </button>
+              </div>
+
+              {/* Staff Sign-In Admin Direct Link inside Sign In dialog */}
+              <div className="pt-2 border-t border-dashed border-border/80">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setCustomerModalOpen(false);
+                    setAdminModalOpen(true);
+                  }}
+                  className="inline-flex items-center gap-1.5 font-bold text-red-600 hover:text-red-700 hover:underline bg-red-50 hover:bg-red-100 px-3 py-1.5 rounded-lg border border-red-200 transition-colors"
+                >
+                  <SlidersHorizontal className="h-3.5 w-3.5" />
+                  Staff Sign-In Admin Dashboard
                 </button>
               </div>
             </div>

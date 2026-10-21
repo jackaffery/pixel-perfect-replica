@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Users,
   CreditCard,
@@ -55,6 +55,7 @@ import {
   ChevronDown,
   Network,
   PauseCircle,
+  Trash2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -66,6 +67,8 @@ import {
   MOCK_SUPPORT_CASES,
   MOCK_ALERTS,
   MOCK_AUDIT_LOGS,
+  INITIAL_BANK_APPLICATIONS,
+  type BankApplication,
   type AdminCustomer,
   type AdminUserRecord,
   type BankAccountRecord,
@@ -96,7 +99,7 @@ export function SoloAdminDashboard({
 }: SoloAdminDashboardProps) {
   // Navigation
   const [activeSection, setActiveSection] = useState<
-    "overview" | "users" | "customers" | "accounts" | "transactions" | "compliance" | "support" | "reports" | "audit" | "settings"
+    "overview" | "users" | "applications" | "customers" | "accounts" | "transactions" | "compliance" | "support" | "reports" | "audit" | "settings"
   >("overview");
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
@@ -105,7 +108,68 @@ export function SoloAdminDashboard({
   const [showProfileMenu, setShowProfileMenu] = useState(false);
 
   // Core State
-  const [adminUsers, setAdminUsers] = useState<AdminUserRecord[]>(MOCK_ADMIN_USERS);
+  const [adminUsers, setAdminUsers] = useState<AdminUserRecord[]>(() => {
+    if (typeof window !== "undefined") {
+      const saved = localStorage.getItem("us_finance_bank_users");
+      if (saved) {
+        try {
+          return JSON.parse(saved);
+        } catch {}
+      }
+    }
+    return MOCK_ADMIN_USERS;
+  });
+
+  const persistAdminUsers = (newUsers: AdminUserRecord[]) => {
+    setAdminUsers(newUsers);
+    if (typeof window !== "undefined") {
+      try {
+        localStorage.setItem("us_finance_bank_users", JSON.stringify(newUsers));
+      } catch (err) {
+        console.error("Failed to persist admin users", err);
+      }
+    }
+  };
+
+  const [applications, setApplications] = useState<BankApplication[]>(() => {
+    if (typeof window !== "undefined") {
+      const saved = localStorage.getItem("us_finance_bank_applications");
+      if (saved) {
+        try {
+          return JSON.parse(saved);
+        } catch {}
+      }
+    }
+    return INITIAL_BANK_APPLICATIONS;
+  });
+
+  const persistApplications = (newApps: BankApplication[]) => {
+    setApplications(newApps);
+    if (typeof window !== "undefined") {
+      try {
+        localStorage.setItem("us_finance_bank_applications", JSON.stringify(newApps));
+      } catch (err) {
+        console.error("Failed to persist applications", err);
+      }
+    }
+  };
+
+  useEffect(() => {
+    const handleStorageUpdate = (e: StorageEvent) => {
+      if (e.key === "us_finance_bank_applications" && e.newValue) {
+        try {
+          setApplications(JSON.parse(e.newValue));
+        } catch {}
+      }
+      if (e.key === "us_finance_bank_users" && e.newValue) {
+        try {
+          setAdminUsers(JSON.parse(e.newValue));
+        } catch {}
+      }
+    };
+    window.addEventListener("storage", handleStorageUpdate);
+    return () => window.removeEventListener("storage", handleStorageUpdate);
+  }, []);
   const [customers, setCustomers] = useState<AdminCustomer[]>(MOCK_CUSTOMERS);
   const [accounts, setAccounts] = useState<BankAccountRecord[]>(MOCK_ACCOUNTS);
   const [transactions, setTransactions] = useState<BankTransactionRecord[]>(() => {
@@ -199,6 +263,48 @@ export function SoloAdminDashboard({
   } | null>(null);
   const [actionReason, setActionReason] = useState("");
   const [actionNotification, setActionNotification] = useState("");
+
+  // Individual User Management Action Modals
+  const [userToDeleteModal, setUserToDeleteModal] = useState<AdminUserRecord | null>(null);
+  const [deleteReason, setDeleteReason] = useState("");
+  const [deleteConfirmChecked, setDeleteConfirmChecked] = useState(false);
+  const [deleteError, setDeleteError] = useState("");
+
+  const [userToSuspendModal, setUserToSuspendModal] = useState<{
+    user: AdminUserRecord;
+    targetStatus: "Active" | "Suspended";
+  } | null>(null);
+  const [suspendReason, setSuspendReason] = useState("");
+
+  const [editingUserRecord, setEditingUserRecord] = useState<AdminUserRecord | null>(null);
+  const [editUserFormData, setEditUserFormData] = useState<{
+    name: string;
+    email: string;
+    phone: string;
+    mailingAddress: string;
+    onlineAccessStatus: AdminUserRecord["onlineAccessStatus"];
+    verificationStatus: AdminUserRecord["verificationStatus"];
+    editReason: string;
+  }>({
+    name: "",
+    email: "",
+    phone: "",
+    mailingAddress: "",
+    onlineAccessStatus: "Active",
+    verificationStatus: "Verified",
+    editReason: "",
+  });
+
+  // Applications Queue Management State
+  const [appSearchQuery, setAppSearchQuery] = useState("");
+  const [appStatusFilter, setAppStatusFilter] = useState<string>("all");
+  const [selectedAppModal, setSelectedAppModal] = useState<BankApplication | null>(null);
+  const [appDecisionModal, setAppDecisionModal] = useState<{
+    app: BankApplication;
+    decision: "Approved" | "Declined" | "Under Review";
+  } | null>(null);
+  const [appDecisionReason, setAppDecisionReason] = useState("");
+  const [autoProvisionUser, setAutoProvisionUser] = useState(true);
 
   // Filters
   const [userFilterStatus, setUserFilterStatus] = useState("all");
@@ -709,21 +815,272 @@ export function SoloAdminDashboard({
     setTimeout(() => setActionNotification(""), 5000);
   };
 
-  // Safe User Deletion with Audit Trail
+  // Safe User Deletion with Audit Trail & Safeguard Review
   const handleDeleteUser = (userId: string, reason: string) => {
     const userToDelete = adminUsers.find((u) => u.id === userId);
     if (!userToDelete) return;
 
-    setAdminUsers((prev) => prev.filter((u) => u.id !== userId));
+    const updated = adminUsers.filter((u) => u.id !== userId);
+    persistAdminUsers(updated);
     appendAuditLog(
       "Users",
       "Deleted User Record",
-      `Administrator permanently deleted user record for ${userToDelete.name} (${userToDelete.email}). Justification: ${reason || "Administrative user deletion policy"}`,
+      `Administrator permanently deleted individual user record for ${userToDelete.name} (${userToDelete.email}, ID: ${userToDelete.id}). Justification: ${reason || "Administrative user deletion policy"}`,
       userId
     );
     setSelectedUser(null);
-    setActionNotification(`User record for ${userToDelete.name} successfully deleted.`);
+    setUserToDeleteModal(null);
+    setActionNotification(`Individual user record for ${userToDelete.name} successfully deleted.`);
     setTimeout(() => setActionNotification(""), 5000);
+  };
+
+  // Safe Execute Deletion from Confirmation Safeguard Modal
+  const handleExecuteDeleteUser = () => {
+    if (!userToDeleteModal) return;
+    if (!deleteReason.trim() || deleteReason.trim().length < 5) {
+      setDeleteError("A detailed administrative justification (minimum 5 characters) is required.");
+      return;
+    }
+    if (!deleteConfirmChecked) {
+      setDeleteError("You must verify the checkbox confirmation before proceeding.");
+      return;
+    }
+
+    const targetUser = userToDeleteModal;
+    const updated = adminUsers.filter((u) => u.id !== targetUser.id);
+    persistAdminUsers(updated);
+
+    appendAuditLog(
+      "Users",
+      "Permanently Deleted User Account",
+      `Administrator permanently deleted individual user account for ${targetUser.name} (${targetUser.email}, ID: ${targetUser.id}). Justification: ${deleteReason.trim()}`,
+      targetUser.id
+    );
+
+    setUserToDeleteModal(null);
+    setSelectedUser(null);
+    setDeleteReason("");
+    setDeleteConfirmChecked(false);
+    setDeleteError("");
+    setActionNotification(`User record for ${targetUser.name} (${targetUser.id}) has been permanently deleted and logged.`);
+    setTimeout(() => setActionNotification(""), 6000);
+  };
+
+  // Execute User Suspend / Reinstate Toggle with Reason
+  const handleExecuteSuspendUser = () => {
+    if (!userToSuspendModal) return;
+    const { user, targetStatus } = userToSuspendModal;
+    const reason = suspendReason.trim() || (targetStatus === "Suspended" ? "Administrative safety freeze" : "Administrative access reinstatement");
+
+    const historyEntry = {
+      id: `HIS-${Date.now().toString().slice(-4)}`,
+      timestamp: "Today, " + new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+      actor: "Staff Admin",
+      action: `Online Access Status changed to ${targetStatus}`,
+      previousState: user.onlineAccessStatus,
+      newState: targetStatus,
+      reason,
+    };
+
+    const updatedUsers = adminUsers.map((u) =>
+      u.id === user.id
+        ? {
+            ...u,
+            onlineAccessStatus: targetStatus,
+            accessChangeHistory: [historyEntry, ...u.accessChangeHistory],
+          }
+        : u
+    );
+
+    persistAdminUsers(updatedUsers);
+
+    appendAuditLog(
+      "Users",
+      targetStatus === "Suspended" ? "Suspended User Access" : "Reinstated User Access",
+      `Online access for ${user.name} (${user.id}) changed to ${targetStatus}. Justification: ${reason}`,
+      user.id
+    );
+
+    if (selectedUser?.id === user.id) {
+      setSelectedUser((prev) => (prev ? { ...prev, onlineAccessStatus: targetStatus } : null));
+    }
+
+    setUserToSuspendModal(null);
+    setSuspendReason("");
+    setActionNotification(`Access for ${user.name} successfully updated to ${targetStatus}.`);
+    setTimeout(() => setActionNotification(""), 5000);
+  };
+
+  // Execute User Profile Edit with Diff Audit Log
+  const handleSaveEditUser = () => {
+    if (!editingUserRecord) return;
+    if (!editUserFormData.editReason.trim()) {
+      alert("Please provide an administrative reason for editing this user profile.");
+      return;
+    }
+
+    const targetUser = editingUserRecord;
+    const diffs: string[] = [];
+    if (editUserFormData.name !== targetUser.name) diffs.push(`Name: ${targetUser.name} → ${editUserFormData.name}`);
+    if (editUserFormData.email !== targetUser.email) diffs.push(`Email: ${targetUser.email} → ${editUserFormData.email}`);
+    if (editUserFormData.phone !== targetUser.phone) diffs.push(`Phone: ${targetUser.phone} → ${editUserFormData.phone}`);
+    if (editUserFormData.mailingAddress !== targetUser.mailingAddress) diffs.push(`Address: ${targetUser.mailingAddress} → ${editUserFormData.mailingAddress}`);
+    if (editUserFormData.onlineAccessStatus !== targetUser.onlineAccessStatus) diffs.push(`Access: ${targetUser.onlineAccessStatus} → ${editUserFormData.onlineAccessStatus}`);
+    if (editUserFormData.verificationStatus !== targetUser.verificationStatus) diffs.push(`KYC: ${targetUser.verificationStatus} → ${editUserFormData.verificationStatus}`);
+
+    const historyEntry = {
+      id: `HIS-${Date.now().toString().slice(-4)}`,
+      timestamp: "Today, " + new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+      actor: "Staff Admin",
+      action: "Profile Record Edited",
+      previousState: "Previous profile snapshot",
+      newState: diffs.join(" | ") || "Minor profile update",
+      reason: editUserFormData.editReason,
+    };
+
+    const updatedUsers = adminUsers.map((u) =>
+      u.id === targetUser.id
+        ? {
+            ...u,
+            name: editUserFormData.name,
+            email: editUserFormData.email,
+            phone: editUserFormData.phone,
+            mailingAddress: editUserFormData.mailingAddress,
+            onlineAccessStatus: editUserFormData.onlineAccessStatus,
+            verificationStatus: editUserFormData.verificationStatus,
+            accessChangeHistory: [historyEntry, ...u.accessChangeHistory],
+          }
+        : u
+    );
+
+    persistAdminUsers(updatedUsers);
+
+    appendAuditLog(
+      "Users",
+      "Edited User Record",
+      `Updated user profile for ${editUserFormData.name} (${targetUser.id}). Changes: ${diffs.join(", ") || "General profile update"}. Reason: ${editUserFormData.editReason}`,
+      targetUser.id
+    );
+
+    if (selectedUser?.id === targetUser.id) {
+      setSelectedUser((prev) =>
+        prev
+          ? {
+              ...prev,
+              name: editUserFormData.name,
+              email: editUserFormData.email,
+              phone: editUserFormData.phone,
+              mailingAddress: editUserFormData.mailingAddress,
+              onlineAccessStatus: editUserFormData.onlineAccessStatus,
+              verificationStatus: editUserFormData.verificationStatus,
+            }
+          : null
+      );
+    }
+
+    setEditingUserRecord(null);
+    setActionNotification(`Profile for ${editUserFormData.name} (${targetUser.id}) updated and recorded.`);
+    setTimeout(() => setActionNotification(""), 5000);
+  };
+
+  // Applications Review & Decision Handler
+  const handleExecuteApplicationDecision = () => {
+    if (!appDecisionModal) return;
+    const { app, decision } = appDecisionModal;
+    if (!appDecisionReason.trim()) {
+      alert("A clear decision justification / reason is mandatory for regulatory compliance.");
+      return;
+    }
+
+    const updatedNotes = `${decision === "Approved" ? "Application approved" : decision === "Declined" ? "Application declined" : "Application marked under review"} by Staff Admin: ${appDecisionReason.trim()}`;
+
+    const updatedApps: BankApplication[] = applications.map((a) =>
+      a.id === app.id
+        ? {
+            ...a,
+            status: decision,
+            reviewNotes: updatedNotes,
+            decisionReason: appDecisionReason.trim(),
+            decisionBy: "Staff Admin",
+            updatedAt: "Today, " + new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+          }
+        : a
+    );
+
+    persistApplications(updatedApps);
+
+    // If Approved and autoProvisionUser is checked, add user to adminUsers if not already there
+    if (decision === "Approved" && autoProvisionUser) {
+      const exists = adminUsers.some((u) => u.email.toLowerCase() === app.email.toLowerCase() || u.id === app.id);
+      if (!exists) {
+        const newUser: AdminUserRecord = {
+          id: app.id,
+          name: app.fullName,
+          email: app.email,
+          phone: app.phone,
+          mailingAddress: `${app.region}, ${app.countryName}`,
+          dateJoined: new Date().toISOString().split("T")[0] || "2026-10-20",
+          displayDateJoined: new Date().toLocaleDateString([], { month: "short", day: "numeric", year: "numeric" }),
+          onlineAccessStatus: "Active",
+          verificationStatus: "Verified",
+          linkedCustomerId: `CUST-${app.id.replace(/\D/g, "") || Math.floor(100000 + Math.random() * 900000)}`,
+          communicationPreferences: {
+            emailAlerts: true,
+            smsNotifications: true,
+            paperlessStatements: true,
+            marketingUpdates: false,
+          },
+          security: {
+            twoFactorEnabled: false,
+            activeSessionsCount: 0,
+            lastSignIn: "Never",
+            lastSignInIp: "N/A",
+            passwordResetRequired: true,
+          },
+          adminNotes: [
+            `[${new Date().toLocaleDateString([], { month: "short", day: "numeric", year: "numeric" })} - Staff Admin]: Auto-provisioned upon approving application ${app.id}. Reason: ${appDecisionReason.trim()}`,
+          ],
+          accessChangeHistory: [
+            {
+              id: `HIS-${Date.now().toString().slice(-4)}`,
+              timestamp: "Today, " + new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+              actor: "Staff Admin",
+              action: "User Account Provisioned from Approved Application",
+              previousState: "None (New Applicant)",
+              newState: "Active / Verified",
+              reason: appDecisionReason.trim(),
+            },
+          ],
+        };
+        const updatedUsers = [newUser, ...adminUsers];
+        persistAdminUsers(updatedUsers);
+      }
+    }
+
+    appendAuditLog(
+      "Applications",
+      `Application ${decision}`,
+      `Application ${app.id} for ${app.fullName} (${app.countryName}) marked as ${decision}. Justification: ${appDecisionReason.trim()}`,
+      app.id
+    );
+
+    setAppDecisionModal(null);
+    if (selectedAppModal?.id === app.id) {
+      setSelectedAppModal((prev) =>
+        prev
+          ? {
+              ...prev,
+              status: decision,
+              reviewNotes: updatedNotes,
+              decisionReason: appDecisionReason.trim(),
+              decisionBy: "Staff Admin",
+            }
+          : null
+      );
+    }
+    setAppDecisionReason("");
+    setActionNotification(`Application ${app.id} (${app.fullName}) has been marked as ${decision}. Decision recorded in audit log.`);
+    setTimeout(() => setActionNotification(""), 6000);
   };
 
   // Safe Customer Status Changer
@@ -1097,8 +1454,8 @@ export function SoloAdminDashboard({
                         setActiveSection("transactions");
                         appendAuditLog("Overview", "Navigated to Transaction History", "Administrator accessed transaction history.");
                       } else if (item.id === "applications") {
-                        setActiveSection("compliance");
-                        appendAuditLog("Overview", "Navigated to New User Applications", "Administrator opened applications queue.");
+                        setActiveSection("applications");
+                        appendAuditLog("Applications", "Navigated to New User Applications Queue", "Administrator opened live applications queue.");
                       } else {
                         setActiveSection(item.id as any);
                         appendAuditLog("Overview", `Navigated to ${item.label}`, `Administrator switched workspace view.`);
@@ -1112,6 +1469,11 @@ export function SoloAdminDashboard({
                   >
                     <Icon className={`h-4 w-4 shrink-0 ${isActive ? "text-white" : "text-slate-500"}`} />
                     <span className="flex-1 text-left truncate">{item.label}</span>
+                    {item.id === "applications" && (
+                      <span className="ml-auto rounded-full bg-amber-500/20 text-amber-300 border border-amber-400/40 px-2 py-0.5 text-[0.65rem] font-bold">
+                        {applications.filter((a) => a.status === "Pending" || a.status === "Under Review").length}
+                      </span>
+                    )}
                   </button>
                 );
               })}
@@ -1183,8 +1545,8 @@ export function SoloAdminDashboard({
                     setActiveSection("transactions");
                     appendAuditLog("Overview", "Navigated to Transaction History", "Administrator accessed transaction history.");
                   } else if (item.id === "applications") {
-                    setActiveSection("compliance");
-                    appendAuditLog("Overview", "Navigated to New User Applications", "Administrator opened applications queue.");
+                    setActiveSection("applications");
+                    appendAuditLog("Applications", "Navigated to New User Applications Queue", "Administrator opened live applications queue.");
                   } else {
                     setActiveSection(item.id as any);
                     appendAuditLog("Overview", `Navigated to ${item.label}`, `Administrator switched workspace view.`);
@@ -1199,7 +1561,14 @@ export function SoloAdminDashboard({
               >
                 <Icon className={`h-4 w-4 shrink-0 ${isActive ? "text-white" : "text-slate-500 group-hover:text-red-600"}`} />
                 {!sidebarCollapsed && (
-                  <span className="flex-1 text-left truncate">{item.label}</span>
+                  <>
+                    <span className="flex-1 text-left truncate">{item.label}</span>
+                    {item.id === "applications" && (
+                      <span className="ml-auto rounded-full bg-amber-500/20 text-amber-400 border border-amber-400/30 px-2 py-0.5 text-[0.65rem] font-bold">
+                        {applications.filter((a) => a.status === "Pending" || a.status === "Under Review").length}
+                      </span>
+                    )}
+                  </>
                 )}
                 {!sidebarCollapsed && (item as any).hasSubmenu && (
                   <ChevronDown className={`h-3 w-3 shrink-0 ${isActive ? "text-white" : "text-slate-400"}`} />
@@ -1423,8 +1792,8 @@ export function SoloAdminDashboard({
                     </p>
                   </div>
 
-                  {/* 3 Quick Links Buttons matching screenshot */}
-                  <div className="grid grid-cols-3 sm:flex sm:flex-wrap items-center gap-2 sm:gap-3 w-full sm:w-auto">
+                  {/* 4 Quick Links Buttons */}
+                  <div className="grid grid-cols-2 sm:flex sm:flex-wrap items-center gap-2 sm:gap-3 w-full sm:w-auto">
                     <button
                       type="button"
                       onClick={() => setActiveSection("accounts")}
@@ -1445,6 +1814,13 @@ export function SoloAdminDashboard({
                       className="rounded-lg bg-purple-600 hover:bg-purple-700 px-3 py-2 text-xs font-bold text-white shadow-sm transition-colors text-center"
                     >
                       Users
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setActiveSection("applications")}
+                      className="rounded-lg bg-amber-600 hover:bg-amber-700 px-3 py-2 text-xs font-bold text-white shadow-sm transition-colors text-center"
+                    >
+                      Applications ({applications.filter((a) => a.status === "Pending" || a.status === "Under Review").length})
                     </button>
                   </div>
                 </div>
@@ -1572,6 +1948,22 @@ export function SoloAdminDashboard({
                     <div className="min-w-0">
                       <span className="text-[11px] sm:text-xs font-semibold text-slate-500 block truncate">Security Clearance</span>
                       <p className="font-display text-xs sm:text-sm font-bold text-emerald-600 truncate">Staff Admin Active</p>
+                    </div>
+                  </div>
+
+                  {/* Card 9: New Applications */}
+                  <div
+                    onClick={() => setActiveSection("applications")}
+                    className="flex items-center gap-3.5 sm:gap-4 p-3 sm:p-4 rounded-xl border border-slate-100 hover:border-red-200 hover:bg-red-50/30 cursor-pointer transition-all min-w-0 shadow-2xs"
+                  >
+                    <div className="flex h-10 w-10 sm:h-12 sm:w-12 shrink-0 items-center justify-center rounded-xl bg-blue-50 text-blue-600">
+                      <FileText className="h-5 w-5 sm:h-6 sm:w-6" />
+                    </div>
+                    <div className="min-w-0">
+                      <span className="text-[11px] sm:text-xs font-semibold text-slate-500 block truncate">Portal Applications</span>
+                      <p className="font-display text-base sm:text-lg font-black text-slate-800 truncate">
+                        {applications.filter((a) => a.status === "Pending" || a.status === "Under Review").length} Pending
+                      </p>
                     </div>
                   </div>
                 </div>
@@ -1739,7 +2131,28 @@ export function SoloAdminDashboard({
                   </p>
                 </div>
 
-                <div className="flex flex-wrap items-center gap-2">
+                <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
+                  {/* Search Input for Users */}
+                  <div className="relative flex-1 min-w-[240px] max-w-sm">
+                    <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400" />
+                    <input
+                      type="text"
+                      value={userFilterSearch}
+                      onChange={(e) => setUserFilterSearch(e.target.value)}
+                      placeholder="Search users by name, email, ID, phone..."
+                      className="w-full rounded-xl border border-slate-200 bg-white pl-9 pr-7 py-1.5 text-xs text-slate-800 placeholder-slate-400 focus:border-red-500 focus:outline-none shadow-xs"
+                    />
+                    {userFilterSearch && (
+                      <button
+                        type="button"
+                        onClick={() => setUserFilterSearch("")}
+                        className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 text-xs"
+                      >
+                        ✕
+                      </button>
+                    )}
+                  </div>
+
                   {/* Status Filter */}
                   <select
                     value={userFilterStatus}
@@ -1874,7 +2287,7 @@ export function SoloAdminDashboard({
                               )}
                             </td>
                             <td className="px-5 py-4 text-right">
-                              <div className="flex items-center justify-end gap-2">
+                              <div className="flex items-center justify-end gap-1.5 flex-wrap">
                                 <Button
                                   size="sm"
                                   variant="outline"
@@ -1887,9 +2300,78 @@ export function SoloAdminDashboard({
                                       user.id
                                     );
                                   }}
-                                  className="border-slate-300 bg-white text-xs font-semibold text-[#0a192f] hover:bg-[#0a192f] hover:border-[#0a192f] hover:text-white transition-colors"
+                                  className="border-slate-300 bg-white text-xs font-semibold text-[#0a192f] hover:bg-[#0a192f] hover:text-white transition-colors"
+                                  title="Review full profile and active sessions"
                                 >
-                                  Review Profile →
+                                  Review
+                                </Button>
+
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => {
+                                    setEditingUserRecord(user);
+                                    setEditUserFormData({
+                                      name: user.name,
+                                      email: user.email,
+                                      phone: user.phone,
+                                      mailingAddress: user.mailingAddress,
+                                      onlineAccessStatus: user.onlineAccessStatus,
+                                      verificationStatus: user.verificationStatus,
+                                      editReason: "",
+                                    });
+                                  }}
+                                  className="border-slate-300 bg-white text-xs font-semibold text-slate-700 hover:bg-slate-100"
+                                  title="Edit user contact details and KYC status"
+                                >
+                                  <Edit3 className="mr-1 h-3 w-3 text-slate-500" />
+                                  Edit
+                                </Button>
+
+                                {user.onlineAccessStatus === "Active" || user.onlineAccessStatus === "Reinstated" ? (
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    onClick={() => {
+                                      setUserToSuspendModal({ user, targetStatus: "Suspended" });
+                                      setSuspendReason("");
+                                    }}
+                                    className="border-amber-200 bg-amber-50/50 text-xs font-semibold text-amber-700 hover:bg-amber-100"
+                                    title="Suspend digital banking access"
+                                  >
+                                    <UserX className="mr-1 h-3 w-3" />
+                                    Suspend
+                                  </Button>
+                                ) : (
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    onClick={() => {
+                                      setUserToSuspendModal({ user, targetStatus: "Active" });
+                                      setSuspendReason("");
+                                    }}
+                                    className="border-emerald-200 bg-emerald-50/50 text-xs font-semibold text-emerald-700 hover:bg-emerald-100"
+                                    title="Reinstate digital banking access"
+                                  >
+                                    <UserCheck className="mr-1 h-3 w-3" />
+                                    Reinstate
+                                  </Button>
+                                )}
+
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => {
+                                    setUserToDeleteModal(user);
+                                    setDeleteReason("");
+                                    setDeleteConfirmChecked(false);
+                                    setDeleteError("");
+                                  }}
+                                  className="border-rose-200 bg-rose-50/40 text-xs font-semibold text-rose-600 hover:bg-rose-600 hover:text-white transition-colors"
+                                  title="Permanently delete individual user account"
+                                >
+                                  <Trash2 className="mr-1 h-3 w-3" />
+                                  Delete
                                 </Button>
                               </div>
                             </td>
@@ -2300,19 +2782,15 @@ export function SoloAdminDashboard({
                         <Button
                           size="sm"
                           variant="destructive"
-                          onClick={() =>
-                            setConfirmActionModal({
-                              title: `Permanently Delete User ${selectedUser.name}?`,
-                              description: "This will remove the user's online credentials and record from the system. This action cannot be undone.",
-                              confirmLabel: "Delete User",
-                              danger: true,
-                              requiresReauth: true,
-                              onConfirm: () => handleDeleteUser(selectedUser.id, actionReason),
-                            })
-                          }
+                          onClick={() => {
+                            setUserToDeleteModal(selectedUser);
+                            setDeleteReason("");
+                            setDeleteConfirmChecked(false);
+                            setDeleteError("");
+                          }}
                           className="bg-red-700 hover:bg-red-800 text-xs font-bold text-white shadow-xs ml-auto"
                         >
-                          <UserX className="mr-1.5 h-3.5 w-3.5" />
+                          <Trash2 className="mr-1.5 h-3.5 w-3.5" />
                           Delete User
                         </Button>
                       </div>
@@ -2715,6 +3193,887 @@ export function SoloAdminDashboard({
                   </div>
                 </div>
               )}
+            </div>
+          )}
+
+          {/* INDIVIDUAL USER DELETION SAFEGUARD CONFIRMATION MODAL */}
+          {userToDeleteModal && (
+            <div
+              role="dialog"
+              aria-modal="true"
+              className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 overflow-y-auto"
+            >
+              <div className="relative w-full max-w-lg rounded-3xl border-2 border-rose-600 bg-white p-6 sm:p-7 shadow-2xl text-slate-800 animate-in fade-in zoom-in-95 duration-150">
+                {/* Alert Header */}
+                <div className="flex items-start gap-3.5 border-b border-rose-100 pb-4">
+                  <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-rose-100 text-rose-700 border border-rose-200">
+                    <AlertTriangle className="h-6 w-6" />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-2">
+                      <span className="rounded bg-rose-600 px-2 py-0.5 text-[0.65rem] font-black uppercase text-white tracking-wider">
+                        Safeguard Review
+                      </span>
+                      <span className="text-xs text-rose-600 font-bold">Individual Account Deletion</span>
+                    </div>
+                    <h3 className="mt-1 font-display text-lg font-black text-slate-900 leading-tight">
+                      Permanently Delete User Account?
+                    </h3>
+                    <p className="text-xs text-slate-500 mt-0.5">
+                      This sensitive operation requires clear target verification and mandatory audit logging.
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setUserToDeleteModal(null);
+                      setDeleteReason("");
+                      setDeleteConfirmChecked(false);
+                      setDeleteError("");
+                    }}
+                    className="rounded-lg p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-700"
+                  >
+                    ✕
+                  </button>
+                </div>
+
+                {/* Target Affected Account Card */}
+                <div className="mt-4 rounded-2xl border border-slate-200 bg-slate-50 p-4 space-y-2.5 text-xs">
+                  <div className="flex items-center justify-between border-b border-slate-200 pb-2">
+                    <span className="font-bold text-slate-500 uppercase tracking-wider text-[0.68rem]">
+                      Account To Be Affected:
+                    </span>
+                    <span className="font-mono font-bold text-rose-700 bg-rose-50 border border-rose-200 px-2 py-0.5 rounded">
+                      {userToDeleteModal.id}
+                    </span>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-2">
+                    <div>
+                      <span className="text-slate-500 block text-[0.68rem]">Full Legal Name:</span>
+                      <span className="font-bold text-slate-900 text-sm">{userToDeleteModal.name}</span>
+                    </div>
+                    <div>
+                      <span className="text-slate-500 block text-[0.68rem]">Online Access Status:</span>
+                      <span className="font-bold text-slate-800">{userToDeleteModal.onlineAccessStatus}</span>
+                    </div>
+                    <div>
+                      <span className="text-slate-500 block text-[0.68rem]">Email Address:</span>
+                      <span className="text-slate-800 truncate block">{userToDeleteModal.email}</span>
+                    </div>
+                    <div>
+                      <span className="text-slate-500 block text-[0.68rem]">Phone Number:</span>
+                      <span className="text-slate-800 font-mono">{userToDeleteModal.phone}</span>
+                    </div>
+                  </div>
+
+                  {/* Linked Financial Assets Review */}
+                  <div className="mt-2 pt-2 border-t border-slate-200">
+                    <span className="text-slate-500 block text-[0.68rem] font-bold uppercase tracking-wider">
+                      Linked Financial Accounts & Balances:
+                    </span>
+                    {(() => {
+                      const linkedAccs = accounts.filter((a) => a.customerId === userToDeleteModal.linkedCustomerId);
+                      if (linkedAccs.length === 0) {
+                        return (
+                          <p className="text-[0.72rem] text-slate-500 mt-1 italic">
+                            No active deposit accounts linked to customer ID {userToDeleteModal.linkedCustomerId}.
+                          </p>
+                        );
+                      }
+                      return (
+                        <div className="mt-1 space-y-1">
+                          {linkedAccs.map((acc) => (
+                            <div key={acc.id} className="flex items-center justify-between bg-white px-2.5 py-1.5 rounded-lg border border-slate-200 text-[0.72rem]">
+                              <span className="font-medium text-slate-700">
+                                {acc.accountType} ({acc.accountNumberMasked})
+                              </span>
+                              <span className="font-mono font-bold text-slate-900">
+                                {acc.currency} {acc.balance.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                      );
+                    })()}
+                  </div>
+                </div>
+
+                {/* Warning Notice */}
+                <div className="mt-3.5 rounded-xl border border-rose-200 bg-rose-50/70 p-3 text-xs text-rose-950 flex items-start gap-2.5">
+                  <ShieldAlert className="h-4 w-4 text-rose-600 shrink-0 mt-0.5" />
+                  <p className="text-[0.72rem] leading-relaxed">
+                    <strong>Permanent Deletion Notice:</strong> Purging this user removes their digital credentials and profile records. To preserve regulatory integrity, this action will be permanently recorded in the administrative activity history.
+                  </p>
+                </div>
+
+                {/* Mandatory Reason Field */}
+                <div className="mt-4 space-y-1.5">
+                  <label className="block text-xs font-bold text-slate-700">
+                    Reason for Deletion (Required for Audit Ledger): <span className="text-rose-600">*</span>
+                  </label>
+                  <textarea
+                    rows={2}
+                    value={deleteReason}
+                    onChange={(e) => {
+                      setDeleteReason(e.target.value);
+                      if (deleteError) setDeleteError("");
+                    }}
+                    placeholder="e.g., Verified customer written GDPR/CCPA erasure request, or duplicate profile created during branch onboarding..."
+                    className="w-full rounded-xl border border-slate-300 bg-white p-2.5 text-xs text-slate-800 placeholder-slate-400 focus:border-rose-500 focus:outline-none"
+                  />
+                </div>
+
+                {/* Confirmation Checkbox */}
+                <div className="mt-3 rounded-xl border border-slate-200 bg-slate-50 p-3">
+                  <label className="flex items-start gap-2.5 cursor-pointer text-xs text-slate-700">
+                    <input
+                      type="checkbox"
+                      checked={deleteConfirmChecked}
+                      onChange={(e) => {
+                        setDeleteConfirmChecked(e.target.checked);
+                        if (deleteError) setDeleteError("");
+                      }}
+                      className="mt-0.5 h-4 w-4 rounded border-slate-300 text-rose-600 focus:ring-rose-500"
+                    />
+                    <span className="leading-snug">
+                      I confirm that I have reviewed the specific user details for <strong>{userToDeleteModal.name}</strong> ({userToDeleteModal.id}) and approve permanent deletion of this individual account only.
+                    </span>
+                  </label>
+                </div>
+
+                {deleteError && (
+                  <p className="mt-2 text-xs font-bold text-rose-600 flex items-center gap-1.5">
+                    <AlertCircle className="h-3.5 w-3.5 shrink-0" />
+                    {deleteError}
+                  </p>
+                )}
+
+                {/* Actions */}
+                <div className="mt-5 flex items-center justify-end gap-2.5 pt-3 border-t border-slate-100">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => {
+                      setUserToDeleteModal(null);
+                      setDeleteReason("");
+                      setDeleteConfirmChecked(false);
+                      setDeleteError("");
+                    }}
+                    className="border-slate-300 text-xs font-semibold text-slate-700 hover:bg-slate-100"
+                  >
+                    Cancel / Keep Account
+                  </Button>
+                  <Button
+                    type="button"
+                    onClick={handleExecuteDeleteUser}
+                    disabled={!deleteConfirmChecked || deleteReason.trim().length < 5}
+                    className="bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold shadow-xs flex items-center gap-1.5 disabled:opacity-50"
+                  >
+                    <Trash2 className="h-3.5 w-3.5" />
+                    Permanently Delete User Account
+                  </Button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* INDIVIDUAL USER SUSPEND / REINSTATE MODAL */}
+          {userToSuspendModal && (
+            <div
+              role="dialog"
+              aria-modal="true"
+              className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 overflow-y-auto"
+            >
+              <div className="relative w-full max-w-md rounded-3xl border border-slate-200 bg-white p-6 shadow-2xl text-slate-800 animate-in fade-in zoom-in-95 duration-150">
+                <div className="flex items-center gap-3 border-b border-slate-100 pb-4">
+                  <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${userToSuspendModal.targetStatus === "Suspended" ? "bg-amber-100 text-amber-700" : "bg-emerald-100 text-emerald-700"}`}>
+                    {userToSuspendModal.targetStatus === "Suspended" ? <UserX className="h-5 w-5" /> : <UserCheck className="h-5 w-5" />}
+                  </div>
+                  <div>
+                    <h3 className="font-display text-base font-black text-slate-900">
+                      {userToSuspendModal.targetStatus === "Suspended" ? "Suspend Digital Banking Access" : "Reinstate Digital Banking Access"}
+                    </h3>
+                    <p className="text-xs text-slate-500">
+                      Target: {userToSuspendModal.user.name} ({userToSuspendModal.user.id})
+                    </p>
+                  </div>
+                </div>
+
+                <p className="mt-3 text-xs text-slate-600 leading-relaxed">
+                  {userToSuspendModal.targetStatus === "Suspended"
+                    ? "Suspending digital access immediately revokes user portal sessions and prevents further logins. Underlying bank records and account balances remain safely intact."
+                    : "Reinstating access re-authorizes the user to sign in to their online banking portal."}
+                </p>
+
+                <div className="mt-4 space-y-1">
+                  <label className="block text-xs font-bold text-slate-700">
+                    Reason for {userToSuspendModal.targetStatus === "Suspended" ? "Suspension" : "Reinstatement"} (Required):
+                  </label>
+                  <textarea
+                    rows={2}
+                    value={suspendReason}
+                    onChange={(e) => setSuspendReason(e.target.value)}
+                    placeholder={`Enter regulatory reason for ${userToSuspendModal.targetStatus.toLowerCase()} access...`}
+                    className="w-full rounded-xl border border-slate-300 bg-white p-2.5 text-xs text-slate-800 placeholder-slate-400 focus:border-red-500 focus:outline-none"
+                  />
+                </div>
+
+                <div className="mt-5 flex items-center justify-end gap-2 pt-3 border-t border-slate-100">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => {
+                      setUserToSuspendModal(null);
+                      setSuspendReason("");
+                    }}
+                    className="border-slate-300 text-xs font-semibold text-slate-700 hover:bg-slate-100"
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    type="button"
+                    onClick={handleExecuteSuspendUser}
+                    className={`text-xs font-bold text-white shadow-xs ${userToSuspendModal.targetStatus === "Suspended" ? "bg-amber-600 hover:bg-amber-700" : "bg-emerald-600 hover:bg-emerald-700"}`}
+                  >
+                    {userToSuspendModal.targetStatus === "Suspended" ? "Confirm Suspension" : "Confirm Reinstatement"}
+                  </Button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* COMPREHENSIVE USER EDIT MODAL */}
+          {editingUserRecord && (
+            <div
+              role="dialog"
+              aria-modal="true"
+              className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 overflow-y-auto"
+            >
+              <div className="relative w-full max-w-lg rounded-3xl border border-slate-200 bg-white p-6 shadow-2xl text-slate-800 animate-in fade-in zoom-in-95 duration-150 max-h-[90vh] overflow-y-auto">
+                <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+                  <div>
+                    <h3 className="font-display text-lg font-black text-slate-900">Edit User Profile Record</h3>
+                    <p className="text-xs text-slate-500">Target ID: {editingUserRecord.id}</p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setEditingUserRecord(null)}
+                    className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-700"
+                  >
+                    ✕
+                  </button>
+                </div>
+
+                <div className="mt-4 space-y-3.5 text-xs">
+                  <div>
+                    <label className="block font-bold text-slate-700 mb-1">Full Legal Name</label>
+                    <input
+                      type="text"
+                      value={editUserFormData.name}
+                      onChange={(e) => setEditUserFormData({ ...editUserFormData, name: e.target.value })}
+                      className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs text-slate-800 focus:border-red-500 focus:outline-none"
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                      <label className="block font-bold text-slate-700 mb-1">Email Address</label>
+                      <input
+                        type="email"
+                        value={editUserFormData.email}
+                        onChange={(e) => setEditUserFormData({ ...editUserFormData, email: e.target.value })}
+                        className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs text-slate-800 focus:border-red-500 focus:outline-none"
+                      />
+                    </div>
+                    <div>
+                      <label className="block font-bold text-slate-700 mb-1">Phone Number</label>
+                      <input
+                        type="text"
+                        value={editUserFormData.phone}
+                        onChange={(e) => setEditUserFormData({ ...editUserFormData, phone: e.target.value })}
+                        className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs text-slate-800 focus:border-red-500 focus:outline-none"
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block font-bold text-slate-700 mb-1">Mailing Address</label>
+                    <input
+                      type="text"
+                      value={editUserFormData.mailingAddress}
+                      onChange={(e) => setEditUserFormData({ ...editUserFormData, mailingAddress: e.target.value })}
+                      className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs text-slate-800 focus:border-red-500 focus:outline-none"
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                      <label className="block font-bold text-slate-700 mb-1">Online Access Status</label>
+                      <select
+                        value={editUserFormData.onlineAccessStatus}
+                        onChange={(e) => setEditUserFormData({ ...editUserFormData, onlineAccessStatus: e.target.value as any })}
+                        className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs text-slate-800 focus:border-red-500 focus:outline-none"
+                      >
+                        <option value="Active">Active</option>
+                        <option value="Suspended">Suspended</option>
+                        <option value="Reinstated">Reinstated</option>
+                        <option value="Closed">Closed</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block font-bold text-slate-700 mb-1">KYC Verification Status</label>
+                      <select
+                        value={editUserFormData.verificationStatus}
+                        onChange={(e) => setEditUserFormData({ ...editUserFormData, verificationStatus: e.target.value as any })}
+                        className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs text-slate-800 focus:border-red-500 focus:outline-none"
+                      >
+                        <option value="Verified">Verified</option>
+                        <option value="Pending Review">Pending Review</option>
+                        <option value="Action Required">Action Required</option>
+                        <option value="Rejected">Rejected</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block font-bold text-slate-700 mb-1">
+                      Reason for Profile Edit (Required for Audit Trail) <span className="text-red-600">*</span>
+                    </label>
+                    <textarea
+                      rows={2}
+                      value={editUserFormData.editReason}
+                      onChange={(e) => setEditUserFormData({ ...editUserFormData, editReason: e.target.value })}
+                      placeholder="Document customer request or verified documentation change..."
+                      className="w-full rounded-xl border border-slate-300 bg-white p-2.5 text-xs text-slate-800 placeholder-slate-400 focus:border-red-500 focus:outline-none"
+                    />
+                  </div>
+                </div>
+
+                <div className="mt-5 flex items-center justify-end gap-2.5 pt-3 border-t border-slate-100">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => setEditingUserRecord(null)}
+                    className="border-slate-300 text-xs font-semibold text-slate-700 hover:bg-slate-100"
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    type="button"
+                    onClick={handleSaveEditUser}
+                    className="bg-red-600 hover:bg-red-700 text-white text-xs font-bold shadow-xs"
+                  >
+                    Save & Record in Audit Log
+                  </Button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* ======================================================== */}
+          {/* VIEW 1.8: NEW USER APPLICATION(S) QUEUE */}
+          {/* ======================================================== */}
+          {activeSection === "applications" && (
+            <div className="space-y-6 max-w-7xl mx-auto">
+              {/* Header & Controls */}
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div>
+                  <div className="flex items-center gap-2">
+                    <h2 className="font-display text-2xl font-black text-slate-800">New User Application(s)</h2>
+                    <span className="rounded-full bg-amber-100 px-2.5 py-0.5 text-xs font-bold text-amber-800 border border-amber-200">
+                      {applications.filter((a) => a.status === "Pending" || a.status === "Under Review").length} Pending Review
+                    </span>
+                  </div>
+                  <p className="text-xs text-slate-500 mt-1">
+                    Review onboarding submissions from the public bank portal, inspect verification documents, and approve or decline accounts with recorded regulatory justification.
+                  </p>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => {
+                      if (typeof window !== "undefined") {
+                        const saved = localStorage.getItem("us_finance_bank_applications");
+                        if (saved) {
+                          try {
+                            setApplications(JSON.parse(saved));
+                          } catch {}
+                        }
+                      }
+                      setActionNotification("Applications queue synchronized with live portal storage.");
+                      setTimeout(() => setActionNotification(""), 3500);
+                    }}
+                    className="border-slate-300 bg-white text-xs font-semibold text-slate-700 hover:bg-slate-50 flex items-center gap-1.5 shadow-xs"
+                  >
+                    <RefreshCw className="h-3.5 w-3.5 text-red-600" />
+                    Refresh Queue
+                  </Button>
+                </div>
+              </div>
+
+              {/* Metric Cards */}
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
+                <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-2xs">
+                  <span className="text-[0.7rem] uppercase tracking-wider text-slate-500 font-bold">Total Applications</span>
+                  <div className="mt-1 font-display text-xl sm:text-2xl font-black text-slate-900">{applications.length}</div>
+                </div>
+                <div className="rounded-2xl border border-amber-200 bg-amber-50/50 p-4 shadow-2xs">
+                  <span className="text-[0.7rem] uppercase tracking-wider text-amber-700 font-bold">Pending Review</span>
+                  <div className="mt-1 font-display text-xl sm:text-2xl font-black text-amber-900">
+                    {applications.filter((a) => a.status === "Pending").length}
+                  </div>
+                </div>
+                <div className="rounded-2xl border border-emerald-200 bg-emerald-50/50 p-4 shadow-2xs">
+                  <span className="text-[0.7rem] uppercase tracking-wider text-emerald-700 font-bold">Approved</span>
+                  <div className="mt-1 font-display text-xl sm:text-2xl font-black text-emerald-900">
+                    {applications.filter((a) => a.status === "Approved").length}
+                  </div>
+                </div>
+                <div className="rounded-2xl border border-rose-200 bg-rose-50/50 p-4 shadow-2xs">
+                  <span className="text-[0.7rem] uppercase tracking-wider text-rose-700 font-bold">Declined / Rejected</span>
+                  <div className="mt-1 font-display text-xl sm:text-2xl font-black text-rose-900">
+                    {applications.filter((a) => a.status === "Declined" || a.status === "Rejected").length}
+                  </div>
+                </div>
+              </div>
+
+              {/* Filters & Search Bar */}
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                {/* Search Input */}
+                <div className="relative flex-1 min-w-[260px] max-w-md">
+                  <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+                  <input
+                    type="text"
+                    value={appSearchQuery}
+                    onChange={(e) => setAppSearchQuery(e.target.value)}
+                    placeholder="Search by applicant name, ID, email, country, or phone..."
+                    className="w-full rounded-xl border border-slate-200 bg-white pl-10 pr-8 py-2 text-xs text-slate-800 placeholder-slate-400 focus:border-red-500 focus:outline-none shadow-xs"
+                  />
+                  {appSearchQuery && (
+                    <button
+                      type="button"
+                      onClick={() => setAppSearchQuery("")}
+                      className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 text-xs p-1"
+                    >
+                      ✕
+                    </button>
+                  )}
+                </div>
+
+                {/* Status Filter Tabs */}
+                <div className="flex flex-wrap items-center gap-1.5 bg-slate-100 p-1 rounded-xl text-xs">
+                  {[
+                    { id: "all", label: `All (${applications.length})` },
+                    { id: "Pending", label: `Pending (${applications.filter((a) => a.status === "Pending").length})` },
+                    { id: "Under Review", label: `Under Review (${applications.filter((a) => a.status === "Under Review").length})` },
+                    { id: "Approved", label: `Approved (${applications.filter((a) => a.status === "Approved").length})` },
+                    { id: "Declined", label: `Declined (${applications.filter((a) => a.status === "Declined" || a.status === "Rejected").length})` },
+                  ].map((tab) => (
+                    <button
+                      key={tab.id}
+                      type="button"
+                      onClick={() => setAppStatusFilter(tab.id)}
+                      className={`rounded-lg px-3 py-1.5 font-bold transition-all ${
+                        appStatusFilter === tab.id
+                          ? "bg-white text-slate-900 shadow-2xs"
+                          : "text-slate-600 hover:text-slate-900"
+                      }`}
+                    >
+                      {tab.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Applications Table on Desktop / Responsive Cards on Mobile */}
+              {(() => {
+                const filtered = applications.filter((app) => {
+                  const q = appSearchQuery.toLowerCase().trim();
+                  const matchesSearch =
+                    !q ||
+                    app.fullName.toLowerCase().includes(q) ||
+                    app.id.toLowerCase().includes(q) ||
+                    app.email.toLowerCase().includes(q) ||
+                    app.phone.toLowerCase().includes(q) ||
+                    app.countryName.toLowerCase().includes(q) ||
+                    app.idNumber.toLowerCase().includes(q) ||
+                    app.accountType.toLowerCase().includes(q);
+                  const matchesStatus =
+                    appStatusFilter === "all" ||
+                    (appStatusFilter === "Declined"
+                      ? app.status === "Declined" || app.status === "Rejected"
+                      : app.status === appStatusFilter);
+                  return matchesSearch && matchesStatus;
+                });
+
+                if (filtered.length === 0) {
+                  return (
+                    <div className="rounded-2xl border border-slate-200 bg-white p-12 text-center shadow-xs">
+                      <UserCheck className="mx-auto h-12 w-12 text-slate-300" />
+                      <h3 className="mt-3 font-display font-bold text-slate-800 text-sm">No Applications Found</h3>
+                      <p className="text-xs text-slate-400 mt-1 max-w-sm mx-auto">
+                        No portal applications match the selected status filter or search query. New public account submissions will appear here automatically.
+                      </p>
+                    </div>
+                  );
+                }
+
+                return (
+                  <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-left text-xs text-slate-700">
+                        <thead className="border-b border-slate-200 bg-slate-50 text-[0.7rem] uppercase tracking-wider text-slate-500 font-bold">
+                          <tr>
+                            <th className="px-5 py-3.5">Ref ID & Date</th>
+                            <th className="px-5 py-3.5">Applicant Details</th>
+                            <th className="px-5 py-3.5">Country & Account</th>
+                            <th className="px-5 py-3.5">ID Verification</th>
+                            <th className="px-5 py-3.5">Status</th>
+                            <th className="px-5 py-3.5">Review Notes / Reason</th>
+                            <th className="px-5 py-3.5 text-right">Actions</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-100">
+                          {filtered.map((app) => (
+                            <tr key={app.id} className="hover:bg-slate-50 transition-colors">
+                              <td className="px-5 py-4">
+                                <div className="font-mono font-bold text-slate-900">{app.id}</div>
+                                <div className="text-[0.7rem] text-slate-500 flex items-center gap-1 mt-0.5">
+                                  <Clock className="h-3 w-3 text-slate-400" />
+                                  {app.submittedAt}
+                                </div>
+                              </td>
+                              <td className="px-5 py-4">
+                                <div className="font-bold text-slate-900 text-sm">{app.fullName}</div>
+                                <div className="text-slate-500 text-[0.72rem]">{app.email}</div>
+                                <div className="text-slate-400 font-mono text-[0.68rem]">{app.phone}</div>
+                              </td>
+                              <td className="px-5 py-4">
+                                <div className="font-semibold text-slate-800">{app.countryName}</div>
+                                <div className="text-slate-500 text-[0.72rem]">{app.accountType}</div>
+                                {app.region && <div className="text-[0.68rem] text-slate-400">{app.region}</div>}
+                              </td>
+                              <td className="px-5 py-4">
+                                <div className="text-slate-800 font-medium">{app.idType}</div>
+                                <div className="font-mono text-slate-500 text-[0.7rem]">{app.idNumber}</div>
+                              </td>
+                              <td className="px-5 py-4">
+                                <span
+                                  className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-[0.68rem] font-bold border ${
+                                    app.status === "Approved"
+                                      ? "bg-emerald-50 text-emerald-800 border-emerald-200"
+                                      : app.status === "Declined" || app.status === "Rejected"
+                                      ? "bg-rose-50 text-rose-800 border-rose-200"
+                                      : app.status === "Under Review"
+                                      ? "bg-sky-50 text-sky-800 border-sky-200"
+                                      : "bg-amber-50 text-amber-800 border-amber-200"
+                                  }`}
+                                >
+                                  {app.status === "Approved" && <CheckCircle2 className="h-3 w-3 text-emerald-600" />}
+                                  {(app.status === "Declined" || app.status === "Rejected") && <XCircle className="h-3 w-3 text-rose-600" />}
+                                  {app.status === "Under Review" && <Eye className="h-3 w-3 text-sky-600" />}
+                                  {app.status === "Pending" && <Clock className="h-3 w-3 text-amber-600" />}
+                                  {app.status}
+                                </span>
+                              </td>
+                              <td className="px-5 py-4 max-w-xs">
+                                <p className="text-[0.72rem] text-slate-600 line-clamp-2" title={app.reviewNotes || app.decisionReason}>
+                                  {app.reviewNotes || app.decisionReason || "Awaiting review."}
+                                </p>
+                                {app.updatedAt && (
+                                  <span className="text-[0.65rem] text-slate-400 block mt-0.5">Updated: {app.updatedAt}</span>
+                                )}
+                              </td>
+                              <td className="px-5 py-4 text-right">
+                                <div className="flex items-center justify-end gap-1.5 flex-wrap">
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    onClick={() => setSelectedAppModal(app)}
+                                    className="border-slate-300 bg-white text-xs font-semibold text-slate-800 hover:bg-slate-100"
+                                  >
+                                    Review
+                                  </Button>
+                                  {app.status !== "Approved" && (
+                                    <Button
+                                      size="sm"
+                                      onClick={() => {
+                                        setAppDecisionModal({ app, decision: "Approved" });
+                                        setAppDecisionReason("Identity verified and all documentation meets regulatory compliance.");
+                                      }}
+                                      className="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold shadow-xs"
+                                    >
+                                      Approve
+                                    </Button>
+                                  )}
+                                  {app.status !== "Declined" && app.status !== "Rejected" && (
+                                    <Button
+                                      size="sm"
+                                      variant="outline"
+                                      onClick={() => {
+                                        setAppDecisionModal({ app, decision: "Declined" });
+                                        setAppDecisionReason("Provided identity documentation could not be verified against national registries.");
+                                      }}
+                                      className="border-rose-200 bg-rose-50/50 text-rose-700 hover:bg-rose-100 text-xs font-bold"
+                                    >
+                                      Decline
+                                    </Button>
+                                  )}
+                                </div>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                );
+              })()}
+            </div>
+          )}
+
+          {/* APPLICATION DETAILS INSPECTION MODAL */}
+          {selectedAppModal && (
+            <div
+              role="dialog"
+              aria-modal="true"
+              className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 overflow-y-auto"
+            >
+              <div className="relative w-full max-w-2xl rounded-3xl border border-slate-200 bg-white p-6 sm:p-7 shadow-2xl text-slate-800 animate-in fade-in zoom-in-95 duration-150 max-h-[90vh] overflow-y-auto">
+                <div className="flex items-start justify-between border-b border-slate-100 pb-4">
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <span className="rounded bg-[#0a192f] px-2 py-0.5 text-[0.68rem] font-bold text-white">
+                        APPLICATION: {selectedAppModal.id}
+                      </span>
+                      <span
+                        className={`rounded-full px-2.5 py-0.5 text-[0.68rem] font-bold border ${
+                          selectedAppModal.status === "Approved"
+                            ? "bg-emerald-50 text-emerald-800 border-emerald-200"
+                            : selectedAppModal.status === "Declined" || selectedAppModal.status === "Rejected"
+                            ? "bg-rose-50 text-rose-800 border-rose-200"
+                            : "bg-amber-50 text-amber-800 border-amber-200"
+                        }`}
+                      >
+                        Status: {selectedAppModal.status}
+                      </span>
+                    </div>
+                    <h3 className="mt-2 text-2xl font-black text-slate-900">{selectedAppModal.fullName}</h3>
+                    <p className="text-xs text-slate-500">
+                      Submitted on {selectedAppModal.submittedAt} via Public Bank Portal
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setSelectedAppModal(null)}
+                    className="rounded-xl p-2 text-slate-400 hover:bg-slate-100 hover:text-slate-800"
+                  >
+                    ✕
+                  </button>
+                </div>
+
+                {/* Structured Details Grid */}
+                <div className="mt-6 grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
+                  <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 space-y-1">
+                    <span className="text-[0.68rem] uppercase font-bold text-slate-500">Contact Information</span>
+                    <div className="font-semibold text-slate-900 flex items-center gap-1.5">
+                      <Mail className="h-3.5 w-3.5 text-red-600" />
+                      {selectedAppModal.email}
+                    </div>
+                    <div className="font-mono text-slate-700 flex items-center gap-1.5">
+                      <Phone className="h-3.5 w-3.5 text-red-600" />
+                      {selectedAppModal.phone}
+                    </div>
+                  </div>
+
+                  <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 space-y-1">
+                    <span className="text-[0.68rem] uppercase font-bold text-slate-500">Jurisdiction & Residence</span>
+                    <div className="font-semibold text-slate-900 flex items-center gap-1.5">
+                      <MapPin className="h-3.5 w-3.5 text-red-600" />
+                      {selectedAppModal.countryName} ({selectedAppModal.countryCode})
+                    </div>
+                    <div className="text-slate-600">Region: {selectedAppModal.region || "Standard Region"}</div>
+                  </div>
+
+                  <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 space-y-1">
+                    <span className="text-[0.68rem] uppercase font-bold text-slate-500">Identity Verification Document</span>
+                    <div className="font-semibold text-slate-900">{selectedAppModal.idType}</div>
+                    <div className="font-mono text-slate-600 bg-white px-2 py-1 rounded border border-slate-200 inline-block">
+                      Number: {selectedAppModal.idNumber}
+                    </div>
+                  </div>
+
+                  <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 space-y-1">
+                    <span className="text-[0.68rem] uppercase font-bold text-slate-500">Requested Financial Product</span>
+                    <div className="font-bold text-slate-900 text-sm">{selectedAppModal.accountType}</div>
+                    <div className="text-slate-500 text-[0.72rem]">Initial Deposit: $0.00 (Pending Approval)</div>
+                  </div>
+                </div>
+
+                {/* Review Notes / Decision History */}
+                <div className="mt-4 rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                  <span className="text-[0.68rem] uppercase font-bold text-slate-500 block mb-1">
+                    Application Notes & Decision Record:
+                  </span>
+                  <p className="text-xs text-slate-800 leading-relaxed font-medium">
+                    {selectedAppModal.reviewNotes || "No review notes recorded yet."}
+                  </p>
+                  {selectedAppModal.updatedAt && (
+                    <p className="text-[0.7rem] text-slate-400 mt-2">
+                      Last Decision Recorded: {selectedAppModal.updatedAt} by {selectedAppModal.decisionBy || "Staff Admin"}
+                    </p>
+                  )}
+                </div>
+
+                {/* Action Decision Controls */}
+                <div className="mt-6 flex flex-wrap items-center justify-between gap-3 pt-4 border-t border-slate-100">
+                  <div className="flex items-center gap-2">
+                    <Button
+                      type="button"
+                      onClick={() => {
+                        setAppDecisionModal({ app: selectedAppModal, decision: "Approved" });
+                        setAppDecisionReason("Identity verified and all documentation meets regulatory compliance.");
+                      }}
+                      className="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold shadow-xs flex items-center gap-1.5"
+                    >
+                      <CheckCircle2 className="h-3.5 w-3.5" />
+                      Approve Application
+                    </Button>
+                    <Button
+                      type="button"
+                      onClick={() => {
+                        setAppDecisionModal({ app: selectedAppModal, decision: "Declined" });
+                        setAppDecisionReason("Provided identity documentation could not be verified against national registries.");
+                      }}
+                      className="bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold shadow-xs flex items-center gap-1.5"
+                    >
+                      <XCircle className="h-3.5 w-3.5" />
+                      Decline Application
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => {
+                        setAppDecisionModal({ app: selectedAppModal, decision: "Under Review" });
+                        setAppDecisionReason("Application placed in escalated regulatory review pending additional address verification.");
+                      }}
+                      className="border-sky-300 text-sky-800 bg-sky-50 hover:bg-sky-100 text-xs font-semibold"
+                    >
+                      Mark Under Review
+                    </Button>
+                  </div>
+
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => setSelectedAppModal(null)}
+                    className="border-slate-300 text-xs font-semibold text-slate-700 hover:bg-slate-100"
+                  >
+                    Close
+                  </Button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* APPLICATION DECISION MODAL WITH REASON REQUIREMENT */}
+          {appDecisionModal && (
+            <div
+              role="dialog"
+              aria-modal="true"
+              className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 overflow-y-auto"
+            >
+              <div className="relative w-full max-w-md rounded-3xl border border-slate-200 bg-white p-6 shadow-2xl text-slate-800 animate-in fade-in zoom-in-95 duration-150">
+                <div className="flex items-center gap-3 border-b border-slate-100 pb-3">
+                  <div
+                    className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${
+                      appDecisionModal.decision === "Approved"
+                        ? "bg-emerald-100 text-emerald-700"
+                        : appDecisionModal.decision === "Declined"
+                        ? "bg-rose-100 text-rose-700"
+                        : "bg-sky-100 text-sky-700"
+                    }`}
+                  >
+                    {appDecisionModal.decision === "Approved" && <CheckCircle2 className="h-5 w-5" />}
+                    {appDecisionModal.decision === "Declined" && <XCircle className="h-5 w-5" />}
+                    {appDecisionModal.decision === "Under Review" && <Eye className="h-5 w-5" />}
+                  </div>
+                  <div>
+                    <h3 className="font-display text-base font-black text-slate-900">
+                      {appDecisionModal.decision === "Approved"
+                        ? "Approve Application"
+                        : appDecisionModal.decision === "Declined"
+                        ? "Decline Application"
+                        : "Set Under Review"}
+                    </h3>
+                    <p className="text-xs text-slate-500">
+                      Applicant: {appDecisionModal.app.fullName} ({appDecisionModal.app.id})
+                    </p>
+                  </div>
+                </div>
+
+                <div className="mt-4 space-y-3 text-xs">
+                  <div>
+                    <label className="block font-bold text-slate-700 mb-1">
+                      Decision Reason / Regulatory Justification (Required): <span className="text-red-600">*</span>
+                    </label>
+                    <textarea
+                      rows={3}
+                      value={appDecisionReason}
+                      onChange={(e) => setAppDecisionReason(e.target.value)}
+                      placeholder="Specify reason for decision (e.g., identity verified against national database, invalid document, etc.)..."
+                      className="w-full rounded-xl border border-slate-300 bg-white p-2.5 text-xs text-slate-800 placeholder-slate-400 focus:border-red-500 focus:outline-none"
+                    />
+                  </div>
+
+                  {appDecisionModal.decision === "Approved" && (
+                    <div className="rounded-xl border border-emerald-200 bg-emerald-50/60 p-3">
+                      <label className="flex items-start gap-2.5 cursor-pointer text-xs text-emerald-950 font-medium">
+                        <input
+                          type="checkbox"
+                          checked={autoProvisionUser}
+                          onChange={(e) => setAutoProvisionUser(e.target.checked)}
+                          className="mt-0.5 h-4 w-4 rounded border-emerald-300 text-emerald-600 focus:ring-emerald-500"
+                        />
+                        <span>
+                          Automatically provision active online banking user account for <strong>{appDecisionModal.app.fullName}</strong> in User Management.
+                        </span>
+                      </label>
+                    </div>
+                  )}
+                </div>
+
+                <div className="mt-5 flex items-center justify-end gap-2.5 pt-3 border-t border-slate-100">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => {
+                      setAppDecisionModal(null);
+                      setAppDecisionReason("");
+                    }}
+                    className="border-slate-300 text-xs font-semibold text-slate-700 hover:bg-slate-100"
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    type="button"
+                    onClick={handleExecuteApplicationDecision}
+                    disabled={!appDecisionReason.trim()}
+                    className={`text-xs font-bold text-white shadow-xs disabled:opacity-50 ${
+                      appDecisionModal.decision === "Approved"
+                        ? "bg-emerald-600 hover:bg-emerald-700"
+                        : appDecisionModal.decision === "Declined"
+                        ? "bg-rose-600 hover:bg-rose-700"
+                        : "bg-sky-600 hover:bg-sky-700"
+                    }`}
+                  >
+                    Confirm & Record Decision
+                  </Button>
+                </div>
+              </div>
             </div>
           )}
 

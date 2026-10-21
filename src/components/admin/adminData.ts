@@ -154,7 +154,7 @@ export interface SoloAdminAuditEntry {
   id: string;
   timestamp: string;
   actor: string;
-  section: "Overview" | "Users" | "Customers" | "Accounts" | "Transactions" | "Compliance" | "Support" | "Reports" | "Settings" | "Security";
+  section: "Overview" | "Users" | "Applications" | "Customers" | "Accounts" | "Transactions" | "Compliance" | "Support" | "Reports" | "Settings" | "Security";
   action: string;
   targetId?: string;
   details: string;
@@ -1036,5 +1036,117 @@ export const MOCK_AUDIT_LOGS: SoloAdminAuditEntry[] = [
     targetId: "REV-101",
     details: "Approved proof of address for Liam Davies (UK Jurisdiction).",
     ipAddress: "127.0.0.1 (Internal Console)",
+  },
+];
+
+export interface BankApplication {
+  id: string;
+  fullName: string;
+  email: string;
+  phone: string;
+  countryName: string;
+  countryCode: string;
+  region: string;
+  accountType: string;
+  idType: string;
+  idNumber: string;
+  status: "Pending" | "Under Review" | "Approved" | "Declined" | "Rejected";
+  reviewNotes: string;
+  submittedAt: string;
+  updatedAt?: string;
+  decisionReason?: string;
+  decisionBy?: string;
+}
+
+export const INITIAL_BANK_APPLICATIONS: BankApplication[] = [
+  {
+    id: "USB-CA-884910",
+    fullName: "Mathieu Tremblay",
+    email: "mathieu.t@example.ca",
+    phone: "+1 (416) 555-0182",
+    countryName: "Canada",
+    countryCode: "CA",
+    region: "Ontario",
+    accountType: "Commercial Treasury",
+    idType: "Social Insurance Number (SIN)",
+    idNumber: "••• ••• 419",
+    status: "Pending",
+    reviewNotes: "Initial documentation uploaded. Awaiting regulatory screening.",
+    submittedAt: "Oct 19, 2026, 08:30 AM",
+  },
+  {
+    id: "USB-GB-401928",
+    fullName: "Liam Davies",
+    email: "liam.davies@example.co.uk",
+    phone: "+44 20 7946 0912",
+    countryName: "United Kingdom",
+    countryCode: "GB",
+    region: "England",
+    accountType: "Advantage Checking",
+    idType: "National Insurance (NI) Number",
+    idNumber: "•• •• •• 89 C",
+    status: "Approved",
+    reviewNotes: "KYC and address proof verified. Advantage Checking account active.",
+    submittedAt: "Oct 15, 2026, 11:20 AM",
+  },
+  {
+    id: "USB-US-109283",
+    fullName: "Eleanor Vance",
+    email: "eleanor.vance@example.com",
+    phone: "+1 (555) 234-8901",
+    countryName: "United States",
+    countryCode: "US",
+    region: "California",
+    accountType: "Advantage Checking & Savings",
+    idType: "Social Security Number (SSN)",
+    idNumber: "•••-••-4892",
+    status: "Approved",
+    reviewNotes: "Domestic identification verified. Welcome bonus activated.",
+    submittedAt: "Oct 12, 2026, 02:45 PM",
+  },
+  {
+    id: "USB-VN-552019",
+    fullName: "Nguyen Van Minh",
+    email: "minh.nguyen@example.vn",
+    phone: "+84 24 3825 0123",
+    countryName: "Vietnam",
+    countryCode: "VN",
+    region: "Hanoi",
+    accountType: "Advantage Checking",
+    idType: "Citizen Identity Card (CCCD)",
+    idNumber: "00109•••••••",
+    status: "Under Review",
+    reviewNotes: "Cross-border ID match in progress with regional compliance team.",
+    submittedAt: "Oct 18, 2026, 04:10 PM",
+  },
+  {
+    id: "USB-MX-331092",
+    fullName: "Sofia Ramirez",
+    email: "sofia.ramirez@example.mx",
+    phone: "+52 55 4912 8840",
+    countryName: "Mexico",
+    countryCode: "MX",
+    region: "Ciudad de México",
+    accountType: "Personal Checking",
+    idType: "CURP / INE Credential",
+    idNumber: "ROMS850215••••••",
+    status: "Pending",
+    reviewNotes: "RFC tax identification uploaded. Pending dual-factor identity validation.",
+    submittedAt: "Oct 20, 2026, 10:15 AM",
+  },
+  {
+    id: "USB-CH-771204",
+    fullName: "Marc Hodel",
+    email: "marc.hodel@example.ch",
+    phone: "+41 22 730 51 11",
+    countryName: "Switzerland",
+    countryCode: "CH",
+    region: "Zurich",
+    accountType: "Private Wealth Multi-Currency",
+    idType: "Swiss Identity Card / AHV-Nr.",
+    idNumber: "756.9281.3304.12",
+    status: "Pending",
+    reviewNotes: "High-value cross-border account application submitted under Swiss FINMA AML protocol.",
+    submittedAt: "Oct 20, 2026, 01:45 PM",
   },
 ];
