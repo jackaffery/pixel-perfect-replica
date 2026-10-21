@@ -276,7 +276,7 @@ export function SoloAdminDashboard({
     phone: "",
     country: "United States",
     accountType: "Advantage Checking & Savings",
-    initialBalance: "5000",
+    initialBalance: "0.00",
     mailingAddress: "",
   });
   const [confirmActionModal, setConfirmActionModal] = useState<{
@@ -709,7 +709,7 @@ export function SoloAdminDashboard({
       phone: "",
       country: "United States",
       accountType: "Advantage Checking & Savings",
-      initialBalance: "5000",
+      initialBalance: "0.00",
       mailingAddress: "",
     });
   };
@@ -3086,7 +3086,7 @@ export function SoloAdminDashboard({
                             type="number"
                             value={newUserData.initialBalance}
                             onChange={(e) => setNewUserData({ ...newUserData, initialBalance: e.target.value })}
-                            placeholder="5000"
+                            placeholder="0.00"
                             className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs text-slate-800 focus:border-red-500 focus:outline-none"
                           />
                         </div>

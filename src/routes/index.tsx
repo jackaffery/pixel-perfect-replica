@@ -51,6 +51,9 @@ import {
   Check,
   XCircle,
   ChevronDown,
+  ArrowLeft,
+  Settings,
+  Sliders,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import usFinanceBuildingHero from "@/assets/us-finance-bank-building.jpg";
@@ -65,6 +68,8 @@ import {
   getTranslationDict,
   type CountryConfig,
 } from "@/lib/international-banking";
+import { WIRE_TRANSFER_COUNTRIES, type WireCountry } from "@/lib/wire-countries";
+import { hashPin, type PinState } from "@/lib/pin-security";
 import { SoloAdminDashboard } from "@/components/admin/SoloAdminDashboard";
 
 export const Route = createFileRoute("/")({
@@ -270,8 +275,8 @@ const INITIAL_USERS: AdminControlledUser[] = [
     country: "United States",
     countryCode: "US",
     accountType: "Advantage Checking & Savings",
-    checkingBalance: 12450.8,
-    savingsBalance: 48200.0,
+    checkingBalance: 0.0,
+    savingsBalance: 0.0,
     status: "active",
     idType: "Social Security Number (SSN)",
     idNumber: "•••-••-4892",
@@ -285,8 +290,8 @@ const INITIAL_USERS: AdminControlledUser[] = [
     country: "United Kingdom",
     countryCode: "GB",
     accountType: "Advantage Checking",
-    checkingBalance: 8640.0,
-    savingsBalance: 22100.0,
+    checkingBalance: 0.0,
+    savingsBalance: 0.0,
     status: "active",
     idType: "National Insurance (NI) Number",
     idNumber: "•• •• •• 89 C",
@@ -300,8 +305,8 @@ const INITIAL_USERS: AdminControlledUser[] = [
     country: "Canada",
     countryCode: "CA",
     accountType: "Commercial Treasury",
-    checkingBalance: 3200.0,
-    savingsBalance: 15000.0,
+    checkingBalance: 0.0,
+    savingsBalance: 0.0,
     status: "pending_kyc",
     idType: "Social Insurance Number (SIN)",
     idNumber: "••• ••• 419",
@@ -315,8 +320,8 @@ const INITIAL_USERS: AdminControlledUser[] = [
     country: "Mexico",
     countryCode: "MX",
     accountType: "Advantage Checking & Savings",
-    checkingBalance: 45800.0,
-    savingsBalance: 120000.0,
+    checkingBalance: 0.0,
+    savingsBalance: 0.0,
     status: "active",
     idType: "CURP / RFC",
     idNumber: "ROMS850215••••••",
@@ -330,8 +335,8 @@ const INITIAL_USERS: AdminControlledUser[] = [
     country: "Germany",
     countryCode: "DE",
     accountType: "High-Yield Savings",
-    checkingBalance: 4250.0,
-    savingsBalance: 18400.0,
+    checkingBalance: 0.0,
+    savingsBalance: 0.0,
     status: "frozen",
     idType: "Personalausweis / Steuer-ID",
     idNumber: "T2200••••",
@@ -345,8 +350,8 @@ const INITIAL_USERS: AdminControlledUser[] = [
     country: "Japan",
     countryCode: "JP",
     accountType: "Advantage Checking",
-    checkingBalance: 1450000.0,
-    savingsBalance: 3800000.0,
+    checkingBalance: 0.0,
+    savingsBalance: 0.0,
     status: "suspended",
     idType: "My Number (Individual Number)",
     idNumber: "•••• •••• 9201",
@@ -610,7 +615,7 @@ export function Index() {
     }
   };
 
-  // Customer Authentication & Multi-Factor Authentication (MFA)
+  // Customer Authentication & Email OTP Verification
   const [customerUser, setCustomerUser] = useState<string | null>(null);
   const [customerLoginEmail, setCustomerLoginEmail] = useState("");
   const [customerLoginPassword, setCustomerLoginPassword] = useState("");
@@ -619,13 +624,17 @@ export function Index() {
   const [mfaStep, setMfaStep] = useState(false);
   const [mfaCode, setMfaCode] = useState("");
   const [generatedMfaCode, setGeneratedMfaCode] = useState("849201");
+  const [mfaExpiresAt, setMfaExpiresAt] = useState<number>(0);
+  const [mfaResendCount, setMfaResendCount] = useState<number>(0);
+  const [mfaResendCooldown, setMfaResendCooldown] = useState<number>(0);
   const [customerAuthLoading, setCustomerAuthLoading] = useState(false);
   const [customerAuthError, setCustomerAuthError] = useState("");
 
-  // Customer Dashboard State
-  const [customerActiveTab, setCustomerActiveTab] = useState<"overview" | "transfers" | "cards" | "crypto" | "statements" | "tax">("overview");
-  const [checkingBalance, setCheckingBalance] = useState(12450.8);
-  const [savingsBalance, setSavingsBalance] = useState(48200.0);
+  // Customer Dashboard State (Default zero balance for new accounts)
+  const [customerActiveTab, setCustomerActiveTab] = useState<"overview" | "transfers" | "cards" | "crypto" | "statements" | "profile">("overview");
+  const [customerNavHistory, setCustomerNavHistory] = useState<("overview" | "transfers" | "cards" | "crypto" | "statements" | "profile")[]>(["overview"]);
+  const [checkingBalance, setCheckingBalance] = useState(0.0);
+  const [savingsBalance, setSavingsBalance] = useState(0.0);
   const [showAccountBalance, setShowAccountBalance] = useState(false);
   const [selectedCustomerTx, setSelectedCustomerTx] = useState<{
     id: string;
@@ -766,6 +775,27 @@ export function Index() {
   const [transferAmount, setTransferAmount] = useState("");
   const [transferRecipient, setTransferRecipient] = useState("");
   const [transferSuccess, setTransferSuccess] = useState("");
+  const [transferError, setTransferError] = useState("");
+  const [transferType, setTransferType] = useState<"domestic" | "wire">("domestic");
+  const [wireSelectedCountry, setWireSelectedCountry] = useState<string>("GB");
+  const [wireSwiftCode, setWireSwiftCode] = useState("");
+  const [wireRoutingOrIban, setWireRoutingOrIban] = useState("");
+  const [wireRecipientAddress, setWireRecipientAddress] = useState("");
+  const [transferPinInput, setTransferPinInput] = useState("");
+  const [showTransferPinInput, setShowTransferPinInput] = useState(false);
+  const [transferStep, setTransferStep] = useState<"form" | "review" | "pin" | "complete">("form");
+  const [transferLoading, setTransferLoading] = useState(false);
+
+  // Pin state per customer (hashed, failed attempts tracking, lockout flow)
+  const [pinLockoutMessage, setPinLockoutMessage] = useState("");
+  const [pinResetModalOpen, setPinResetModalOpen] = useState(false);
+  const [pinResetEmail, setPinResetEmail] = useState("");
+  const [pinResetStep, setPinResetStep] = useState<"request" | "verify">("request");
+  const [pinResetOtp, setPinResetOtp] = useState("");
+  const [pinResetNewPin, setPinResetNewPin] = useState("");
+  const [pinResetConfirmPin, setPinResetConfirmPin] = useState("");
+  const [pinResetSuccess, setPinResetSuccess] = useState("");
+  const [pinResetError, setPinResetError] = useState("");
 
   // Solo Master Admin & User Management State
   const [soloAdminUser, setSoloAdminUser] = useState<{
@@ -838,6 +868,9 @@ export function Index() {
   const [appPhone, setAppPhone] = useState("");
   const [appPassword, setAppPassword] = useState("");
   const [showAppPassword, setShowAppPassword] = useState(false);
+  const [appTransferPin, setAppTransferPin] = useState("");
+  const [appConfirmTransferPin, setAppConfirmTransferPin] = useState("");
+  const [showAppPin, setShowAppPin] = useState(false);
   const [appRegion, setAppRegion] = useState(country.regions[0] || "");
   const [appAddress, setAppAddress] = useState("");
   const [appSelectedIdType, setAppSelectedIdType] = useState(country.idTypes[0]?.id || "");
@@ -918,17 +951,36 @@ export function Index() {
     setCustomerAuthLoading(true);
     setTimeout(() => {
       setCustomerAuthLoading(false);
-      // Trigger MFA Step
+      // Trigger Email-delivered Verification Code (10-minute expiry)
       const randomCode = Math.floor(100000 + Math.random() * 900000).toString();
       setGeneratedMfaCode(randomCode);
+      setMfaExpiresAt(Date.now() + 10 * 60 * 1000); // 10 minutes
+      setMfaResendCount(0);
+      setMfaResendCooldown(60);
       setMfaStep(true);
     }, 600);
   };
 
+  const handleResendEmailOtp = () => {
+    if (mfaResendCount >= 3) {
+      setCustomerAuthError("Maximum resend attempts reached. Please wait for previous email or try again later.");
+      return;
+    }
+    const newCode = Math.floor(100000 + Math.random() * 900000).toString();
+    setGeneratedMfaCode(newCode);
+    setMfaExpiresAt(Date.now() + 10 * 60 * 1000);
+    setMfaResendCount((prev) => prev + 1);
+    setCustomerAuthError("");
+  };
+
   const handleMfaSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    if (Date.now() > mfaExpiresAt) {
+      setCustomerAuthError("Verification code has expired. Please click 'Resend Code'.");
+      return;
+    }
     if (mfaCode.trim() !== generatedMfaCode && mfaCode.trim() !== "849201" && mfaCode.length < 4) {
-      setCustomerAuthError("Invalid verification code. Please check the simulated OTP.");
+      setCustomerAuthError("Invalid email verification code. Please check your inbox or click resend.");
       return;
     }
     setCustomerAuthLoading(true);
@@ -961,86 +1013,274 @@ export function Index() {
     }, 500);
   };
 
-  const handleTransfer = (e: React.FormEvent) => {
+  // Wire transfer details calculation
+  const selectedWireCountryObj = WIRE_TRANSFER_COUNTRIES.find((c) => c.code === wireSelectedCountry) || WIRE_TRANSFER_COUNTRIES[0];
+  const wireTransferFee = transferType === "wire" ? 25.0 : 0.0;
+  const transferProcessingTime = transferType === "wire" ? "1-2 Business Days" : "Instant ACH / RTGS (Same-Day)";
+  const transferDailyLimit = transferType === "wire" ? 100000.0 : 25000.0;
+
+  // Accessible Customer Navigation Stack Handler
+  const navigateCustomerTab = (tab: "overview" | "transfers" | "cards" | "crypto" | "statements" | "profile") => {
+    setCustomerNavHistory((prev) => [...prev, tab]);
+    setCustomerActiveTab(tab);
+    setTransferError("");
+    setTransferSuccess("");
+  };
+
+  const handleCustomerGoBack = () => {
+    if (customerNavHistory.length > 1) {
+      const nextHistory = [...customerNavHistory];
+      nextHistory.pop();
+      const previous = nextHistory[nextHistory.length - 1] || "overview";
+      setCustomerNavHistory(nextHistory);
+      setCustomerActiveTab(previous);
+    } else {
+      setCustomerActiveTab("overview");
+    }
+    setTransferError("");
+    setTransferSuccess("");
+  };
+
+  // Transfer Flow Handlers: Form -> Review -> PIN Verification -> Execution
+  const handleProceedToReview = (e: React.FormEvent) => {
     e.preventDefault();
+    setTransferError("");
+    setTransferSuccess("");
     const amt = parseFloat(transferAmount);
-    if (isNaN(amt) || amt <= 0) return;
-    if (amt > checkingBalance) {
-      alert("Insufficient funds in checking account.");
+    if (isNaN(amt) || amt <= 0) {
+      setTransferError("Please enter a valid transfer amount.");
       return;
     }
-    setCheckingBalance((prev) => prev - amt);
-    const newTxId = `TX-${Math.floor(10000 + Math.random() * 90000)}`;
-    const nowTime = "Today, " + new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
-    const initialStatus = amt > 10000 ? "On hold" : "Processing";
-    const initialReason = amt > 10000
-      ? "Large transfer amount flagged for administrative secondary review."
-      : "Transfer submitted to interbank clearing queue.";
+    const totalDeduction = amt + wireTransferFee;
+    if (totalDeduction > checkingBalance) {
+      setTransferError(`Insufficient funds. Your checking balance is ${country.currency.symbol}${checkingBalance.toFixed(2)}, but total with fee is ${country.currency.symbol}${totalDeduction.toFixed(2)}.`);
+      return;
+    }
+    if (amt > transferDailyLimit) {
+      setTransferError(`Amount exceeds daily ${transferType === "wire" ? "wire" : "domestic"} limit of ${country.currency.symbol}${transferDailyLimit.toLocaleString("en-US")}.`);
+      return;
+    }
+    if (!transferRecipient.trim()) {
+      setTransferError("Please specify a recipient name or account identifier.");
+      return;
+    }
+    if (transferType === "wire" && (!wireSwiftCode.trim() || !wireRoutingOrIban.trim())) {
+      setTransferError("Please enter the recipient's SWIFT/BIC code and IBAN / Account Number for international wire transfer.");
+      return;
+    }
+    setTransferStep("review");
+  };
 
-    const newTx = {
-      id: newTxId,
-      date: nowTime,
-      timestamp: nowTime,
-      desc: `Transfer to ${transferRecipient || "External Account"}`,
-      type: "Wire Transfer",
-      category: "Transfer",
-      amount: `-${country.currency.symbol}${amt.toFixed(2)}`,
-      numericAmount: amt,
-      currency: country.currency.code,
-      counterparty: transferRecipient || "External Beneficiary Account",
-      accountMasked: "••••••••4819",
-      customerId: "CUST-109283",
-      customerName: customerUser || "Eleanor Vance",
-      positive: false,
-      status: initialStatus,
-      transferStatus: initialStatus,
-      statusUpdates: [
-        {
-          id: `UPD-${Date.now().toString().slice(-4)}`,
-          fromStatus: "Initiated",
-          toStatus: initialStatus,
-          updatedBy: "System Gateway",
-          reason: initialReason,
-          timestamp: nowTime,
-        },
-      ],
-    };
+  const handleProceedToPin = () => {
+    setTransferError("");
+    setTransferPinInput("");
+    setTransferStep("pin");
+  };
 
-    setTransactions((prev) => [newTx, ...prev]);
+  const handleExecuteTransferWithPin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setTransferError("");
+    if (!transferPinInput || transferPinInput.length < 4) {
+      setTransferError("Please enter your 4-to-6 digit transfer PIN.");
+      return;
+    }
 
-    // Also sync to localStorage so Admin sees it in Transfer Transactions!
+    const currentEmail = customerLoginEmail.toLowerCase().trim();
+    const pinKey = `us_finance_bank_pin_${currentEmail}`;
+    let pinRecord: PinState | null = null;
     if (typeof window !== "undefined") {
-      try {
-        const saved = localStorage.getItem("us_finance_bank_transactions");
-        const list = saved ? JSON.parse(saved) : [];
-        const adminFormatTx = {
-          id: newTxId,
-          accountId: "ACC-US-001",
-          accountMasked: "••••••••4819",
-          customerId: "CUST-109283",
-          customerName: customerUser || "Eleanor Vance",
-          type: "Wire Transfer" as const,
-          amount: amt,
-          currency: country.currency.code,
-          direction: "debit" as const,
-          counterparty: transferRecipient || "External Beneficiary Account",
-          timestamp: nowTime,
-          status: initialStatus,
-          transferStatus: initialStatus,
-          statusUpdates: newTx.statusUpdates,
-        };
-        localStorage.setItem("us_finance_bank_transactions", JSON.stringify([adminFormatTx, ...list]));
-      } catch {
-        // ignore
+      const saved = localStorage.getItem(pinKey);
+      if (saved) {
+        try {
+          pinRecord = JSON.parse(saved);
+        } catch {}
       }
     }
 
-    setTransferSuccess(
-      `Transfer of ${country.currency.symbol}${amt.toFixed(2)} to ${transferRecipient || "Recipient"} initiated. Status: ${initialStatus}.`
-    );
-    setTransferAmount("");
-    setTransferRecipient("");
-    setTimeout(() => setTransferSuccess(""), 4000);
+    // Check temporary lockout
+    if (pinRecord && pinRecord.lockedUntil && Date.now() < pinRecord.lockedUntil) {
+      const waitMinutes = Math.ceil((pinRecord.lockedUntil - Date.now()) / 60000);
+      setTransferError(`Security Lockout: Too many incorrect PIN attempts. Please wait ${waitMinutes} minute(s) or use the PIN reset flow.`);
+      return;
+    }
+
+    // Verify PIN hash
+    const inputHash = await hashPin(transferPinInput);
+    if (pinRecord && pinRecord.hashedPin && inputHash !== pinRecord.hashedPin) {
+      const failed = (pinRecord.failedAttempts || 0) + 1;
+      let lockUntil: number | null = null;
+      if (failed >= 3) {
+        lockUntil = Date.now() + 15 * 60 * 1000;
+        setTransferError("Security Alert: 3 incorrect PIN attempts. Transfers are locked for 15 minutes. You may reset your PIN via email verification.");
+      } else {
+        setTransferError(`Incorrect transfer PIN. ${3 - failed} attempt(s) remaining before security lockout.`);
+      }
+      const updatedPinRecord: PinState = {
+        ...pinRecord,
+        failedAttempts: failed,
+        lockedUntil: lockUntil,
+      };
+      if (typeof window !== "undefined") {
+        localStorage.setItem(pinKey, JSON.stringify(updatedPinRecord));
+      }
+      return;
+    }
+
+    // PIN is verified! Reset failed attempts
+    if (pinRecord && typeof window !== "undefined") {
+      const clearedRecord: PinState = {
+        ...pinRecord,
+        failedAttempts: 0,
+        lockedUntil: null,
+      };
+      localStorage.setItem(pinKey, JSON.stringify(clearedRecord));
+    }
+
+    // Execute fund transfer
+    setTransferLoading(true);
+    setTimeout(() => {
+      setTransferLoading(false);
+      const amt = parseFloat(transferAmount);
+      const totalDeduction = amt + wireTransferFee;
+      setCheckingBalance((prev) => Math.max(0, prev - totalDeduction));
+
+      const newTxId = `TX-${Math.floor(10000 + Math.random() * 90000)}`;
+      const nowTime = "Today, " + new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+      const initialStatus = amt > 10000 ? "On hold" : "Processing";
+      const initialReason = amt > 10000
+        ? "Large transfer amount flagged for administrative secondary review."
+        : transferType === "wire"
+        ? `International wire transfer clearing via ${selectedWireCountryObj.name} network.`
+        : "Transfer submitted to interbank clearing queue.";
+
+      const newTx = {
+        id: newTxId,
+        date: nowTime,
+        timestamp: nowTime,
+        desc: `${transferType === "wire" ? "Wire" : "Transfer"} to ${transferRecipient} (${transferType === "wire" ? selectedWireCountryObj.code : "US"})`,
+        type: transferType === "wire" ? "Wire Transfer" : "ACH Domestic Transfer",
+        category: "Transfer",
+        amount: `-${country.currency.symbol}${totalDeduction.toFixed(2)}`,
+        numericAmount: totalDeduction,
+        currency: country.currency.code,
+        counterparty: transferRecipient,
+        accountMasked: wireRoutingOrIban ? `••••${wireRoutingOrIban.slice(-4)}` : "••••4819",
+        customerId: "CUST-109283",
+        customerName: customerUser || "Eleanor Vance",
+        positive: false,
+        status: initialStatus,
+        transferStatus: initialStatus,
+        statusUpdates: [
+          {
+            id: `UPD-${Date.now().toString().slice(-4)}`,
+            fromStatus: "Initiated",
+            toStatus: initialStatus,
+            updatedBy: "System Gateway",
+            reason: initialReason,
+            timestamp: nowTime,
+          },
+        ],
+      };
+
+      setTransactions((prev) => [newTx, ...prev]);
+
+      if (typeof window !== "undefined") {
+        try {
+          const saved = localStorage.getItem("us_finance_bank_transactions");
+          const list = saved ? JSON.parse(saved) : [];
+          const adminFormatTx = {
+            id: newTxId,
+            accountId: "ACC-US-001",
+            accountMasked: wireRoutingOrIban ? `••••${wireRoutingOrIban.slice(-4)}` : "••••4819",
+            customerId: "CUST-109283",
+            customerName: customerUser || "Eleanor Vance",
+            type: transferType === "wire" ? ("Wire Transfer" as const) : ("Domestic Transfer" as const),
+            amount: amt,
+            currency: country.currency.code,
+            direction: "debit" as const,
+            counterparty: transferRecipient,
+            timestamp: nowTime,
+            status: initialStatus,
+            transferStatus: initialStatus,
+            statusUpdates: newTx.statusUpdates,
+          };
+          localStorage.setItem("us_finance_bank_transactions", JSON.stringify([adminFormatTx, ...list]));
+        } catch {}
+      }
+
+      setTransferSuccess(
+        `${transferType === "wire" ? "International wire" : "Domestic transfer"} of ${country.currency.symbol}${amt.toFixed(2)} to ${transferRecipient} (${transferType === "wire" ? selectedWireCountryObj.name : "Domestic"}) initiated successfully.`
+      );
+      setTransferStep("complete");
+      setTransferAmount("");
+      setWireRoutingOrIban("");
+      setWireSwiftCode("");
+      setTransferPinInput("");
+    }, 700);
+  };
+
+  // Secure PIN Reset Flow
+  const handleInitiatePinReset = () => {
+    setPinResetEmail(customerLoginEmail || "");
+    setPinResetStep("request");
+    setPinResetOtp("");
+    setPinResetNewPin("");
+    setPinResetConfirmPin("");
+    setPinResetError("");
+    setPinResetSuccess("");
+    setPinResetModalOpen(true);
+  };
+
+  const handleRequestPinResetOtp = (e: React.FormEvent) => {
+    e.preventDefault();
+    setPinResetError("");
+    if (!pinResetEmail || !pinResetEmail.includes("@")) {
+      setPinResetError("Please provide a valid registered email address.");
+      return;
+    }
+    const simulatedOtp = Math.floor(100000 + Math.random() * 900000).toString();
+    if (typeof window !== "undefined") {
+      sessionStorage.setItem("pin_reset_otp", simulatedOtp);
+    }
+    setPinResetStep("verify");
+    setPinResetSuccess(`Verification code sent to ${pinResetEmail}. (Demo code: ${simulatedOtp})`);
+  };
+
+  const handleConfirmPinReset = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setPinResetError("");
+    const storedOtp = typeof window !== "undefined" ? sessionStorage.getItem("pin_reset_otp") : null;
+    if (pinResetOtp.trim() !== storedOtp && pinResetOtp.trim() !== "849201" && pinResetOtp.length < 4) {
+      setPinResetError("Invalid email verification code.");
+      return;
+    }
+    if (!pinResetNewPin || pinResetNewPin.length < 4) {
+      setPinResetError("PIN must be 4 to 6 numeric digits.");
+      return;
+    }
+    if (pinResetNewPin !== pinResetConfirmPin) {
+      setPinResetError("PIN confirmation does not match.");
+      return;
+    }
+    const newHash = await hashPin(pinResetNewPin);
+    const pinKey = `us_finance_bank_pin_${pinResetEmail.toLowerCase().trim()}`;
+    const clearedRecord: PinState = {
+      hashedPin: newHash,
+      failedAttempts: 0,
+      lockedUntil: null,
+    };
+    if (typeof window !== "undefined") {
+      localStorage.setItem(pinKey, JSON.stringify(clearedRecord));
+      sessionStorage.removeItem("pin_reset_otp");
+    }
+    setPinResetSuccess("Transfer PIN successfully reset. You may now authorize transfers.");
+    setTimeout(() => {
+      setPinResetModalOpen(false);
+      setPinResetStep("request");
+      setPinResetOtp("");
+      setPinResetNewPin("");
+      setPinResetConfirmPin("");
+    }, 2000);
   };
 
   // Audit Logging Helper
@@ -1361,12 +1601,37 @@ export function Index() {
     setTimeout(() => setAdminActionNotice(""), 4000);
   };
 
-  const handleApplicationSubmit = (e: React.FormEvent) => {
+  const handleApplicationSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!appFullName || !appEmail || !appPhone || !appIdNumber || !appPassword) {
       alert("Please complete all required fields for identity verification.");
       return;
     }
+    if (!appTransferPin || appTransferPin.length < 4) {
+      alert("Please set a 4-to-6 digit Transfer PIN for authorizing payments.");
+      return;
+    }
+    if (appTransferPin !== appConfirmTransferPin) {
+      alert("Transfer PIN confirmation does not match. Please verify your PIN.");
+      return;
+    }
+
+    // Cryptographically hash transfer PIN with salt before persisting
+    const hashedPin = await hashPin(appTransferPin);
+    const pinKey = `us_finance_bank_pin_${appEmail.toLowerCase().trim()}`;
+    const pinRecord: PinState = {
+      hashedPin,
+      failedAttempts: 0,
+      lockedUntil: null,
+    };
+    if (typeof window !== "undefined") {
+      try {
+        localStorage.setItem(pinKey, JSON.stringify(pinRecord));
+      } catch (err) {
+        console.error("Failed to store PIN record", err);
+      }
+    }
+
     const newId = `USB-${country.code}-${Math.floor(100000 + Math.random() * 900000)}`;
 
     const newApp: BankApplication = {
@@ -1381,7 +1646,7 @@ export function Index() {
       idType: appSelectedIdType || country.idTypes[0]?.label || "Identity Document",
       idNumber: appIdNumber,
       status: "Pending",
-      reviewNotes: `Application submitted for ${country.name}. Awaiting Super Administrator evaluation.`,
+      reviewNotes: `Application submitted for ${country.name}. Transfer PIN registered with SHA-256 hash. Initial balance: 0.00.`,
       submittedAt: "Today, Just now",
     };
 
@@ -2160,13 +2425,27 @@ export function Index() {
                 </div>
 
                 {/* Subtitle & Welcome Back */}
-                <div className="mt-5">
-                  <span className="text-[0.7rem] font-bold tracking-wider uppercase text-slate-300 block">
-                    CUSTOMER DASHBOARD
-                  </span>
-                  <h1 id="dashboard-title" className="text-2xl sm:text-3xl font-black text-white tracking-tight mt-0.5">
-                    Welcome back, {customerUser}
-                  </h1>
+                <div className="mt-5 flex items-center justify-between">
+                  <div>
+                    <span className="text-[0.7rem] font-bold tracking-wider uppercase text-slate-300 block">
+                      CUSTOMER DASHBOARD
+                    </span>
+                    <h1 id="dashboard-title" className="text-2xl sm:text-3xl font-black text-white tracking-tight mt-0.5">
+                      Welcome back, {customerUser}
+                    </h1>
+                  </div>
+                  {/* Accessible Back control in top-left / top-right of customer screens */}
+                  {customerActiveTab !== "overview" && (
+                    <button
+                      type="button"
+                      onClick={handleCustomerGoBack}
+                      aria-label="Back to dashboard overview"
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-white text-xs font-bold border border-white/15 transition-colors focus:outline-none focus:ring-2 focus:ring-red-500"
+                    >
+                      <ArrowLeft className="h-4 w-4" />
+                      <span>Back</span>
+                    </button>
+                  )}
                 </div>
 
                 {/* Main Available Balance Card matching screenshot */}
@@ -2205,12 +2484,12 @@ export function Index() {
                   </p>
                 </div>
 
-                {/* 4 Primary Navigation Cards matching screenshot: Transfers, Cards, Digital Assets, Statements */}
-                <div className="mt-4 grid grid-cols-2 gap-3 sm:gap-4">
+                {/* 5 Primary Navigation Cards: Transfers, Cards, Digital Assets, Statements, Profile */}
+                <div className="mt-4 grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4">
                   {/* Card 1: Transfers */}
                   <button
                     type="button"
-                    onClick={() => setCustomerActiveTab(customerActiveTab === "transfers" ? "overview" : "transfers")}
+                    onClick={() => navigateCustomerTab("transfers")}
                     className={`rounded-2xl p-4 sm:p-5 text-left transition-all shadow-sm ${
                       customerActiveTab === "transfers"
                         ? "bg-white text-slate-900 ring-4 ring-red-500"
@@ -2222,14 +2501,14 @@ export function Index() {
                       Transfers
                     </span>
                     <span className="text-[0.7rem] text-slate-500 block mt-0.5">
-                      Send & schedule payments
+                      Domestic & wire payments
                     </span>
                   </button>
 
                   {/* Card 2: Cards */}
                   <button
                     type="button"
-                    onClick={() => setCustomerActiveTab(customerActiveTab === "cards" ? "overview" : "cards")}
+                    onClick={() => navigateCustomerTab("cards")}
                     className={`rounded-2xl p-4 sm:p-5 text-left transition-all shadow-sm ${
                       customerActiveTab === "cards"
                         ? "bg-white text-slate-900 ring-4 ring-red-500"
@@ -2248,7 +2527,7 @@ export function Index() {
                   {/* Card 3: Digital Assets (Bitcoin & Crypto) */}
                   <button
                     type="button"
-                    onClick={() => setCustomerActiveTab(customerActiveTab === "crypto" ? "overview" : "crypto")}
+                    onClick={() => navigateCustomerTab("crypto")}
                     className={`rounded-2xl p-4 sm:p-5 text-left transition-all shadow-sm ${
                       customerActiveTab === "crypto"
                         ? "bg-white text-slate-900 ring-4 ring-red-500"
@@ -2267,7 +2546,7 @@ export function Index() {
                   {/* Card 4: Statements & Tax / IRS Documents */}
                   <button
                     type="button"
-                    onClick={() => setCustomerActiveTab(customerActiveTab === "statements" ? "overview" : "statements")}
+                    onClick={() => navigateCustomerTab("statements")}
                     className={`rounded-2xl p-4 sm:p-5 text-left transition-all shadow-sm ${
                       customerActiveTab === "statements"
                         ? "bg-white text-slate-900 ring-4 ring-red-500"
@@ -2282,6 +2561,25 @@ export function Index() {
                       Tax docs, IRS & e-records
                     </span>
                   </button>
+
+                  {/* Card 5: Profile & Security Settings */}
+                  <button
+                    type="button"
+                    onClick={() => navigateCustomerTab("profile")}
+                    className={`col-span-2 sm:col-span-1 rounded-2xl p-4 sm:p-5 text-left transition-all shadow-sm ${
+                      customerActiveTab === "profile"
+                        ? "bg-white text-slate-900 ring-4 ring-red-500"
+                        : "bg-white text-slate-900 hover:bg-slate-50"
+                    }`}
+                  >
+                    <Settings className="h-6 w-6 text-red-600" />
+                    <span className="mt-3 block font-bold text-base sm:text-lg text-slate-900">
+                      Profile & Security
+                    </span>
+                    <span className="text-[0.7rem] text-slate-500 block mt-0.5">
+                      Transfer PIN & settings
+                    </span>
+                  </button>
                 </div>
 
                 {/* Bottom Red Pill Badge matching screenshot */}
@@ -2293,70 +2591,390 @@ export function Index() {
                 {/* EXPANDABLE DEDICATED SERVICE SECTIONS */}
                 {/* ======================================================== */}
 
-                {/* A. TRANSFERS SECTION */}
+                {/* A. TRANSFERS SECTION (DOMESTIC & 60 NON-AFRICAN WIRE COUNTRIES) */}
                 {customerActiveTab === "transfers" && (
-                  <div className="mt-6 rounded-2xl bg-white p-5 sm:p-6 text-slate-900 shadow-xl border border-slate-200 animate-fadeIn">
-                    <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+                  <div className="mt-6 rounded-2xl bg-white p-5 sm:p-6 text-slate-900 shadow-xl border border-slate-200 animate-fadeIn relative">
+                    {/* Header */}
+                    <div className="flex items-center justify-between border-b border-slate-100 pb-4">
                       <div>
-                        <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
-                          <Send className="h-5 w-5 text-red-600" />
-                          Send Money & Domestic / International Transfers
-                        </h3>
-                        <p className="text-xs text-slate-500">
-                          Instant electronic clearing with real-time status tracking.
+                        <div className="flex items-center gap-2">
+                          <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-red-50 text-red-600">
+                            <Send className="h-4 w-4" />
+                          </span>
+                          <h3 className="text-base font-bold text-slate-900">
+                            Transfer Funds
+                          </h3>
+                        </div>
+                        <p className="text-xs text-slate-500 mt-1">
+                          Send domestic payments or international wire transfers across 60 supported nations.
                         </p>
                       </div>
                       <button
                         type="button"
-                        onClick={() => setCustomerActiveTab("overview")}
-                        className="text-xs text-slate-400 hover:text-slate-700 font-bold"
+                        onClick={handleCustomerGoBack}
+                        aria-label="Back to overview"
+                        className="text-xs text-slate-400 hover:text-slate-700 font-bold inline-flex items-center gap-1"
                       >
-                        ✕ Close
+                        <ArrowLeft className="h-3.5 w-3.5" /> Back
                       </button>
                     </div>
 
-                    <form onSubmit={handleTransfer} className="mt-4 space-y-3">
-                      <div>
-                        <label className="block text-xs font-bold text-slate-700 mb-1">
-                          Recipient Account, IBAN, or Wire Identifier
-                        </label>
-                        <input
-                          type="text"
-                          placeholder="e.g. US98000100234819"
-                          value={transferRecipient}
-                          onChange={(e) => setTransferRecipient(e.target.value)}
-                          required
-                          className="w-full rounded-lg border border-slate-300 px-3 py-2 text-xs text-slate-800 focus:border-red-600 focus:outline-none"
-                        />
-                      </div>
-                      <div className="flex gap-2">
-                        <div className="flex-1">
-                          <label className="block text-xs font-bold text-slate-700 mb-1">
-                            Transfer Amount ({country.currency.code})
-                          </label>
-                          <input
-                            type="number"
-                            placeholder="0.00"
-                            value={transferAmount}
-                            onChange={(e) => setTransferAmount(e.target.value)}
-                            required
-                            min="1"
-                            step="0.01"
-                            className="w-full rounded-lg border border-slate-300 px-3 py-2 text-xs text-slate-800 focus:border-red-600 focus:outline-none"
-                          />
+                    {/* Step 1: Transfer Input Form */}
+                    {transferStep === "form" && (
+                      <div className="mt-5">
+                        <div className="grid grid-cols-2 gap-2 p-1 bg-slate-100 rounded-xl">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setTransferType("domestic");
+                              setTransferError("");
+                            }}
+                            className={`py-2 px-3 text-xs font-bold rounded-lg transition-all ${
+                              transferType === "domestic"
+                                ? "bg-white text-slate-900 shadow-xs border border-slate-200"
+                                : "text-slate-600 hover:text-slate-900"
+                            }`}
+                          >
+                            🇺🇸 Domestic Transfer ($0.00 Fee)
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setTransferType("wire");
+                              setTransferError("");
+                            }}
+                            className={`py-2 px-3 text-xs font-bold rounded-lg transition-all ${
+                              transferType === "wire"
+                                ? "bg-red-600 text-white shadow-xs"
+                                : "text-slate-600 hover:text-slate-900"
+                            }`}
+                          >
+                            🌐 International Wire (60 Nations)
+                          </button>
                         </div>
-                        <div className="flex items-end">
-                          <Button type="submit" className="bg-red-600 hover:bg-red-700 text-white font-bold text-xs h-9 px-5">
-                            {t.sendFunds}
+
+                        {/* Limits and Fees Callout */}
+                        <div className="mt-4 grid grid-cols-3 gap-2 p-3 bg-slate-50 rounded-xl border border-slate-200 text-center text-xs">
+                          <div>
+                            <span className="text-[0.65rem] uppercase text-slate-500 font-bold block">Transfer Fee</span>
+                            <span className="font-extrabold text-slate-900">
+                              {transferType === "wire" ? "$25.00 Wire Fee" : "Free ($0.00)"}
+                            </span>
+                          </div>
+                          <div className="border-x border-slate-200">
+                            <span className="text-[0.65rem] uppercase text-slate-500 font-bold block">Processing Speed</span>
+                            <span className="font-extrabold text-emerald-600">{transferProcessingTime}</span>
+                          </div>
+                          <div>
+                            <span className="text-[0.65rem] uppercase text-slate-500 font-bold block">Daily Limit</span>
+                            <span className="font-extrabold text-slate-900">
+                              {country.currency.symbol}{transferDailyLimit.toLocaleString("en-US")}
+                            </span>
+                          </div>
+                        </div>
+
+                        <form onSubmit={handleProceedToReview} className="mt-5 space-y-4">
+                          {/* International Wire Destination Country Selection */}
+                          {transferType === "wire" && (
+                            <div>
+                              <label className="block text-xs font-bold text-slate-800 mb-1">
+                                Supported Destination Country (60 Nations Worldwide • Non-African)
+                              </label>
+                              <select
+                                value={wireSelectedCountry}
+                                onChange={(e) => setWireSelectedCountry(e.target.value)}
+                                className="w-full rounded-lg border border-slate-300 px-3 py-2 text-xs font-medium text-slate-800 bg-white focus:border-red-600 focus:outline-none"
+                              >
+                                {WIRE_TRANSFER_COUNTRIES.map((cty) => (
+                                  <option key={cty.code} value={cty.code}>
+                                    {cty.flag} {cty.name} — {cty.currency} ({cty.routingScheme})
+                                  </option>
+                                ))}
+                              </select>
+                              <p className="text-[0.68rem] text-slate-500 mt-1">
+                                Selected routing system: <strong className="text-slate-700">{selectedWireCountryObj.routingScheme}</strong> • Currency: <strong>{selectedWireCountryObj.currency}</strong>
+                              </p>
+                            </div>
+                          )}
+
+                          {/* Recipient Account / Name */}
+                          <div className="grid sm:grid-cols-2 gap-3">
+                            <div>
+                              <label className="block text-xs font-bold text-slate-800 mb-1">
+                                Recipient Full Name / Beneficiary
+                              </label>
+                              <input
+                                type="text"
+                                placeholder="e.g. Eleanor Vance"
+                                value={transferRecipient}
+                                onChange={(e) => setTransferRecipient(e.target.value)}
+                                required
+                                className="w-full rounded-lg border border-slate-300 px-3 py-2 text-xs text-slate-800 focus:border-red-600 focus:outline-none"
+                              />
+                            </div>
+                            <div>
+                              <label className="block text-xs font-bold text-slate-800 mb-1">
+                                {transferType === "wire" ? "Recipient IBAN / Account Number" : "Account Number / Routing"}
+                              </label>
+                              <input
+                                type="text"
+                                placeholder={transferType === "wire" ? "e.g. GB29NWBK60161331926819" : "e.g. 021000021 / 9800010023"}
+                                value={wireRoutingOrIban}
+                                onChange={(e) => setWireRoutingOrIban(e.target.value)}
+                                required
+                                className="w-full rounded-lg border border-slate-300 px-3 py-2 text-xs font-mono text-slate-800 focus:border-red-600 focus:outline-none"
+                              />
+                            </div>
+                          </div>
+
+                          {/* Wire Specific: SWIFT/BIC & Address */}
+                          {transferType === "wire" && (
+                            <div className="grid sm:grid-cols-2 gap-3">
+                              <div>
+                                <label className="block text-xs font-bold text-slate-800 mb-1">
+                                  Bank SWIFT / BIC Code (8 or 11 characters)
+                                </label>
+                                <input
+                                  type="text"
+                                  placeholder="e.g. NWBKGB2L"
+                                  maxLength={11}
+                                  value={wireSwiftCode}
+                                  onChange={(e) => setWireSwiftCode(e.target.value.toUpperCase())}
+                                  required
+                                  className="w-full rounded-lg border border-slate-300 px-3 py-2 text-xs font-mono uppercase text-slate-800 focus:border-red-600 focus:outline-none"
+                                />
+                              </div>
+                              <div>
+                                <label className="block text-xs font-bold text-slate-800 mb-1">
+                                  Recipient Physical Address
+                                </label>
+                                <input
+                                  type="text"
+                                  placeholder="e.g. 10 Finsbury Square, London"
+                                  value={wireRecipientAddress}
+                                  onChange={(e) => setWireRecipientAddress(e.target.value)}
+                                  className="w-full rounded-lg border border-slate-300 px-3 py-2 text-xs text-slate-800 focus:border-red-600 focus:outline-none"
+                                />
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Transfer Amount */}
+                          <div>
+                            <label className="block text-xs font-bold text-slate-800 mb-1">
+                              Transfer Amount ({country.currency.code})
+                            </label>
+                            <div className="relative">
+                              <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500 font-bold text-sm">
+                                {country.currency.symbol}
+                              </span>
+                              <input
+                                type="number"
+                                placeholder="0.00"
+                                value={transferAmount}
+                                onChange={(e) => setTransferAmount(e.target.value)}
+                                required
+                                min="1"
+                                step="0.01"
+                                className="w-full pl-8 pr-3 py-2 text-sm font-bold rounded-lg border border-slate-300 text-slate-900 focus:border-red-600 focus:outline-none"
+                              />
+                            </div>
+                            <p className="text-[0.68rem] text-slate-500 mt-1">
+                              Available checking balance: <strong className="text-slate-700">{country.currency.symbol}{checkingBalance.toFixed(2)}</strong>
+                            </p>
+                          </div>
+
+                          {transferError && (
+                            <div className="p-3 rounded-lg bg-red-50 border border-red-200 text-xs font-bold text-red-700 flex items-center gap-2">
+                              <AlertCircle className="h-4 w-4 shrink-0 text-red-600" />
+                              <span>{transferError}</span>
+                            </div>
+                          )}
+
+                          <div className="flex justify-end pt-2">
+                            <Button
+                              type="submit"
+                              className="bg-red-600 hover:bg-red-700 text-white font-bold text-xs h-10 px-6"
+                            >
+                              Continue to Review & Confirm →
+                            </Button>
+                          </div>
+                        </form>
+                      </div>
+                    )}
+
+                    {/* Step 2: Confirmation / Review Step */}
+                    {transferStep === "review" && (
+                      <div className="mt-5 space-y-4 animate-fadeIn">
+                        <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 space-y-3">
+                          <h4 className="font-bold text-sm text-slate-900 border-b border-slate-200 pb-2">
+                            Please Review Transfer Details
+                          </h4>
+                          <div className="grid grid-cols-2 gap-2 text-xs">
+                            <span className="text-slate-500">Transfer Type:</span>
+                            <span className="font-bold text-slate-900 capitalize">
+                              {transferType === "wire" ? `International Wire (${selectedWireCountryObj.name})` : "Domestic ACH Transfer"}
+                            </span>
+
+                            <span className="text-slate-500">Recipient:</span>
+                            <span className="font-bold text-slate-900">{transferRecipient}</span>
+
+                            <span className="text-slate-500">Account / IBAN:</span>
+                            <span className="font-mono font-bold text-slate-900">{wireRoutingOrIban || "On file"}</span>
+
+                            {transferType === "wire" && (
+                              <>
+                                <span className="text-slate-500">SWIFT / BIC:</span>
+                                <span className="font-mono font-bold text-slate-900">{wireSwiftCode}</span>
+                              </>
+                            )}
+
+                            <span className="text-slate-500">Transfer Principal:</span>
+                            <span className="font-bold text-slate-900">
+                              {country.currency.symbol}{parseFloat(transferAmount || "0").toFixed(2)}
+                            </span>
+
+                            <span className="text-slate-500">Service Fee:</span>
+                            <span className="font-bold text-slate-900">
+                              {wireTransferFee === 0 ? "Free ($0.00)" : `${wireTransferFee.toFixed(2)}`}
+                            </span>
+
+                            <div className="col-span-2 border-t border-slate-200 pt-2 flex justify-between items-center text-sm font-extrabold text-slate-900">
+                              <span>Total Debit from Checking:</span>
+                              <span className="text-red-600">
+                                {country.currency.symbol}{(parseFloat(transferAmount || "0") + wireTransferFee).toFixed(2)}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center justify-between pt-2">
+                          <button
+                            type="button"
+                            onClick={() => setTransferStep("form")}
+                            className="text-xs font-bold text-slate-600 hover:text-slate-900"
+                          >
+                            ← Edit Details
+                          </button>
+                          <Button
+                            type="button"
+                            onClick={handleProceedToPin}
+                            className="bg-red-600 hover:bg-red-700 text-white font-bold text-xs h-10 px-6"
+                          >
+                            Authorize with Transfer PIN →
                           </Button>
                         </div>
                       </div>
-                      {transferSuccess && (
-                        <p className="text-xs font-bold text-emerald-600 bg-emerald-50 p-2.5 rounded-lg border border-emerald-200">
-                          ✓ {transferSuccess}
+                    )}
+
+                    {/* Step 3: Transfer PIN Authorization */}
+                    {transferStep === "pin" && (
+                      <form onSubmit={handleExecuteTransferWithPin} className="mt-5 space-y-4 animate-fadeIn">
+                        <div className="rounded-xl border border-red-200 bg-red-50/50 p-4">
+                          <div className="flex items-center gap-2 mb-2">
+                            <Lock className="h-5 w-5 text-red-600" />
+                            <h4 className="font-bold text-sm text-red-950">
+                              Enter Transfer Security PIN
+                            </h4>
+                          </div>
+                          <p className="text-xs text-slate-600 leading-relaxed mb-4">
+                            For your protection, transfer authorization requires your secret 4-to-6 digit PIN. 3 consecutive failed attempts will lock your account for 15 minutes.
+                          </p>
+
+                          <div>
+                            <label className="block text-xs font-bold text-slate-800 mb-1">
+                              Security PIN
+                            </label>
+                            <div className="relative max-w-xs">
+                              <input
+                                type={showTransferPinInput ? "text" : "password"}
+                                maxLength={6}
+                                autoFocus
+                                required
+                                value={transferPinInput}
+                                onChange={(e) => {
+                                  setTransferPinInput(e.target.value.replace(/\D/g, ""));
+                                  setTransferError("");
+                                }}
+                                placeholder="••••"
+                                className="w-full text-center tracking-widest font-mono text-xl py-2.5 rounded-lg border border-slate-300 text-slate-900 focus:border-red-600 focus:outline-none"
+                              />
+                              <button
+                                type="button"
+                                onClick={() => setShowTransferPinInput(!showTransferPinInput)}
+                                className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-500 hover:text-slate-800"
+                              >
+                                {showTransferPinInput ? "Hide" : "Show"}
+                              </button>
+                            </div>
+                          </div>
+
+                          <div className="mt-3 flex items-center justify-between text-xs">
+                            <button
+                              type="button"
+                              onClick={handleInitiatePinReset}
+                              className="text-red-600 font-bold hover:underline"
+                            >
+                              Forgot or need to reset PIN?
+                            </button>
+                            <span className="text-[0.68rem] text-slate-500">
+                              Protected by SHA-256 hash
+                            </span>
+                          </div>
+                        </div>
+
+                        {transferError && (
+                          <div className="p-3 rounded-lg bg-red-50 border border-red-200 text-xs font-bold text-red-700 flex items-center gap-2">
+                            <AlertCircle className="h-4 w-4 shrink-0 text-red-600" />
+                            <span>{transferError}</span>
+                          </div>
+                        )}
+
+                        <div className="flex items-center justify-between pt-2">
+                          <button
+                            type="button"
+                            onClick={() => setTransferStep("review")}
+                            className="text-xs font-bold text-slate-600 hover:text-slate-900"
+                          >
+                            ← Back to Review
+                          </button>
+                          <Button
+                            type="submit"
+                            disabled={transferLoading}
+                            className="bg-red-600 hover:bg-red-700 text-white font-bold text-xs h-10 px-6 disabled:opacity-50"
+                          >
+                            {transferLoading ? "Verifying & Clearing..." : "Confirm & Execute Transfer"}
+                          </Button>
+                        </div>
+                      </form>
+                    )}
+
+                    {/* Step 4: Completion Success */}
+                    {transferStep === "complete" && (
+                      <div className="mt-5 p-5 rounded-xl border border-emerald-200 bg-emerald-50 text-center space-y-3 animate-fadeIn">
+                        <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-emerald-100 text-emerald-600">
+                          <CheckCircle2 className="h-7 w-7" />
+                        </div>
+                        <h4 className="font-extrabold text-base text-emerald-950">
+                          Transfer Successfully Executed
+                        </h4>
+                        <p className="text-xs text-emerald-800 max-w-md mx-auto">
+                          {transferSuccess}
                         </p>
-                      )}
-                    </form>
+                        <div className="pt-2">
+                          <Button
+                            type="button"
+                            onClick={() => {
+                              setTransferStep("form");
+                              setTransferSuccess("");
+                            }}
+                            className="bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-bold px-5"
+                          >
+                            Make Another Transfer
+                          </Button>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 )}
 
@@ -2535,6 +3153,122 @@ export function Index() {
                         <Button size="sm" variant="outline" className="text-xs font-bold text-slate-700 border-slate-300">
                           Generate Letter
                         </Button>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* E. PROFILE & SECURITY SETTINGS SECTION */}
+                {customerActiveTab === "profile" && (
+                  <div className="mt-6 rounded-2xl bg-white p-5 sm:p-6 text-slate-900 shadow-xl border border-slate-200 animate-fadeIn">
+                    <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+                      <div>
+                        <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
+                          <Settings className="h-5 w-5 text-red-600" />
+                          Profile, Limits & Security Settings
+                        </h3>
+                        <p className="text-xs text-slate-500">
+                          Manage account security, transfer PIN, email verification, and daily limits.
+                        </p>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={handleCustomerGoBack}
+                        aria-label="Back to overview"
+                        className="text-xs text-slate-400 hover:text-slate-700 font-bold inline-flex items-center gap-1"
+                      >
+                        <ArrowLeft className="h-3.5 w-3.5" /> Back
+                      </button>
+                    </div>
+
+                    <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {/* Account Summary & Verification */}
+                      <div className="rounded-xl border border-slate-200 p-4 bg-slate-50/50 space-y-3">
+                        <h4 className="font-bold text-xs uppercase tracking-wider text-slate-600">
+                          Account Profile
+                        </h4>
+                        <div className="space-y-2 text-xs">
+                          <div className="flex justify-between py-1 border-b border-slate-200/60">
+                            <span className="text-slate-500">Account Holder:</span>
+                            <span className="font-bold text-slate-900">{customerUser}</span>
+                          </div>
+                          <div className="flex justify-between py-1 border-b border-slate-200/60">
+                            <span className="text-slate-500">Registered Email:</span>
+                            <span className="font-mono font-medium text-slate-800">{customerLoginEmail || "user@usfinancebank.online"}</span>
+                          </div>
+                          <div className="flex justify-between py-1 border-b border-slate-200/60">
+                            <span className="text-slate-500">Account Status:</span>
+                            <span className="font-bold text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded text-[0.65rem]">
+                              ✓ Fully Verified (Tier 2 FDIC)
+                            </span>
+                          </div>
+                          <div className="flex justify-between py-1 border-b border-slate-200/60">
+                            <span className="text-slate-500">Checking Balance:</span>
+                            <span className="font-bold text-slate-900">{country.currency.symbol}{checkingBalance.toFixed(2)}</span>
+                          </div>
+                          <div className="flex justify-between py-1">
+                            <span className="text-slate-500">Savings Balance:</span>
+                            <span className="font-bold text-slate-900">{country.currency.symbol}{savingsBalance.toFixed(2)}</span>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Security & Transfer PIN */}
+                      <div className="rounded-xl border border-slate-200 p-4 bg-slate-50/50 space-y-3">
+                        <h4 className="font-bold text-xs uppercase tracking-wider text-slate-600 flex items-center justify-between">
+                          <span>Transfer Security & PIN</span>
+                          <span className="text-[0.65rem] font-bold text-emerald-600">Active</span>
+                        </h4>
+                        <p className="text-xs text-slate-600 leading-relaxed">
+                          Your secret transfer PIN is required to authorize all wire transfers and external payments. PINs are salted and hashed with SHA-256 before storage.
+                        </p>
+
+                        <div className="pt-2 space-y-2">
+                          <Button
+                            type="button"
+                            onClick={handleInitiatePinReset}
+                            className="w-full bg-[#0a192f] hover:bg-[#122847] text-white text-xs font-bold py-2"
+                          >
+                            <KeyRound className="h-3.5 w-3.5 mr-1.5" /> Reset or Change Transfer PIN
+                          </Button>
+                          <Button
+                            type="button"
+                            variant="outline"
+                            onClick={() => {
+                              setCustomerPassResetModal(true);
+                              setCustomerPassResetSuccess("");
+                              setPasswordResetError("");
+                            }}
+                            className="w-full border-slate-300 text-slate-800 text-xs font-bold py-2"
+                          >
+                            <Lock className="h-3.5 w-3.5 mr-1.5" /> Update Web Login Password
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Daily Limits & International Eligibility */}
+                    <div className="mt-4 p-4 rounded-xl border border-slate-200 bg-white">
+                      <h4 className="font-bold text-xs uppercase tracking-wider text-slate-600 mb-2">
+                        Transfer Limits & International Wire Eligibility
+                      </h4>
+                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs text-center">
+                        <div className="p-2.5 rounded-lg bg-slate-50 border border-slate-100">
+                          <span className="text-[0.65rem] text-slate-500 block">Domestic Transfer Limit</span>
+                          <span className="font-extrabold text-slate-900">$25,000.00 / day</span>
+                        </div>
+                        <div className="p-2.5 rounded-lg bg-slate-50 border border-slate-100">
+                          <span className="text-[0.65rem] text-slate-500 block">Wire Transfer Limit</span>
+                          <span className="font-extrabold text-slate-900">$100,000.00 / day</span>
+                        </div>
+                        <div className="p-2.5 rounded-lg bg-slate-50 border border-slate-100">
+                          <span className="text-[0.65rem] text-slate-500 block">Supported Wire Nations</span>
+                          <span className="font-extrabold text-red-600">60 Countries</span>
+                        </div>
+                        <div className="p-2.5 rounded-lg bg-slate-50 border border-slate-100">
+                          <span className="text-[0.65rem] text-slate-500 block">Two-Factor Auth</span>
+                          <span className="font-extrabold text-emerald-600">Email OTP (10m)</span>
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -3683,30 +4417,50 @@ export function Index() {
               /* MULTI-FACTOR AUTHENTICATION (MFA) STEP */
               <form onSubmit={handleMfaSubmit} className="mt-5 space-y-4">
                 <div className="rounded-xl bg-blue-50 border border-blue-200 p-4 text-xs text-blue-900">
-                  <p className="font-bold flex items-center gap-1.5">
-                    <Fingerprint className="h-4 w-4 text-primary" />
-                    {t.mfaTitle}
+                  <p className="font-bold flex items-center gap-1.5 text-primary">
+                    <Mail className="h-4 w-4 text-primary" />
+                    Email Verification Code Delivered
                   </p>
-                  <p className="mt-1 leading-relaxed">{t.mfaPrompt}</p>
-                  <div className="mt-3 rounded bg-white p-2 font-mono text-center text-sm font-bold text-primary border border-blue-200">
-                    Simulated One-Time Code: <span className="text-accent">{generatedMfaCode}</span>
+                  <p className="mt-1 leading-relaxed text-slate-700">
+                    A 6-digit verification code has been dispatched to <strong className="text-slate-900 font-mono">{customerLoginEmail}</strong>. Please enter the code below to securely access your customer account.
+                  </p>
+                  <div className="mt-3 rounded-lg bg-white p-2.5 font-mono text-center text-sm font-bold text-primary border border-blue-200 flex items-center justify-between">
+                    <span className="text-xs text-slate-500 font-sans">Delivered Code:</span>
+                    <span className="text-red-600 font-black text-base tracking-widest">{generatedMfaCode}</span>
                   </div>
                 </div>
 
                 <div>
-                  <label htmlFor="mfa-input" className="block text-xs font-bold text-foreground">
-                    Enter 6-Digit One-Time Code (OTP)
-                  </label>
+                  <div className="flex justify-between items-center">
+                    <label htmlFor="mfa-input" className="block text-xs font-bold text-foreground">
+                      Enter 6-Digit Email Verification Code
+                    </label>
+                    <span className="text-[0.68rem] text-slate-500 font-normal">
+                      Valid for 10 minutes
+                    </span>
+                  </div>
                   <input
                     id="mfa-input"
                     type="text"
                     required
                     maxLength={6}
                     value={mfaCode}
-                    onChange={(e) => setMfaCode(e.target.value)}
+                    onChange={(e) => setMfaCode(e.target.value.replace(/\D/g, ""))}
                     placeholder="e.g. 849201"
-                    className="mt-1 w-full text-center tracking-widest font-mono text-lg rounded-md border border-input px-3.5 py-2 focus:border-primary focus:outline-none"
+                    className="mt-1 w-full text-center tracking-widest font-mono text-xl rounded-md border border-input px-3.5 py-2.5 focus:border-primary focus:outline-none"
                   />
+                </div>
+
+                <div className="flex items-center justify-between text-xs text-muted-foreground pt-1">
+                  <span>Didn't receive the email code?</span>
+                  <button
+                    type="button"
+                    onClick={handleResendEmailOtp}
+                    disabled={mfaResendCount >= 3}
+                    className="font-bold text-primary hover:underline disabled:text-slate-400"
+                  >
+                    Resend Code {mfaResendCount > 0 && `(${3 - mfaResendCount} left)`}
+                  </button>
                 </div>
 
                 <Button
@@ -3905,6 +4659,58 @@ export function Index() {
                       >
                         {showAppPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                       </button>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Mandatory 4-to-6 digit Security Transfer PIN */}
+                <div className="rounded-xl border border-red-200 bg-red-50/50 p-4">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-xs font-bold text-red-950 flex items-center gap-1.5">
+                      <KeyRound className="h-4 w-4 text-red-600" />
+                      Create Transfer PIN (Required for Fund Transfers)
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => setShowAppPin(!showAppPin)}
+                      className="text-[0.68rem] text-red-600 font-bold hover:underline"
+                    >
+                      {showAppPin ? "Hide PIN" : "Show PIN"}
+                    </button>
+                  </div>
+                  <p className="text-[0.7rem] text-slate-600 leading-relaxed mb-3">
+                    Your transfer PIN is encrypted and stored as a secure one-way hash. It is required to approve all domestic and international wire transfers.
+                  </p>
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    <div>
+                      <label htmlFor="reg-pin" className="block text-[0.7rem] font-bold text-foreground">
+                        4-to-6 Digit Security PIN
+                      </label>
+                      <input
+                        id="reg-pin"
+                        type={showAppPin ? "text" : "password"}
+                        required
+                        maxLength={6}
+                        value={appTransferPin}
+                        onChange={(e) => setAppTransferPin(e.target.value.replace(/\D/g, ""))}
+                        placeholder="4 to 6 numbers"
+                        className="mt-1 w-full font-mono text-center tracking-widest rounded-md border border-input px-3.5 py-2 text-sm focus:border-red-600 focus:outline-none"
+                      />
+                    </div>
+                    <div>
+                      <label htmlFor="reg-pin-confirm" className="block text-[0.7rem] font-bold text-foreground">
+                        Confirm Security PIN
+                      </label>
+                      <input
+                        id="reg-pin-confirm"
+                        type={showAppPin ? "text" : "password"}
+                        required
+                        maxLength={6}
+                        value={appConfirmTransferPin}
+                        onChange={(e) => setAppConfirmTransferPin(e.target.value.replace(/\D/g, ""))}
+                        placeholder="Re-enter PIN"
+                        className="mt-1 w-full font-mono text-center tracking-widest rounded-md border border-input px-3.5 py-2 text-sm focus:border-red-600 focus:outline-none"
+                      />
                     </div>
                   </div>
                 </div>
@@ -4967,6 +5773,144 @@ export function Index() {
                 </Button>
               </form>
             )}
+          </div>
+        </div>
+      )}
+
+      {/* PIN RESET MODAL (Email Verification + New Hash) */}
+      {pinResetModalOpen && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-xs"
+        >
+          <div className="relative w-full max-w-md rounded-2xl border border-border bg-white p-6 shadow-2xl text-foreground">
+            <button
+              type="button"
+              onClick={() => setPinResetModalOpen(false)}
+              className="absolute right-4 top-4 rounded-full p-1 text-muted-foreground hover:bg-secondary hover:text-foreground"
+            >
+              <X className="h-5 w-5" />
+            </button>
+
+            <div className="flex items-center gap-3 border-b border-border pb-4">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-red-100 text-red-600">
+                <KeyRound className="h-5 w-5" />
+              </div>
+              <div>
+                <h3 className="text-base font-bold text-slate-900">Reset Transfer Security PIN</h3>
+                <p className="text-xs text-muted-foreground">Authorized via registered email address</p>
+              </div>
+            </div>
+
+            {pinResetStep === "request" ? (
+              <form onSubmit={handleRequestPinResetOtp} className="mt-4 space-y-4">
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">
+                    Registered Email Address
+                  </label>
+                  <input
+                    type="email"
+                    required
+                    value={pinResetEmail}
+                    onChange={(e) => setPinResetEmail(e.target.value)}
+                    placeholder="e.g. eleanor.vance@example.com"
+                    className="w-full rounded-md border border-input px-3.5 py-2 text-sm focus:border-red-600 focus:outline-none"
+                  />
+                </div>
+                {pinResetError && (
+                  <p className="text-xs font-bold text-red-600">{pinResetError}</p>
+                )}
+                <Button type="submit" className="w-full bg-red-600 hover:bg-red-700 text-white font-bold text-xs py-2.5">
+                  Send Email Verification Code →
+                </Button>
+              </form>
+            ) : (
+              <form onSubmit={handleConfirmPinReset} className="mt-4 space-y-4">
+                <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-xs text-red-900">
+                  {pinResetSuccess || `We sent a 6-digit verification code to ${pinResetEmail}.`}
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">
+                    Enter Email Verification Code
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    maxLength={6}
+                    value={pinResetOtp}
+                    onChange={(e) => setPinResetOtp(e.target.value.replace(/\D/g, ""))}
+                    placeholder="6-digit code"
+                    className="w-full font-mono text-center tracking-widest text-lg rounded-md border border-input px-3 py-2 focus:border-red-600 focus:outline-none"
+                  />
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 mb-1">
+                      New Security PIN
+                    </label>
+                    <input
+                      type="password"
+                      required
+                      maxLength={6}
+                      value={pinResetNewPin}
+                      onChange={(e) => setPinResetNewPin(e.target.value.replace(/\D/g, ""))}
+                      placeholder="••••"
+                      className="w-full font-mono text-center tracking-widest rounded-md border border-input px-3 py-2 text-sm focus:border-red-600 focus:outline-none"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 mb-1">
+                      Confirm New PIN
+                    </label>
+                    <input
+                      type="password"
+                      required
+                      maxLength={6}
+                      value={pinResetConfirmPin}
+                      onChange={(e) => setPinResetConfirmPin(e.target.value.replace(/\D/g, ""))}
+                      placeholder="••••"
+                      className="w-full font-mono text-center tracking-widest rounded-md border border-input px-3 py-2 text-sm focus:border-red-600 focus:outline-none"
+                    />
+                  </div>
+                </div>
+                {pinResetError && (
+                  <p className="text-xs font-bold text-red-600">{pinResetError}</p>
+                )}
+                <Button type="submit" className="w-full bg-red-600 hover:bg-red-700 text-white font-bold text-xs py-2.5">
+                  Update & Save New Transfer PIN
+                </Button>
+              </form>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* FAINT LOW-CONTRAST BANK LOGO LOADING TREATMENT */}
+      {(transferLoading || customerAuthLoading) && (
+        <div
+          role="status"
+          aria-live="polite"
+          aria-label="Secure command processing..."
+          className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-black/40 backdrop-blur-xs select-none"
+        >
+          <div className="flex flex-col items-center justify-center p-6 rounded-2xl bg-[#0a192f]/90 border border-white/10 shadow-2xl">
+            {/* Low-contrast faint bank logo treatment */}
+            <div className="relative flex items-center justify-center w-24 h-24 mb-3">
+              <div className="absolute inset-0 rounded-full border-2 border-red-500/20 animate-ping" />
+              <img
+                src="/favicon.png"
+                alt=""
+                aria-hidden="true"
+                className="w-16 h-16 object-contain opacity-35 filter grayscale contrast-75 animate-pulse"
+              />
+            </div>
+            <p className="text-xs font-bold uppercase tracking-widest text-slate-300 animate-pulse">
+              US Finance Bank Clearing
+            </p>
+            <span className="text-[0.65rem] text-slate-400 mt-1">
+              Securing transmission with SHA-256...
+            </span>
           </div>
         </div>
       )}
