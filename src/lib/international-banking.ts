@@ -52,7 +52,7 @@ export const SUPPORTED_COUNTRIES: Record<string, CountryConfig> = {
       { id: "national_insurance", label: "National Insurance Number", placeholder: "e.g. QQ 12 34 56 A", reason: "Required for tax reporting and individual verification." }
     ],
     regulatoryNote: "Accounts are provisioned subject to UK FCA/PRA banking compliance frameworks and anti-money laundering controls.",
-    languages: ["en"]
+    languages: ["en-GB", "en"]
   },
   CA: {
     code: "CA",
@@ -70,7 +70,7 @@ export const SUPPORTED_COUNTRIES: Record<string, CountryConfig> = {
       { id: "sin", label: "Social Insurance Number (SIN)", placeholder: "9-digit SIN", reason: "Required for Canada Revenue Agency (CRA) tax disclosure purposes." }
     ],
     regulatoryNote: "Subject to FINTRAC regulations and Canadian regulatory oversight.",
-    languages: ["en", "fr"]
+    languages: ["en-CA", "en", "fr"]
   },
   MX: {
     code: "MX",
@@ -88,7 +88,7 @@ export const SUPPORTED_COUNTRIES: Record<string, CountryConfig> = {
       { id: "passport", label: "Pasaporte Mexicano", placeholder: "Passport number", reason: "Valid alternative international identity document." }
     ],
     regulatoryNote: "Complying with CNBV and SHCP financial transparency guidelines in Mexico.",
-    languages: ["es", "en"]
+    languages: ["es-MX", "es", "en"]
   },
   CN: {
     code: "CN",
@@ -222,7 +222,10 @@ export interface LanguageConfig {
 }
 
 export const SUPPORTED_LANGUAGES: Record<string, LanguageConfig> = {
-  en: { code: "en", name: "English", nativeName: "English (US)", flag: "🇺🇸" },
+  en: { code: "en", name: "English (US)", nativeName: "English (US)", flag: "🇺🇸" },
+  "en-GB": { code: "en-GB", name: "United Kingdom", nativeName: "United Kingdom (English)", flag: "🇬🇧" },
+  "en-CA": { code: "en-CA", name: "Canada", nativeName: "Canada (English)", flag: "🇨🇦" },
+  "es-MX": { code: "es-MX", name: "Mexico", nativeName: "Mexico (Español)", flag: "🇲🇽" },
   es: { code: "es", name: "Spanish", nativeName: "Español", flag: "🇪🇸" },
   fr: { code: "fr", name: "French", nativeName: "Français", flag: "🇫🇷" },
   de: { code: "de", name: "German", nativeName: "Deutsch", flag: "🇩🇪" },
@@ -296,6 +299,99 @@ export const TRANSLATIONS: Record<string, TranslationDict> = {
     sendFunds: "Send Funds",
     quickTransfer: "Quick Fund Transfer",
     signOut: "Sign Out"
+  },
+  "en-GB": {
+    brandName: "US FINANCE BANK",
+    tagline: "Online Banking",
+    motto: "Stronger Together for a Brighter Future",
+    heroHeadline: "Banking Made Simpler. Your Future, Your Finance.",
+    heroSubheadline: "Discover a modern, secure, and multilingual digital banking experience designed to make managing your money simple, convenient, and accessible worldwide.",
+    signIn: "Customer Sign In",
+    createAccount: "Open an Account / Apply",
+    checkStatus: "Check Application Status",
+    exploreBanking: "Explore Banking",
+    contactUs: "Contact Us",
+    adminPortal: "Staff Sign-In Admin Dashboard",
+    staffPortal: "Staff Sign-In Admin Dashboard",
+    selectCountry: "Select Country / Territory",
+    selectLanguage: "Language",
+    countryNotice: "Target service region for authorized international operations. Requirements are tailored to local banking frameworks.",
+    securityNotice: "Bank-grade 256-bit encryption. Passwords and sensitive verification data are hashed securely. Bank officials will never ask for your PIN or OTP.",
+    mfaTitle: "Multi-Factor Verification",
+    mfaPrompt: "A one-time verification code (OTP) has been dispatched to your verified security channel.",
+    personalBanking: "Personal Banking",
+    businessBanking: "Business Banking",
+    onlineBanking: "Online Banking",
+    aboutUs: "About Us",
+    recentTransactions: "Recent Transactions",
+    welcomeBack: "Welcome back",
+    checking: "Current Account",
+    savings: "High-Yield Savings",
+    sendFunds: "Send Funds",
+    quickTransfer: "Quick Fund Transfer",
+    signOut: "Sign Out"
+  },
+  "en-CA": {
+    brandName: "US FINANCE BANK",
+    tagline: "Online Banking",
+    motto: "Stronger Together for a Brighter Future",
+    heroHeadline: "Banking Made Simpler. Your Future, Your Finance.",
+    heroSubheadline: "Discover a modern, secure, and multilingual digital banking experience designed to make managing your money simple, convenient, and accessible worldwide.",
+    signIn: "Customer Sign In",
+    createAccount: "Create Account / Apply",
+    checkStatus: "Check Application Status",
+    exploreBanking: "Explore Banking",
+    contactUs: "Contact Us",
+    adminPortal: "Staff Sign-In Admin Dashboard",
+    staffPortal: "Staff Sign-In Admin Dashboard",
+    selectCountry: "Select Country / Territory",
+    selectLanguage: "Language",
+    countryNotice: "Target service region for authorized international operations. Requirements are tailored to local banking frameworks.",
+    securityNotice: "Bank-grade 256-bit encryption. Passwords and sensitive verification data are hashed securely. Bank officials will never ask for your PIN or OTP.",
+    mfaTitle: "Multi-Factor Verification",
+    mfaPrompt: "A one-time verification code (OTP) has been dispatched to your verified security channel.",
+    personalBanking: "Personal Banking",
+    businessBanking: "Business Banking",
+    onlineBanking: "Online Banking",
+    aboutUs: "About Us",
+    recentTransactions: "Recent Transactions",
+    welcomeBack: "Welcome back",
+    checking: "Chequing Account",
+    savings: "High-Yield Savings",
+    sendFunds: "Send Funds",
+    quickTransfer: "Quick Fund Transfer",
+    signOut: "Sign Out"
+  },
+  "es-MX": {
+    brandName: "US FINANCE BANK",
+    tagline: "Banca en Línea",
+    motto: "Más Fuertes Juntos por un Futuro Más Brillante",
+    heroHeadline: "Banca Más Sencilla. Tu Futuro, Tus Finanzas.",
+    heroSubheadline: "Descubra una experiencia bancaria digital moderna, segura y multilingüe diseñada para simplificar y proteger sus finanzas a nivel global.",
+    signIn: "Iniciar Sesión",
+    createAccount: "Crear Cuenta / Solicitar",
+    checkStatus: "Consultar Estado de Solicitud",
+    exploreBanking: "Explorar Servicios",
+    contactUs: "Contáctenos",
+    adminPortal: "Portal Solo Admin",
+    staffPortal: "Portal Solo Admin",
+    selectCountry: "Seleccionar País / Territorio",
+    selectLanguage: "Idioma",
+    countryNotice: "Región de servicio planificada. Los requisitos se adaptan al marco regulatorio bancario de su país.",
+    securityNotice: "Cifrado bancario de 256 bits. Jamás compartiremos su información ni le solicitaremos su PIN o código OTP.",
+    mfaTitle: "Autenticación de Dos Factores",
+    mfaPrompt: "Se ha enviado un código de seguridad único (OTP) a su número o correo registrado.",
+    personalBanking: "Banca Personal",
+    businessBanking: "Banca Empresarial",
+    onlineBanking: "Banca Digital",
+    aboutUs: "Acerca de Nosotros",
+    recentTransactions: "Transacciones Recientes",
+    welcomeBack: "Bienvenido",
+    checking: "Cuenta de Cheques",
+    savings: "Cuenta de Ahorros",
+    sendFunds: "Enviar Fondos",
+    quickTransfer: "Transferencia Rápida",
+    signOut: "Cerrar Sesión"
   },
   es: {
     brandName: "US FINANCE BANK",

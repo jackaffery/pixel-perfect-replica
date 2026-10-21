@@ -90,6 +90,9 @@ export const Route = createFileRoute("/")({
 
 export const LANGUAGE_FLAG_CODES: Record<string, string> = {
   en: "US",
+  "en-GB": "GB",
+  "en-CA": "CA",
+  "es-MX": "MX",
   es: "ES",
   fr: "FR",
   de: "DE",
@@ -1706,7 +1709,7 @@ export function Index() {
                               code={LANGUAGE_FLAG_CODES[l.code] || "US"}
                               className="h-3.5 w-5 rounded-[2px] shadow-xs shrink-0 object-cover"
                             />
-                            <span className="truncate">{l.nativeName} ({l.name})</span>
+                            <span className="truncate">{l.nativeName}</span>
                           </button>
                         ))}
                       </div>
@@ -2002,7 +2005,7 @@ export function Index() {
                             code={LANGUAGE_FLAG_CODES[l.code] || "US"}
                             className="h-3.5 w-5 rounded-[2px] shadow-xs shrink-0 object-cover"
                           />
-                          <span className="truncate">{l.nativeName} ({l.name})</span>
+                          <span className="truncate">{l.nativeName}</span>
                         </button>
                       ))}
                     </div>
