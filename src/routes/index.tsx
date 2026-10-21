@@ -623,8 +623,10 @@ export function Index() {
   const [customerAuthError, setCustomerAuthError] = useState("");
 
   // Customer Dashboard State
+  const [customerActiveTab, setCustomerActiveTab] = useState<"overview" | "transfers" | "cards" | "crypto" | "statements" | "tax">("overview");
   const [checkingBalance, setCheckingBalance] = useState(12450.8);
   const [savingsBalance, setSavingsBalance] = useState(48200.0);
+  const [showAccountBalance, setShowAccountBalance] = useState(false);
   const [selectedCustomerTx, setSelectedCustomerTx] = useState<{
     id: string;
     date: string;
@@ -2121,171 +2123,471 @@ export function Index() {
         {customerUser && (
           <section
             aria-labelledby="dashboard-title"
-            className="border-b border-border bg-secondary/50 py-10"
+            className="border-b border-border bg-[#0a192f] text-white py-6 sm:py-10"
           >
-            <div className="mx-auto max-w-7xl px-5">
-              <div className="flex flex-col justify-between gap-4 rounded-xl border border-border bg-white p-6 shadow-sm md:flex-row md:items-center">
-                <div>
-                  <div className="flex items-center gap-2">
-                    <span className="rounded bg-primary/10 px-2.5 py-0.5 text-xs font-bold text-primary">
-                      {t.onlineBanking.toUpperCase()}
-                    </span>
-                    <span className="text-xs text-muted-foreground">
-                      {country.name} • 256-Bit Encrypted Session
-                    </span>
-                  </div>
-                  <h1
-                    id="dashboard-title"
-                    className="mt-1 font-display text-2xl font-bold text-primary sm:text-3xl"
-                  >
-                    {t.welcomeBack}, {customerUser}
-                  </h1>
-                  <p className="text-sm text-muted-foreground">
-                    US Finance Bank • Multi-Currency Account Management ({country.currency.code})
-                  </p>
-                </div>
-                <div className="flex items-center gap-3">
-                  <Button
-                    variant="outline"
-                    onClick={() => setCustomerUser(null)}
-                    className="text-sm"
-                  >
-                    <LogOut className="mr-1.5 h-4 w-4" /> {t.signOut}
-                  </Button>
-                </div>
-              </div>
-
-              {/* Balances */}
-              <div className="mt-6 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-                <div className="rounded-xl border border-border bg-white p-6 shadow-xs">
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
-                      {t.checking}
-                    </span>
-                    <Wallet className="h-5 w-5 text-primary" />
-                  </div>
-                  <div className="mt-3 text-3xl font-extrabold text-primary">
-                    {country.currency.symbol}
-                    {checkingBalance.toLocaleString("en-US", { minimumFractionDigits: 2 })}{" "}
-                    <span className="text-sm font-semibold text-muted-foreground">
-                      {country.currency.code}
-                    </span>
-                  </div>
-                  <p className="mt-1 text-xs text-muted-foreground">
-                    Account # •••• 4892 (Available)
-                  </p>
-                </div>
-
-                <div className="rounded-xl border border-border bg-white p-6 shadow-xs">
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
-                      {t.savings}
-                    </span>
-                    <TrendingUp className="h-5 w-5 text-accent" />
-                  </div>
-                  <div className="mt-3 text-3xl font-extrabold text-primary">
-                    {country.currency.symbol}
-                    {savingsBalance.toLocaleString("en-US", { minimumFractionDigits: 2 })}{" "}
-                    <span className="text-sm font-semibold text-muted-foreground">
-                      {country.currency.code}
-                    </span>
-                  </div>
-                  <p className="mt-1 text-xs text-muted-foreground">
-                    Account # •••• 8104 (4.85% APY)
-                  </p>
-                </div>
-
-                <div className="rounded-xl border border-border bg-white p-6 shadow-xs sm:col-span-2 lg:col-span-1">
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
-                      {t.quickTransfer}
-                    </span>
-                    <Send className="h-5 w-5 text-primary" />
-                  </div>
-                  <form onSubmit={handleTransfer} className="mt-3 space-y-3">
-                    <input
-                      type="text"
-                      placeholder="Recipient Identifier / IBAN / Account"
-                      value={transferRecipient}
-                      onChange={(e) => setTransferRecipient(e.target.value)}
-                      required
-                      className="w-full rounded-md border border-input px-3 py-1.5 text-xs focus:border-primary focus:outline-none"
-                    />
-                    <div className="flex gap-2">
-                      <input
-                        type="number"
-                        placeholder={`Amount in ${country.currency.code}`}
-                        value={transferAmount}
-                        onChange={(e) => setTransferAmount(e.target.value)}
-                        required
-                        min="1"
-                        step="0.01"
-                        className="w-full rounded-md border border-input px-3 py-1.5 text-xs focus:border-primary focus:outline-none"
-                      />
-                      <Button type="submit" size="sm" className="bg-primary text-xs">
-                        {t.sendFunds}
-                      </Button>
+            <div className="mx-auto max-w-4xl px-4 sm:px-6">
+              {/* App-like Container matching customer dashboard mockup */}
+              <div className="rounded-2xl sm:rounded-3xl border border-white/10 bg-[#0f213d] p-5 sm:p-7 shadow-2xl relative overflow-hidden">
+                {/* Header: USA Flag Emblem + Bank Name + Verified Shield */}
+                <div className="flex items-center justify-between border-b border-white/10 pb-5">
+                  <div className="flex items-center gap-3">
+                    <div className="flex h-11 w-11 sm:h-12 sm:w-12 items-center justify-center rounded-2xl bg-[#162e55] border border-white/15 shadow-md overflow-hidden">
+                      <span className="text-2xl" role="img" aria-label="USA Flag">🇺🇸</span>
                     </div>
-                    {transferSuccess && (
-                      <p className="text-xs font-medium text-emerald-600">{transferSuccess}</p>
-                    )}
-                  </form>
-                </div>
-              </div>
-
-              {/* Transactions Ledger */}
-              <div className="mt-6 rounded-xl border border-border bg-white p-6 shadow-xs">
-                <div className="flex items-center justify-between border-b border-border pb-4">
-                  <div>
-                    <h2 className="text-lg font-bold text-primary">{t.recentTransactions}</h2>
-                    <p className="text-xs text-muted-foreground mt-0.5">
-                      Select any transfer to review its live status, verified administrative updates, and clearing notes.
-                    </p>
+                    <div>
+                      <h2 className="font-display text-lg sm:text-xl font-black text-white tracking-tight">
+                        USA FINANCE BANK
+                      </h2>
+                      <p className="text-xs text-slate-300 font-medium">
+                        Secure digital banking
+                      </p>
+                    </div>
                   </div>
-                  <span className="text-xs font-medium text-muted-foreground">
-                    Format: {country.dateFormat}
-                  </span>
-                </div>
-                <div className="divide-y divide-border">
-                  {transactions.map((tx) => (
-                    <div
-                      key={tx.id}
-                      onClick={() => setSelectedCustomerTx(tx)}
-                      className="flex flex-col sm:flex-row sm:items-center justify-between py-3.5 px-2 rounded-lg hover:bg-slate-50 cursor-pointer transition-colors gap-2"
+
+                  <div className="flex items-center gap-2">
+                    <div className="flex h-8 w-8 items-center justify-center rounded-full bg-white/10 text-emerald-400">
+                      <ShieldCheck className="h-5 w-5" />
+                    </div>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setCustomerUser(null)}
+                      className="border-white/20 bg-white/10 text-white hover:bg-white/20 text-xs font-semibold ml-1"
                     >
+                      <LogOut className="h-3.5 w-3.5 mr-1" /> {t.signOut}
+                    </Button>
+                  </div>
+                </div>
+
+                {/* Subtitle & Welcome Back */}
+                <div className="mt-5">
+                  <span className="text-[0.7rem] font-bold tracking-wider uppercase text-slate-300 block">
+                    CUSTOMER DASHBOARD
+                  </span>
+                  <h1 id="dashboard-title" className="text-2xl sm:text-3xl font-black text-white tracking-tight mt-0.5">
+                    Welcome back, {customerUser}
+                  </h1>
+                </div>
+
+                {/* Main Available Balance Card matching screenshot */}
+                <div className="mt-5 rounded-2xl bg-white p-5 sm:p-6 text-slate-900 shadow-md">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs sm:text-sm font-semibold text-slate-500">
+                      Available balance
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => setShowAccountBalance(!showAccountBalance)}
+                      className="text-xs font-bold text-red-600 hover:text-red-700 transition-colors"
+                    >
+                      {showAccountBalance ? "Hide Balance" : "Show Balance"}
+                    </button>
+                  </div>
+
+                  <div className="mt-2.5">
+                    {showAccountBalance ? (
+                      <div className="font-display text-2xl sm:text-3xl font-black text-slate-900 flex items-baseline gap-1.5">
+                        <span>{country.currency.symbol}</span>
+                        <span>{(checkingBalance + savingsBalance).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                        <span className="text-xs font-bold text-slate-500 uppercase">{country.currency.code}</span>
+                      </div>
+                    ) : (
+                      <div className="flex items-center gap-2 py-1 text-slate-800 tracking-widest text-xl sm:text-2xl font-black select-none">
+                        <span>●●●●●●●●</span>
+                      </div>
+                    )}
+                  </div>
+
+                  <p className="mt-2 text-xs text-slate-500 font-medium">
+                    {showAccountBalance
+                      ? `Checking: ${country.currency.symbol}${checkingBalance.toLocaleString("en-US", { minimumFractionDigits: 2 })} • High-Yield Savings: ${country.currency.symbol}${savingsBalance.toLocaleString("en-US", { minimumFractionDigits: 2 })}`
+                      : "Connect a verified account to display your actual balance."}
+                  </p>
+                </div>
+
+                {/* 4 Primary Navigation Cards matching screenshot: Transfers, Cards, Digital Assets, Statements */}
+                <div className="mt-4 grid grid-cols-2 gap-3 sm:gap-4">
+                  {/* Card 1: Transfers */}
+                  <button
+                    type="button"
+                    onClick={() => setCustomerActiveTab(customerActiveTab === "transfers" ? "overview" : "transfers")}
+                    className={`rounded-2xl p-4 sm:p-5 text-left transition-all shadow-sm ${
+                      customerActiveTab === "transfers"
+                        ? "bg-white text-slate-900 ring-4 ring-red-500"
+                        : "bg-white text-slate-900 hover:bg-slate-50"
+                    }`}
+                  >
+                    <ArrowRightLeft className="h-6 w-6 text-slate-800" />
+                    <span className="mt-3 block font-bold text-base sm:text-lg text-slate-900">
+                      Transfers
+                    </span>
+                    <span className="text-[0.7rem] text-slate-500 block mt-0.5">
+                      Send & schedule payments
+                    </span>
+                  </button>
+
+                  {/* Card 2: Cards */}
+                  <button
+                    type="button"
+                    onClick={() => setCustomerActiveTab(customerActiveTab === "cards" ? "overview" : "cards")}
+                    className={`rounded-2xl p-4 sm:p-5 text-left transition-all shadow-sm ${
+                      customerActiveTab === "cards"
+                        ? "bg-white text-slate-900 ring-4 ring-red-500"
+                        : "bg-white text-slate-900 hover:bg-slate-50"
+                    }`}
+                  >
+                    <CreditCard className="h-6 w-6 text-slate-800" />
+                    <span className="mt-3 block font-bold text-base sm:text-lg text-slate-900">
+                      Cards
+                    </span>
+                    <span className="text-[0.7rem] text-slate-500 block mt-0.5">
+                      Debit, credit & limits
+                    </span>
+                  </button>
+
+                  {/* Card 3: Digital Assets (Bitcoin & Crypto) */}
+                  <button
+                    type="button"
+                    onClick={() => setCustomerActiveTab(customerActiveTab === "crypto" ? "overview" : "crypto")}
+                    className={`rounded-2xl p-4 sm:p-5 text-left transition-all shadow-sm ${
+                      customerActiveTab === "crypto"
+                        ? "bg-white text-slate-900 ring-4 ring-red-500"
+                        : "bg-white text-slate-900 hover:bg-slate-50"
+                    }`}
+                  >
+                    <span className="text-xl font-black text-amber-500 font-mono block">₿</span>
+                    <span className="mt-2 block font-bold text-base sm:text-lg text-slate-900">
+                      Digital Assets
+                    </span>
+                    <span className="text-[0.7rem] text-slate-500 block mt-0.5">
+                      Bitcoin, ETH & custody
+                    </span>
+                  </button>
+
+                  {/* Card 4: Statements & Tax / IRS Documents */}
+                  <button
+                    type="button"
+                    onClick={() => setCustomerActiveTab(customerActiveTab === "statements" ? "overview" : "statements")}
+                    className={`rounded-2xl p-4 sm:p-5 text-left transition-all shadow-sm ${
+                      customerActiveTab === "statements"
+                        ? "bg-white text-slate-900 ring-4 ring-red-500"
+                        : "bg-white text-slate-900 hover:bg-slate-50"
+                    }`}
+                  >
+                    <FileText className="h-6 w-6 text-slate-800" />
+                    <span className="mt-3 block font-bold text-base sm:text-lg text-slate-900">
+                      Statements
+                    </span>
+                    <span className="text-[0.7rem] text-slate-500 block mt-0.5">
+                      Tax docs, IRS & e-records
+                    </span>
+                  </button>
+                </div>
+
+                {/* Bottom Red Pill Badge matching screenshot */}
+                <div className="mt-4 rounded-xl bg-red-600 py-3 px-4 text-center text-white font-extrabold text-xs sm:text-sm tracking-widest shadow-md uppercase select-none">
+                  SECURE BANKING • RED • WHITE • BLUE
+                </div>
+
+                {/* ======================================================== */}
+                {/* EXPANDABLE DEDICATED SERVICE SECTIONS */}
+                {/* ======================================================== */}
+
+                {/* A. TRANSFERS SECTION */}
+                {customerActiveTab === "transfers" && (
+                  <div className="mt-6 rounded-2xl bg-white p-5 sm:p-6 text-slate-900 shadow-xl border border-slate-200 animate-fadeIn">
+                    <div className="flex items-center justify-between border-b border-slate-100 pb-3">
                       <div>
-                        <div className="flex items-center gap-2">
-                          <p className="font-semibold text-primary">{tx.desc}</p>
-                          <span
-                            className={`rounded-full px-2.5 py-0.5 text-[0.68rem] font-bold ${
-                              (tx.transferStatus || tx.status) === "Completed"
-                                ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
-                                : (tx.transferStatus || tx.status) === "On hold"
-                                ? "bg-amber-50 text-amber-700 border border-amber-200"
-                                : "bg-blue-50 text-blue-700 border border-blue-200"
-                            }`}
-                          >
-                            {tx.transferStatus || tx.status}
-                          </span>
-                        </div>
-                        <p className="text-xs text-muted-foreground">
-                          {tx.date} • {tx.category} • Ref: <span className="font-mono">{tx.id}</span>
+                        <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
+                          <Send className="h-5 w-5 text-red-600" />
+                          Send Money & Domestic / International Transfers
+                        </h3>
+                        <p className="text-xs text-slate-500">
+                          Instant electronic clearing with real-time status tracking.
                         </p>
                       </div>
-                      <div className="flex sm:flex-col items-center sm:items-end justify-between sm:justify-center">
-                        <span
-                          className={`font-mono font-bold ${
-                            tx.positive ? "text-emerald-600" : "text-foreground"
-                          }`}
-                        >
-                          {tx.amount}
-                        </span>
-                        <span className="text-[0.72rem] text-primary font-semibold hover:underline">
-                          View Transfer Details →
-                        </span>
+                      <button
+                        type="button"
+                        onClick={() => setCustomerActiveTab("overview")}
+                        className="text-xs text-slate-400 hover:text-slate-700 font-bold"
+                      >
+                        ✕ Close
+                      </button>
+                    </div>
+
+                    <form onSubmit={handleTransfer} className="mt-4 space-y-3">
+                      <div>
+                        <label className="block text-xs font-bold text-slate-700 mb-1">
+                          Recipient Account, IBAN, or Wire Identifier
+                        </label>
+                        <input
+                          type="text"
+                          placeholder="e.g. US98000100234819"
+                          value={transferRecipient}
+                          onChange={(e) => setTransferRecipient(e.target.value)}
+                          required
+                          className="w-full rounded-lg border border-slate-300 px-3 py-2 text-xs text-slate-800 focus:border-red-600 focus:outline-none"
+                        />
+                      </div>
+                      <div className="flex gap-2">
+                        <div className="flex-1">
+                          <label className="block text-xs font-bold text-slate-700 mb-1">
+                            Transfer Amount ({country.currency.code})
+                          </label>
+                          <input
+                            type="number"
+                            placeholder="0.00"
+                            value={transferAmount}
+                            onChange={(e) => setTransferAmount(e.target.value)}
+                            required
+                            min="1"
+                            step="0.01"
+                            className="w-full rounded-lg border border-slate-300 px-3 py-2 text-xs text-slate-800 focus:border-red-600 focus:outline-none"
+                          />
+                        </div>
+                        <div className="flex items-end">
+                          <Button type="submit" className="bg-red-600 hover:bg-red-700 text-white font-bold text-xs h-9 px-5">
+                            {t.sendFunds}
+                          </Button>
+                        </div>
+                      </div>
+                      {transferSuccess && (
+                        <p className="text-xs font-bold text-emerald-600 bg-emerald-50 p-2.5 rounded-lg border border-emerald-200">
+                          ✓ {transferSuccess}
+                        </p>
+                      )}
+                    </form>
+                  </div>
+                )}
+
+                {/* B. CARDS SECTION */}
+                {customerActiveTab === "cards" && (
+                  <div className="mt-6 rounded-2xl bg-white p-5 sm:p-6 text-slate-900 shadow-xl border border-slate-200 animate-fadeIn">
+                    <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+                      <div>
+                        <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
+                          <CreditCard className="h-5 w-5 text-red-600" />
+                          Payment Cards & Limits
+                        </h3>
+                        <p className="text-xs text-slate-500">
+                          Manage contactless debit and physical credit card security.
+                        </p>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setCustomerActiveTab("overview")}
+                        className="text-xs text-slate-400 hover:text-slate-700 font-bold"
+                      >
+                        ✕ Close
+                      </button>
+                    </div>
+
+                    <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div className="rounded-2xl bg-gradient-to-br from-[#0a192f] to-[#1e3a66] p-5 text-white shadow-md relative overflow-hidden">
+                        <div className="flex justify-between items-start">
+                          <div>
+                            <span className="text-[0.65rem] uppercase font-bold text-slate-300">USA Finance Bank</span>
+                            <p className="text-sm font-bold mt-0.5">Platinum Debit</p>
+                          </div>
+                          <span className="text-xs font-bold text-emerald-400 bg-emerald-500/20 px-2 py-0.5 rounded border border-emerald-400/30">
+                            Active
+                          </span>
+                        </div>
+                        <div className="mt-6 font-mono text-base tracking-widest">
+                          •••• •••• •••• 4892
+                        </div>
+                        <div className="mt-4 flex justify-between items-center text-xs text-slate-300">
+                          <span>{customerUser}</span>
+                          <span>EXP: 10/29</span>
+                        </div>
+                      </div>
+
+                      <div className="space-y-2.5 text-xs text-slate-700">
+                        <div className="p-3 rounded-xl border border-slate-200 flex justify-between items-center">
+                          <div>
+                            <p className="font-bold">Daily ATM Withdrawal Limit</p>
+                            <p className="text-slate-500">$2,500.00 / day</p>
+                          </div>
+                          <span className="font-bold text-emerald-600">Standard</span>
+                        </div>
+                        <div className="p-3 rounded-xl border border-slate-200 flex justify-between items-center">
+                          <div>
+                            <p className="font-bold">International POS Transactions</p>
+                            <p className="text-slate-500">Zero foreign exchange surcharge</p>
+                          </div>
+                          <span className="font-bold text-blue-600">Enabled</span>
+                        </div>
                       </div>
                     </div>
-                  ))}
+                  </div>
+                )}
+
+                {/* C. DIGITAL ASSETS & BITCOIN SECTION */}
+                {customerActiveTab === "crypto" && (
+                  <div className="mt-6 rounded-2xl bg-white p-5 sm:p-6 text-slate-900 shadow-xl border border-slate-200 animate-fadeIn">
+                    <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+                      <div>
+                        <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
+                          <span className="text-amber-500 font-mono font-black text-lg">₿</span>
+                          Digital Assets & Bitcoin Custody
+                        </h3>
+                        <p className="text-xs text-slate-500">
+                          Institutional cold-storage digital currency holdings and valuation.
+                        </p>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setCustomerActiveTab("overview")}
+                        className="text-xs text-slate-400 hover:text-slate-700 font-bold"
+                      >
+                        ✕ Close
+                      </button>
+                    </div>
+
+                    <div className="mt-4 grid grid-cols-1 sm:grid-cols-3 gap-3">
+                      <div className="rounded-xl border border-slate-200 p-4 bg-slate-50/50">
+                        <div className="flex items-center justify-between">
+                          <span className="text-xs font-bold text-slate-700">Bitcoin (BTC)</span>
+                          <span className="text-xs font-bold text-amber-600 font-mono">₿ 0.00000000</span>
+                        </div>
+                        <p className="text-lg font-black text-slate-900 mt-2">$0.00 USD</p>
+                        <span className="text-[0.65rem] text-slate-500">Cold vault wallet ready</span>
+                      </div>
+
+                      <div className="rounded-xl border border-slate-200 p-4 bg-slate-50/50">
+                        <div className="flex items-center justify-between">
+                          <span className="text-xs font-bold text-slate-700">Ethereum (ETH)</span>
+                          <span className="text-xs font-bold text-indigo-600 font-mono">0.0000 ETH</span>
+                        </div>
+                        <p className="text-lg font-black text-slate-900 mt-2">$0.00 USD</p>
+                        <span className="text-[0.65rem] text-slate-500">Staking & smart contracts</span>
+                      </div>
+
+                      <div className="rounded-xl border border-slate-200 p-4 bg-slate-50/50">
+                        <div className="flex items-center justify-between">
+                          <span className="text-xs font-bold text-slate-700">USDC Settlement</span>
+                          <span className="text-xs font-bold text-blue-600 font-mono">0.00 USDC</span>
+                        </div>
+                        <p className="text-lg font-black text-slate-900 mt-2">$0.00 USD</p>
+                        <span className="text-[0.65rem] text-slate-500">Instant dollar peg</span>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* D. STATEMENTS, IRS & TAX DOCUMENTS SECTION */}
+                {customerActiveTab === "statements" && (
+                  <div className="mt-6 rounded-2xl bg-white p-5 sm:p-6 text-slate-900 shadow-xl border border-slate-200 animate-fadeIn">
+                    <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+                      <div>
+                        <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
+                          <FileText className="h-5 w-5 text-red-600" />
+                          Statements, Tax Forms & IRS Documents
+                        </h3>
+                        <p className="text-xs text-slate-500">
+                          Download official regulatory tax reports, Form 1099-INT, and e-statements.
+                        </p>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setCustomerActiveTab("overview")}
+                        className="text-xs text-slate-400 hover:text-slate-700 font-bold"
+                      >
+                        ✕ Close
+                      </button>
+                    </div>
+
+                    <div className="mt-4 space-y-2 text-xs">
+                      <div className="p-3.5 rounded-xl border border-slate-200 hover:border-slate-300 flex items-center justify-between transition-colors">
+                        <div className="flex items-center gap-3">
+                          <FileText className="h-5 w-5 text-red-600 shrink-0" />
+                          <div>
+                            <p className="font-bold text-slate-900">IRS Form 1099-INT (Interest Income Statement)</p>
+                            <p className="text-[0.7rem] text-slate-500">Annual federal tax reporting statement for savings accounts</p>
+                          </div>
+                        </div>
+                        <Button size="sm" variant="outline" className="text-xs font-bold text-slate-700 border-slate-300">
+                          Download PDF
+                        </Button>
+                      </div>
+
+                      <div className="p-3.5 rounded-xl border border-slate-200 hover:border-slate-300 flex items-center justify-between transition-colors">
+                        <div className="flex items-center gap-3">
+                          <FileText className="h-5 w-5 text-blue-600 shrink-0" />
+                          <div>
+                            <p className="font-bold text-slate-900">Monthly Account Statement (Current Period)</p>
+                            <p className="text-[0.7rem] text-slate-500">Itemized electronic bank statement with masked account verification</p>
+                          </div>
+                        </div>
+                        <Button size="sm" variant="outline" className="text-xs font-bold text-slate-700 border-slate-300">
+                          Download PDF
+                        </Button>
+                      </div>
+
+                      <div className="p-3.5 rounded-xl border border-slate-200 hover:border-slate-300 flex items-center justify-between transition-colors">
+                        <div className="flex items-center gap-3">
+                          <ShieldCheck className="h-5 w-5 text-emerald-600 shrink-0" />
+                          <div>
+                            <p className="font-bold text-slate-900">Official Bank Account Verification Letter</p>
+                            <p className="text-[0.7rem] text-slate-500">Certified verification of account standing for immigration or financial proof</p>
+                          </div>
+                        </div>
+                        <Button size="sm" variant="outline" className="text-xs font-bold text-slate-700 border-slate-300">
+                          Generate Letter
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Recent Transactions List inside Customer Dashboard */}
+                <div className="mt-6 rounded-2xl bg-white p-5 sm:p-6 text-slate-900 shadow-md">
+                  <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+                    <div>
+                      <h3 className="font-bold text-sm text-slate-900">Recent Transactions</h3>
+                      <p className="text-[0.7rem] text-slate-500 mt-0.5">
+                        Tap any transaction to view verification details and clearing status.
+                      </p>
+                    </div>
+                    <span className="text-[0.65rem] font-bold text-slate-400 uppercase">
+                      Live Ledger
+                    </span>
+                  </div>
+
+                  <div className="mt-2 divide-y divide-slate-100">
+                    {transactions.slice(0, 5).map((tx) => (
+                      <div
+                        key={tx.id}
+                        onClick={() => setSelectedCustomerTx(tx)}
+                        className="py-3 flex items-center justify-between hover:bg-slate-50 cursor-pointer px-2 rounded-lg transition-colors"
+                      >
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <p className="font-bold text-xs text-slate-900">{tx.desc}</p>
+                            <span
+                              className={`rounded-full px-2 py-0.5 text-[0.65rem] font-bold ${
+                                (tx.transferStatus || tx.status) === "Completed"
+                                  ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
+                                  : (tx.transferStatus || tx.status) === "On hold"
+                                  ? "bg-amber-50 text-amber-700 border border-amber-200"
+                                  : "bg-blue-50 text-blue-700 border border-blue-200"
+                              }`}
+                            >
+                              {tx.transferStatus || tx.status}
+                            </span>
+                          </div>
+                          <p className="text-[0.68rem] text-slate-500 mt-0.5">
+                            {tx.date} • {tx.category} • Ref: <span className="font-mono">{tx.id}</span>
+                          </p>
+                        </div>
+                        <div className="text-right">
+                          <span className={`font-mono font-bold text-xs ${tx.positive ? "text-emerald-600" : "text-slate-900"}`}>
+                            {tx.amount}
+                          </span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
                 </div>
               </div>
             </div>
