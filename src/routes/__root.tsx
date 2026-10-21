@@ -110,7 +110,8 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       },
       { rel: "preconnect", href: "https://fonts.googleapis.com" },
       { rel: "stylesheet", href: "https://fonts.googleapis.com/css2?family=Libre+Caslon+Text:wght@400;700&family=Public+Sans:wght@400;500;600;700&display=swap" },
-      { rel: "icon", href: "/favicon.ico", type: "image/x-icon" },
+      { rel: "icon", type: "image/png", href: "/favicon.png" },
+
       { rel: "canonical", href: "/" },
     ],
   }),
@@ -125,93 +126,9 @@ function RootShell({ children }: { children: ReactNode }) {
     <html lang="en">
       <head>
         <HeadContent />
-        <style
-          dangerouslySetInnerHTML={{
-            __html: `
-              #lovable-badge,
-              .lovable-badge,
-              [data-lovable-badge],
-              lovable-badge,
-              a[href*="lovable.dev"],
-              a[href*="lovable.app"],
-              a[href*="gptengineer.app"],
-              [class*="lovable"],
-              [id*="lovable"],
-              [data-component-path*="lovable"],
-              div[style*="z-index: 2147483647"],
-              div[style*="z-index:2147483647"],
-              div[style*="z-index: 9999999"],
-              div[style*="z-index:9999999"],
-              div[style*="z-index: 999999"],
-              div[style*="z-index:999999"],
-              div[style*="z-index: 99999"],
-              div[style*="z-index:99999"] {
-                display: none !important;
-                visibility: hidden !important;
-                opacity: 0 !important;
-                pointer-events: none !important;
-                position: absolute !important;
-                top: -99999px !important;
-                left: -99999px !important;
-                width: 0 !important;
-                height: 0 !important;
-                overflow: hidden !important;
-                clip: rect(0, 0, 0, 0) !important;
-                transform: scale(0) !important;
-              }
-            `,
-          }}
-        />
-        <script
-          dangerouslySetInnerHTML={{
-            __html: `
-              (function() {
-                function purge() {
-                  try {
-                    var selectors = [
-                      '#lovable-badge',
-                      '.lovable-badge',
-                      '[data-lovable-badge]',
-                      'lovable-badge',
-                      'a[href*="lovable.dev"]',
-                      'a[href*="lovable.app"]',
-                      'a[href*="gptengineer.app"]',
-                      '[class*="lovable"]',
-                      '[id*="lovable"]'
-                    ];
-                    selectors.forEach(function(s) {
-                      var nodes = document.querySelectorAll(s);
-                      for (var i = 0; i < nodes.length; i++) {
-                        nodes[i].remove();
-                      }
-                    });
-                    var all = document.querySelectorAll('body > div, body > a, html > div, html > a');
-                    for (var j = 0; j < all.length; j++) {
-                      var text = (all[j].innerText || all[j].textContent || '').toLowerCase();
-                      if (text.includes('lovable') || text.includes('edit in lovable') || text.includes('made with lovable')) {
-                        all[j].remove();
-                      }
-                    }
-                  } catch (e) {}
-                }
-                if (typeof window !== 'undefined') {
-                  purge();
-                  if (document.readyState === 'loading') {
-                    document.addEventListener('DOMContentLoaded', purge);
-                  }
-                  window.addEventListener('load', purge);
-                  try {
-                    var obs = new MutationObserver(purge);
-                    if (document.documentElement) {
-                      obs.observe(document.documentElement, { childList: true, subtree: true });
-                    }
-                  } catch (e) {}
-                }
-              })();
-            `,
-          }}
-        />
+
       </head>
+
       <body>
         {children}
         <Scripts />
@@ -223,73 +140,8 @@ function RootShell({ children }: { children: ReactNode }) {
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
 
-  useEffect(() => {
-    // Automatically detect and remove any injected Lovable or third-party watermark elements
-    const purgeWatermarks = () => {
-      const selectors = [
-        '[data-lovable-badge]',
-        '#lovable-badge',
-        '.lovable-badge',
-        'a[href*="lovable.dev"]',
-        'a[href*="lovable.app"]',
-        'a[href*="gptengineer.app"]',
-        'lovable-badge',
-        '[class*="lovable"]',
-        '[id*="lovable"]',
-      ];
-
-      selectors.forEach((sel) => {
-        try {
-          const els = document.querySelectorAll(sel);
-          els.forEach((el) => {
-            el.remove();
-          });
-        } catch {
-          // ignore
-        }
-      });
-
-      // Target fixed elements in corners that link to external domains or carry high z-index
-      document.querySelectorAll('body > div, body > a, html > div, html > a').forEach((el) => {
-        const text = (el.textContent || '').toLowerCase();
-        if (text.includes('lovable') || text.includes('edit in lovable') || text.includes('made with lovable')) {
-          el.remove();
-        }
-      });
-
-      // Inspect open shadow roots if any web components were attached
-      try {
-        document.querySelectorAll('*').forEach((node) => {
-          if (node.shadowRoot) {
-            selectors.forEach((sel) => {
-              node.shadowRoot?.querySelectorAll(sel).forEach((el) => el.remove());
-            });
-          }
-        });
-      } catch {
-        // ignore
-      }
-    };
-
-    purgeWatermarks();
-    const interval = setInterval(purgeWatermarks, 500);
-
-    // MutationObserver to immediately detach any dynamically injected watermark node
-    const observer = new MutationObserver(() => {
-      purgeWatermarks();
-    });
-
-    if (document.documentElement) {
-      observer.observe(document.documentElement, { childList: true, subtree: true });
-    }
-
-    return () => {
-      clearInterval(interval);
-      observer.disconnect();
-    };
-  }, []);
-
   return (
+
     <QueryClientProvider client={queryClient}>
       {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
       <Outlet />
