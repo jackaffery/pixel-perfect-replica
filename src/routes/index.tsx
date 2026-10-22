@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useState, useEffect } from "react";
 import {
   Menu,
@@ -548,7 +548,8 @@ const INITIAL_AUDIT_LOGS: AdminAuditLog[] = [
   },
 ];
 
-export function Index() {
+export function Index({ view = "home" }: { view?: "home" | "account" } = {}) {
+  const navigate = useNavigate();
   // Localization State
   const [currentCountryCode, setCurrentCountryCode] = useState<string>("US");
   const [currentLangCode, setCurrentLangCode] = useState<string>("en");
@@ -826,6 +827,18 @@ export function Index() {
       }
     }
   }, [customerUser]);
+  // New customers start with an empty transaction history
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem("us_finance_bank_customer_session");
+      if (saved && JSON.parse(saved).isNewUser) setTransactions([]);
+    } catch {}
+  }, [customerUser]);
+
+  // The private account page needs a signed-in customer
+  useEffect(() => {
+    if (view === "account" && !customerUser) navigate({ to: "/" });
+  }, [view, customerUser, navigate]);
   const [transferAmount, setTransferAmount] = useState("");
   const [transferRecipient, setTransferRecipient] = useState("");
   const [transferSuccess, setTransferSuccess] = useState("");
@@ -1091,7 +1104,8 @@ export function Index() {
         setCustomerProfilePic(profPic);
       }
 
-      if (rememberCustomer) {
+      if (!matchingUser) setTransactions([]);
+      {
         try {
           localStorage.setItem(
             "us_finance_bank_customer_session",
@@ -1100,6 +1114,7 @@ export function Index() {
               checkingBalance: chkBal,
               savingsBalance: savBal,
               email: customerLoginEmail,
+              isNewUser: !matchingUser,
               profilePicUrl: profPic,
             })
           );
@@ -1109,7 +1124,7 @@ export function Index() {
       setCustomerModalOpen(false);
       setCustomerLoginPassword("");
       setMfaCode("");
-      window.scrollTo({ top: 0, behavior: "smooth" });
+      navigate({ to: "/account" });
     }, 500);
   };
 
@@ -1133,7 +1148,7 @@ export function Index() {
     try {
       localStorage.removeItem("us_finance_bank_customer_session");
     } catch {}
-    window.scrollTo({ top: 0, behavior: "smooth" });
+    if (view === "account") navigate({ to: "/" }); else window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
   const handleUpdateCustomerProfilePic = (newUrl: string) => {
@@ -2296,7 +2311,7 @@ export function Index() {
             {customerUser ? (
               <div className="flex items-center gap-2.5">
                 <a
-                  href="#dashboard-title"
+                  href="/account"
                   className="flex items-center gap-2 rounded-xl border border-primary/20 bg-primary/5 hover:bg-primary/10 px-3 py-1.5 transition-colors cursor-pointer text-xs font-bold text-primary"
                 >
                   {customerProfilePic ? (
@@ -2357,7 +2372,7 @@ export function Index() {
           <div className="flex items-center gap-2 lg:hidden">
             {customerUser ? (
               <a
-                href="#dashboard-title"
+                href="/account"
                 className="flex items-center gap-1.5 text-xs font-bold text-primary bg-primary/10 px-2.5 py-1 rounded-lg"
               >
                 {customerProfilePic ? (
@@ -2561,12 +2576,13 @@ export function Index() {
       {/* Main Content Area */}
       <main id="main">
         {/* CUSTOMER DASHBOARD (Rendered when authenticated) */}
-        {customerUser && (
+        {view === "account" && customerUser && (
           <section
             aria-labelledby="dashboard-title"
             className="border-b border-border bg-[#0a192f] text-white py-6 sm:py-10"
           >
             <div className="mx-auto max-w-4xl px-4 sm:px-6">
+              <p role="note" className="mb-4 rounded-lg border border-red-400/50 bg-red-600/20 px-3 py-2 text-center text-xs font-bold text-white">Demo site, not a real bank. All balances and transactions are example data.</p>
               {/* App-like Container matching customer dashboard mockup */}
               <div className="rounded-2xl sm:rounded-3xl border border-white/10 bg-[#0f213d] p-5 sm:p-7 shadow-2xl relative overflow-hidden">
                 {/* Header: USA Flag Emblem + Bank Name + Verified Shield */}
@@ -3690,6 +3706,8 @@ export function Index() {
         )}
 
 
+        {view === "home" && (
+        <>
         {/* HERO SECTION WITH USER UPLOADED BANK BUILDING PHOTOGRAPH */}
         <section
           aria-labelledby="hero-heading"
@@ -4417,6 +4435,8 @@ export function Index() {
             </div>
           </div>
         </section>
+        </>
+        )}
       </main>
 
       {/* FOOTER */}
