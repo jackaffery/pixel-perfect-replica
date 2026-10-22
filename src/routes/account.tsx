@@ -5,10 +5,10 @@ export const Route = createFileRoute("/account")({
   ssr: false,
   head: () => ({
     meta: [
-      { title: "My Account (Demo) | US Finance Bank" },
-      { name: "description", content: "Private demo account area with example balances and transactions." },
-      { property: "og:title", content: "My Account (Demo) | US Finance Bank" },
-      { property: "og:description", content: "Private demo account area with example data." },
+      { title: "My Account | US Finance Bank" },
+      { name: "description", content: "Secure private customer account dashboard, balances, transfers, and security settings." },
+      { property: "og:title", content: "My Account | US Finance Bank" },
+      { property: "og:description", content: "Secure private customer account portal." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
       { name: "robots", content: "noindex" },

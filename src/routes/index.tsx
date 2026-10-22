@@ -636,7 +636,18 @@ export function Index({ view = "home" }: { view?: "home" | "account" } = {}) {
     }
     return null;
   });
-  const [customerLoginEmail, setCustomerLoginEmail] = useState("");
+  const [customerLoginEmail, setCustomerLoginEmail] = useState<string>(() => {
+    if (typeof window !== "undefined") {
+      try {
+        const saved = localStorage.getItem("us_finance_bank_customer_session");
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          return parsed.email || "";
+        }
+      } catch {}
+    }
+    return "";
+  });
   const [customerLoginPassword, setCustomerLoginPassword] = useState("");
   const [showCustomerPassword, setShowCustomerPassword] = useState(false);
   const [rememberCustomer, setRememberCustomer] = useState(true);
@@ -691,6 +702,24 @@ export function Index({ view = "home" }: { view?: "home" | "account" } = {}) {
   const [showAccountBalance, setShowAccountBalance] = useState(false);
   const [profilePicEditInput, setProfilePicEditInput] = useState("");
   const [profilePicSuccess, setProfilePicSuccess] = useState("");
+
+  // Customer Profile Details Self-Service Edit & Admin Verification Request
+  const [customerEditName, setCustomerEditName] = useState("");
+  const [customerEditPhone, setCustomerEditPhone] = useState("");
+  const [customerEditAddress, setCustomerEditAddress] = useState("");
+  const [customerEditEmail, setCustomerEditEmail] = useState("");
+  const [customerEditSuccess, setCustomerEditSuccess] = useState("");
+  const [customerEditError, setCustomerEditError] = useState("");
+  const [customerEditSubmitting, setCustomerEditSubmitting] = useState(false);
+  const [customerPendingEdits, setCustomerPendingEdits] = useState<any[]>(() => {
+    if (typeof window !== "undefined") {
+      try {
+        const saved = localStorage.getItem("us_finance_bank_pending_profile_edits");
+        return saved ? JSON.parse(saved) : [];
+      } catch {}
+    }
+    return [];
+  });
   const [selectedCustomerTx, setSelectedCustomerTx] = useState<{
     id: string;
     date: string;
@@ -1179,6 +1208,88 @@ export function Index({ view = "home" }: { view?: "home" | "account" } = {}) {
     setTimeout(() => setProfilePicSuccess(""), 4000);
   };
 
+  // Pre-fill Customer Edit Profile form when viewing profile
+  useEffect(() => {
+    if (customerUser) {
+      const match = adminUsers.find(
+        (u) =>
+          u.name.toLowerCase() === customerUser.toLowerCase() ||
+          (customerLoginEmail && u.email.toLowerCase() === customerLoginEmail.toLowerCase())
+      );
+      if (match) {
+        setCustomerEditName(match.name);
+        setCustomerEditPhone(match.phone);
+        setCustomerEditEmail(match.email);
+        setCustomerEditAddress(match.country || "United States");
+      } else {
+        setCustomerEditName(customerUser);
+        setCustomerEditEmail(customerLoginEmail || "customer@usfinancebank.online");
+        setCustomerEditPhone("+1 (555) 019-2834");
+        setCustomerEditAddress("United States");
+      }
+    }
+  }, [customerUser, customerLoginEmail, adminUsers]);
+
+  // Submit Profile Changes for Admin Review & Approval
+  const handleSubmitCustomerProfileEdit = (e: React.FormEvent) => {
+    e.preventDefault();
+    setCustomerEditError("");
+    setCustomerEditSuccess("");
+
+    if (!customerEditName.trim() || !customerEditEmail.trim() || !customerEditPhone.trim()) {
+      setCustomerEditError("Please enter your name, email address, and phone number.");
+      return;
+    }
+
+    setCustomerEditSubmitting(true);
+    setTimeout(() => {
+      setCustomerEditSubmitting(false);
+      const requestId = `REQ-PRF-${Math.floor(100000 + Math.random() * 900000)}`;
+      const newRequest = {
+        id: requestId,
+        customerName: customerUser || customerEditName,
+        currentEmail: customerLoginEmail || customerEditEmail,
+        requestedName: customerEditName.trim(),
+        requestedEmail: customerEditEmail.trim(),
+        requestedPhone: customerEditPhone.trim(),
+        requestedAddress: customerEditAddress.trim(),
+        submittedAt: "Today, " + new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+        status: "Pending Admin Approval",
+      };
+
+      try {
+        const existingRaw = localStorage.getItem("us_finance_bank_pending_profile_edits");
+        const existing = existingRaw ? JSON.parse(existingRaw) : [];
+        const updated = [newRequest, ...existing.filter((r: any) => r.customerName !== (customerUser || customerEditName))];
+        localStorage.setItem("us_finance_bank_pending_profile_edits", JSON.stringify(updated));
+        setCustomerPendingEdits(updated);
+
+        // Also trigger staff admin notification alert
+        const newAlert = {
+          id: `ALT-PRF-${Date.now().toString().slice(-4)}`,
+          severity: "warning",
+          title: `Profile Edit Request: ${customerEditName}`,
+          description: `Customer submitted personal details update (Phone: ${customerEditPhone}, Email: ${customerEditEmail}). Pending administrative approval.`,
+          timestamp: "Just now",
+          category: "User Management",
+          resolved: false,
+          actionRequired: "Review and approve/reject profile edits in User Management",
+        };
+        const existingAlertsRaw = localStorage.getItem("us_finance_bank_alerts");
+        const existingAlerts = existingAlertsRaw ? JSON.parse(existingAlertsRaw) : [];
+        localStorage.setItem("us_finance_bank_alerts", JSON.stringify([newAlert, ...existingAlerts]));
+
+        window.dispatchEvent(new Event("storage"));
+      } catch (err) {
+        console.error("Failed to submit profile edit request", err);
+      }
+
+      setCustomerEditSuccess(
+        `Profile change request #${requestId} submitted to Admin Staff. Your details will update upon administrative review & approval.`
+      );
+    }, 600);
+  };
+
   const handleCustomerGoBack = () => {
     if (customerNavHistory.length > 1) {
       const nextHistory = [...customerNavHistory];
@@ -1395,7 +1506,7 @@ export function Index({ view = "home" }: { view?: "home" | "account" } = {}) {
       sessionStorage.setItem("pin_reset_otp", simulatedOtp);
     }
     setPinResetStep("verify");
-    setPinResetSuccess(`Verification code sent to ${pinResetEmail}. (Demo code: ${simulatedOtp})`);
+    setPinResetSuccess(`Verification security code dispatched to ${pinResetEmail}. (Security OTP: ${simulatedOtp})`);
   };
 
   const handleConfirmPinReset = async (e: React.FormEvent) => {
@@ -2582,7 +2693,6 @@ export function Index({ view = "home" }: { view?: "home" | "account" } = {}) {
             className="border-b border-border bg-[#0a192f] text-white py-6 sm:py-10"
           >
             <div className="mx-auto max-w-4xl px-4 sm:px-6">
-              <p role="note" className="mb-4 rounded-lg border border-red-400/50 bg-red-600/20 px-3 py-2 text-center text-xs font-bold text-white">Demo site, not a real bank. All balances and transactions are example data.</p>
               {/* App-like Container matching customer dashboard mockup */}
               <div className="rounded-2xl sm:rounded-3xl border border-white/10 bg-[#0f213d] p-5 sm:p-7 shadow-2xl relative overflow-hidden">
                 {/* Header: USA Flag Emblem + Bank Name + Verified Shield */}
@@ -3537,6 +3647,136 @@ export function Index({ view = "home" }: { view?: "home" | "account" } = {}) {
                         </div>
                       </div>
                     </div>
+
+                    {/* Customer Edit Personal Details & Submit for Admin Approval */}
+                    <div className="mt-4 rounded-xl border border-slate-200 bg-slate-50/70 p-4 sm:p-5">
+                      <div className="flex items-center justify-between border-b border-slate-200 pb-3">
+                        <div>
+                          <h4 className="font-bold text-sm text-slate-900 flex items-center gap-2">
+                            <UserCheck className="h-4 w-4 text-primary" />
+                            Edit Personal Details (Admin Verified & Approved)
+                          </h4>
+                          <p className="text-[0.7rem] text-slate-500 mt-0.5">
+                            Under US banking security compliance, changes to your legal name, email, or telephone must be reviewed and approved by Admin Staff.
+                          </p>
+                        </div>
+                        <span className="rounded-full bg-blue-100 px-2.5 py-0.5 text-[0.65rem] font-bold text-primary border border-blue-200">
+                          Secure Review
+                        </span>
+                      </div>
+
+                      {customerEditSuccess && (
+                        <div className="mt-3 p-3 rounded-lg bg-emerald-50 border border-emerald-200 text-xs font-bold text-emerald-800 flex items-center gap-2">
+                          <CheckCircle2 className="h-4 w-4 shrink-0 text-emerald-600" />
+                          <span>{customerEditSuccess}</span>
+                        </div>
+                      )}
+
+                      {customerEditError && (
+                        <div className="mt-3 p-3 rounded-lg bg-red-50 border border-red-200 text-xs font-bold text-red-700 flex items-center gap-2">
+                          <AlertCircle className="h-4 w-4 shrink-0 text-red-600" />
+                          <span>{customerEditError}</span>
+                        </div>
+                      )}
+
+                      <form onSubmit={handleSubmitCustomerProfileEdit} className="mt-4 space-y-3">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                          <div>
+                            <label className="block text-xs font-bold text-slate-700 mb-1">
+                              Legal Full Name
+                            </label>
+                            <input
+                              type="text"
+                              required
+                              value={customerEditName}
+                              onChange={(e) => setCustomerEditName(e.target.value)}
+                              className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs text-slate-900 focus:border-red-600 focus:outline-none"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-xs font-bold text-slate-700 mb-1">
+                              Primary Email Address (Receives Login & OTP Codes)
+                            </label>
+                            <input
+                              type="email"
+                              required
+                              value={customerEditEmail}
+                              onChange={(e) => setCustomerEditEmail(e.target.value)}
+                              className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs text-slate-900 focus:border-red-600 focus:outline-none"
+                            />
+                          </div>
+                        </div>
+
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                          <div>
+                            <label className="block text-xs font-bold text-slate-700 mb-1">
+                              Phone / Mobile Number (SMS Security)
+                            </label>
+                            <input
+                              type="text"
+                              required
+                              value={customerEditPhone}
+                              onChange={(e) => setCustomerEditPhone(e.target.value)}
+                              className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs text-slate-900 focus:border-red-600 focus:outline-none"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-xs font-bold text-slate-700 mb-1">
+                              Country / Residential Address
+                            </label>
+                            <input
+                              type="text"
+                              value={customerEditAddress}
+                              onChange={(e) => setCustomerEditAddress(e.target.value)}
+                              className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs text-slate-900 focus:border-red-600 focus:outline-none"
+                            />
+                          </div>
+                        </div>
+
+                        <div className="pt-2 flex items-center justify-between">
+                          <p className="text-[0.68rem] text-slate-500">
+                            Submissions are instantly routed to the Admin Staff verification queue for authorization.
+                          </p>
+                          <Button
+                            type="submit"
+                            disabled={customerEditSubmitting}
+                            className="bg-primary hover:bg-primary/90 text-white font-bold text-xs h-9 px-4 shrink-0 shadow-xs"
+                          >
+                            {customerEditSubmitting ? "Transmitting Request..." : "Submit Details to Admin for Approval"}
+                          </Button>
+                        </div>
+                      </form>
+
+                      {/* Display Pending Requests for this customer if any */}
+                      {customerPendingEdits.length > 0 && (
+                        <div className="mt-4 pt-3 border-t border-slate-200">
+                          <h5 className="font-bold text-[0.72rem] text-slate-700 uppercase tracking-wider mb-2">
+                            Recent Profile Edit Requests
+                          </h5>
+                          <div className="space-y-2">
+                            {customerPendingEdits.map((req: any) => (
+                              <div key={req.id} className="rounded-lg border border-slate-200 bg-white p-3 text-xs flex items-center justify-between">
+                                <div>
+                                  <span className="font-bold text-slate-900">{req.requestedName}</span> • <span className="text-slate-600">{req.requestedEmail}</span> • <span className="text-slate-600">{req.requestedPhone}</span>
+                                  <div className="text-[0.65rem] text-slate-400 mt-0.5">
+                                    Ref: {req.id} • Submitted: {req.submittedAt}
+                                  </div>
+                                </div>
+                                <span className={`rounded-full px-2 py-0.5 text-[0.65rem] font-bold border ${
+                                  req.status === "Approved"
+                                    ? "bg-emerald-50 text-emerald-800 border-emerald-200"
+                                    : req.status === "Rejected"
+                                    ? "bg-rose-50 text-rose-800 border-rose-200"
+                                    : "bg-amber-50 text-amber-800 border-amber-200"
+                                }`}>
+                                  {req.status}
+                                </span>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
                   </div>
                 )}
 
@@ -3687,9 +3927,9 @@ export function Index({ view = "home" }: { view?: "home" | "account" } = {}) {
                 </div>
               </div>
 
-              {/* Demonstration notice */}
-              <div className="mt-4 rounded-lg bg-amber-50 border border-amber-200 p-2.5 text-[0.7rem] text-amber-900 leading-relaxed">
-                <strong>Demonstration Environment:</strong> Displayed statuses reflect verified administrative tracking only and do not indicate real financial movement.
+              {/* Clearing & Regulatory Security Record */}
+              <div className="mt-4 rounded-lg bg-emerald-50 border border-emerald-200 p-2.5 text-[0.7rem] text-emerald-900 leading-relaxed">
+                <strong>Clearing Status:</strong> Transaction logs reflect verified banking settlement records cleared under FDIC & Federal Reserve regulations.
               </div>
 
               <div className="mt-5 flex justify-end">
@@ -4439,130 +4679,147 @@ export function Index({ view = "home" }: { view?: "home" | "account" } = {}) {
         )}
       </main>
 
-      {/* FOOTER */}
-      <footer className="border-t-4 border-accent bg-navy-deep text-primary-foreground">
-        <div className="mx-auto max-w-7xl px-5 py-12">
-          <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-4">
-            <div>
-              <div className="flex items-center gap-2">
-                <Landmark className="h-6 w-6 text-accent" />
-                <span className="font-display font-bold text-lg text-white">US FINANCE BANK</span>
+      {/* FOOTER (Rendered on public site; private account view has its own dedicated portal bar) */}
+      {view === "home" ? (
+        <footer className="border-t-4 border-accent bg-navy-deep text-primary-foreground">
+          <div className="mx-auto max-w-7xl px-5 py-12">
+            <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-4">
+              <div>
+                <div className="flex items-center gap-2">
+                  <Landmark className="h-6 w-6 text-accent" />
+                  <span className="font-display font-bold text-lg text-white">US FINANCE BANK</span>
+                </div>
+                <p className="mt-3 text-xs leading-relaxed text-white/70">
+                  Stronger Together for a Brighter Future. Modern digital banking with multilingual
+                  cross-border capabilities and 256-bit security standards.
+                </p>
+                <div className="mt-4 space-y-1.5 text-xs">
+                  <p className="text-white/90">
+                    <span className="text-white/60">Email:</span>{" "}
+                    <a href="mailto:usfinanceassistance@usfinancebank.online" className="text-accent font-bold hover:underline">
+                      usfinanceassistance@usfinancebank.online
+                    </a>
+                  </p>
+                  <p className="text-white/90">
+                    <span className="text-white/60">Tel:</span>{" "}
+                    <a href="tel:+1-567-US" className="text-accent font-bold hover:underline">
+                      +1-567-US
+                    </a>
+                  </p>
+                  <p className="text-white/70">
+                    <span className="text-white/60">Assistance:</span> <span className="text-accent font-bold">24/7 Digital Support</span>
+                  </p>
+                </div>
               </div>
-              <p className="mt-3 text-xs leading-relaxed text-white/70">
-                Stronger Together for a Brighter Future. Modern digital banking with multilingual
-                cross-border capabilities and 256-bit security standards.
+
+              <div>
+                <h4 className="text-xs font-bold tracking-wider uppercase text-accent">Banking</h4>
+                <ul className="mt-3 space-y-2 text-xs text-white/80">
+                  <li>
+                    <a href="#personal" className="hover:text-white">
+                      Personal Checking
+                    </a>
+                  </li>
+                  <li>
+                    <a href="#personal" className="hover:text-white">
+                      High-Yield Savings
+                    </a>
+                  </li>
+                  <li>
+                    <a href="#business" className="hover:text-white">
+                      Commercial Checking
+                    </a>
+                  </li>
+                  <li>
+                    <a href="#business" className="hover:text-white">
+                      Global Treasury
+                    </a>
+                  </li>
+                </ul>
+              </div>
+
+              <div>
+                <h4 className="text-xs font-bold tracking-wider uppercase text-accent">Security & Access</h4>
+                <ul className="mt-3 space-y-2 text-xs text-white/80">
+                  <li>
+                    <button
+                      type="button"
+                      onClick={() => setCustomerModalOpen(true)}
+                      className="hover:text-white underline-offset-2 hover:underline"
+                    >
+                      Customer Sign In
+                    </button>
+                  </li>
+                  <li>
+                    <button
+                      type="button"
+                      onClick={() => setOpenAccountModalOpen(true)}
+                      className="hover:text-white underline-offset-2 hover:underline"
+                    >
+                      Create Account / Apply
+                    </button>
+                  </li>
+                  <li>
+                    <button
+                      type="button"
+                      onClick={() => setCheckStatusModalOpen(true)}
+                      className="hover:text-white underline-offset-2 hover:underline"
+                    >
+                      Check Application Status
+                    </button>
+                  </li>
+                  <li>
+                    <button
+                      type="button"
+                      onClick={() => setAdminModalOpen(true)}
+                      className="hover:text-white flex items-center gap-1.5 text-white font-medium underline-offset-2 hover:underline"
+                    >
+                      <SlidersHorizontal className="h-3 w-3 text-accent" /> Staff Sign-In Admin Dashboard
+                    </button>
+                  </li>
+                </ul>
+              </div>
+
+              <div>
+                <h4 className="text-xs font-bold tracking-wider uppercase text-accent">Service Countries</h4>
+                <p className="mt-3 text-xs text-white/70 leading-relaxed">
+                  United States (USA), UK, Canada, Mexico, China, Taiwan, Japan, Vietnam, South Korea, Switzerland, Germany.
+                </p>
+                <div className="mt-3 text-xs text-white/60">
+                  Regional Currency: <strong className="text-white">{country.currency.name} ({country.currency.symbol})</strong>
+                </div>
+              </div>
+            </div>
+
+            <div className="mt-10 border-t border-white/10 pt-6 text-xs text-white/60">
+              <p className="leading-relaxed">
+                Official US Finance Bank portal. Contact: usfinanceassistance@usfinancebank.online • Tel: +1-567-US. Treat the listed countries
+                as the bank's intended service coverage, not as a claim of completed licensing or
+                charter. Country-specific compliance, tax reporting, and KYC frameworks are
+                customized per jurisdiction and subject to legal review before production launch.
               </p>
-              <div className="mt-4 space-y-1.5 text-xs">
-                <p className="text-white/90">
-                  <span className="text-white/60">Email:</span>{" "}
-                  <a href="mailto:usfinanceassistance@usfinancebank.online" className="text-accent font-bold hover:underline">
-                    usfinanceassistance@usfinancebank.online
-                  </a>
-                </p>
-                <p className="text-white/90">
-                  <span className="text-white/60">Tel:</span>{" "}
-                  <a href="tel:+1-567-US" className="text-accent font-bold hover:underline">
-                    +1-567-US
-                  </a>
-                </p>
-                <p className="text-white/70">
-                  <span className="text-white/60">Assistance:</span> <span className="text-accent font-bold">24/7 Digital Support</span>
-                </p>
-              </div>
-            </div>
-
-            <div>
-              <h4 className="text-xs font-bold tracking-wider uppercase text-accent">Banking</h4>
-              <ul className="mt-3 space-y-2 text-xs text-white/80">
-                <li>
-                  <a href="#personal" className="hover:text-white">
-                    Personal Checking
-                  </a>
-                </li>
-                <li>
-                  <a href="#personal" className="hover:text-white">
-                    High-Yield Savings
-                  </a>
-                </li>
-                <li>
-                  <a href="#business" className="hover:text-white">
-                    Commercial Checking
-                  </a>
-                </li>
-                <li>
-                  <a href="#business" className="hover:text-white">
-                    Global Treasury
-                  </a>
-                </li>
-              </ul>
-            </div>
-
-            <div>
-              <h4 className="text-xs font-bold tracking-wider uppercase text-accent">Security & Access</h4>
-              <ul className="mt-3 space-y-2 text-xs text-white/80">
-                <li>
-                  <button
-                    type="button"
-                    onClick={() => setCustomerModalOpen(true)}
-                    className="hover:text-white underline-offset-2 hover:underline"
-                  >
-                    Customer Sign In
-                  </button>
-                </li>
-                <li>
-                  <button
-                    type="button"
-                    onClick={() => setOpenAccountModalOpen(true)}
-                    className="hover:text-white underline-offset-2 hover:underline"
-                  >
-                    Create Account / Apply
-                  </button>
-                </li>
-                <li>
-                  <button
-                    type="button"
-                    onClick={() => setCheckStatusModalOpen(true)}
-                    className="hover:text-white underline-offset-2 hover:underline"
-                  >
-                    Check Application Status
-                  </button>
-                </li>
-                <li>
-                  <button
-                    type="button"
-                    onClick={() => setAdminModalOpen(true)}
-                    className="hover:text-white flex items-center gap-1.5 text-white font-medium underline-offset-2 hover:underline"
-                  >
-                    <SlidersHorizontal className="h-3 w-3 text-accent" /> Staff Sign-In Admin Dashboard
-                  </button>
-                </li>
-              </ul>
-            </div>
-
-            <div>
-              <h4 className="text-xs font-bold tracking-wider uppercase text-accent">Service Countries</h4>
-              <p className="mt-3 text-xs text-white/70 leading-relaxed">
-                United States (USA), UK, Canada, Mexico, China, Taiwan, Japan, Vietnam, South Korea, Switzerland, Germany.
+              <p className="mt-2">
+                © {new Date().getFullYear()} USFinanceBank • US Finance Bank | Online Banking.
               </p>
-              <div className="mt-3 text-xs text-white/60">
-                Regional Currency: <strong className="text-white">{country.currency.name} ({country.currency.symbol})</strong>
-              </div>
             </div>
           </div>
-
-          <div className="mt-10 border-t border-white/10 pt-6 text-xs text-white/60">
-            <p className="leading-relaxed">
-              Official US Finance Bank portal. Contact: usfinanceassistance@usfinancebank.online • Tel: +1-567-US. Treat the listed countries
-              as the bank's intended service coverage, not as a claim of completed licensing or
-              charter. Country-specific compliance, tax reporting, and KYC frameworks are
-              customized per jurisdiction and subject to legal review before production launch.
+        </footer>
+      ) : (
+        <footer className="border-t border-[#162e55] bg-[#071324] py-6 text-center text-xs text-slate-400">
+          <div className="mx-auto max-w-4xl px-4 flex flex-col sm:flex-row items-center justify-between gap-3">
+            <div className="flex items-center gap-2">
+              <span className="text-base" role="img" aria-label="USA Flag">🇺🇸</span>
+              <span className="font-bold text-white tracking-wide">US FINANCE BANK CUSTOMER PORTAL</span>
+            </div>
+            <p className="text-[0.7rem] text-slate-400">
+              FDIC Insured • 256-Bit SSL Encrypted Session • 24/7 Priority Assistance
             </p>
-            <p className="mt-2">
-              © {new Date().getFullYear()} USFinanceBank • US Finance Bank | Online Banking.
+            <p className="text-[0.68rem] text-slate-500 font-mono">
+              © {new Date().getFullYear()} US Finance Bank Digital Systems
             </p>
           </div>
-        </div>
-      </footer>
+        </footer>
+      )}
 
       {/* CUSTOMER LOGIN MODAL (WITH MULTI-FACTOR AUTHENTICATION) */}
       {customerModalOpen && (

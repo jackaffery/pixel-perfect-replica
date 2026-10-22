@@ -172,10 +172,38 @@ export function SoloAdminDashboard({
           setAlerts(JSON.parse(e.newValue));
         } catch {}
       }
+      if (e.key === "us_finance_bank_pending_profile_edits" && e.newValue) {
+        try {
+          setPendingProfileEdits(JSON.parse(e.newValue));
+        } catch {}
+      }
     };
     window.addEventListener("storage", handleStorageUpdate);
     return () => window.removeEventListener("storage", handleStorageUpdate);
   }, []);
+
+  // Customer Profile Edit Requests state (submitted by customers in their account portal)
+  const [pendingProfileEdits, setPendingProfileEdits] = useState<any[]>(() => {
+    if (typeof window !== "undefined") {
+      try {
+        const saved = localStorage.getItem("us_finance_bank_pending_profile_edits");
+        return saved ? JSON.parse(saved) : [];
+      } catch {}
+    }
+    return [];
+  });
+
+  const persistPendingProfileEdits = (newEdits: any[]) => {
+    setPendingProfileEdits(newEdits);
+    if (typeof window !== "undefined") {
+      try {
+        localStorage.setItem("us_finance_bank_pending_profile_edits", JSON.stringify(newEdits));
+        window.dispatchEvent(new Event("storage"));
+      } catch (err) {
+        console.error("Failed to persist pending profile edits", err);
+      }
+    }
+  };
   const [customers, setCustomers] = useState<AdminCustomer[]>(MOCK_CUSTOMERS);
   const [accounts, setAccounts] = useState<BankAccountRecord[]>(MOCK_ACCOUNTS);
   const [transactions, setTransactions] = useState<BankTransactionRecord[]>(() => {
@@ -645,6 +673,92 @@ export function SoloAdminDashboard({
 
     setUserEditModalOpen(false);
     setActionReason("");
+  };
+
+  // Staff Admin Approval or Rejection of Customer Profile Edit Requests
+  const handleApproveCustomerProfileEdit = (requestId: string, approve: boolean, adminReason: string) => {
+    const targetReq = pendingProfileEdits.find((r) => r.id === requestId);
+    if (!targetReq) return;
+
+    if (approve) {
+      // Find matching user record in adminUsers
+      const updatedAdminUsers = adminUsers.map((u) => {
+        if (
+          u.name.toLowerCase() === targetReq.customerName.toLowerCase() ||
+          u.email.toLowerCase() === targetReq.currentEmail.toLowerCase()
+        ) {
+          const historyEntry = {
+            id: `HIS-${Date.now().toString().slice(-4)}`,
+            timestamp: "Today, " + new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+            actor: "Staff Admin",
+            action: "Customer Profile Self-Edit Request Approved",
+            previousState: `Name: ${u.name}, Phone: ${u.phone}, Email: ${u.email}`,
+            newState: `Name: ${targetReq.requestedName}, Phone: ${targetReq.requestedPhone}, Email: ${targetReq.requestedEmail}`,
+            reason: adminReason || "Verified customer identity and approved profile edit",
+          };
+          return {
+            ...u,
+            name: targetReq.requestedName || u.name,
+            email: targetReq.requestedEmail || u.email,
+            phone: targetReq.requestedPhone || u.phone,
+            mailingAddress: targetReq.requestedAddress || u.mailingAddress,
+            accessChangeHistory: [historyEntry, ...u.accessChangeHistory],
+          };
+        }
+        return u;
+      });
+
+      persistAdminUsers(updatedAdminUsers);
+
+      // If active customer session in localStorage matches, update it too
+      if (typeof window !== "undefined") {
+        try {
+          const sessRaw = localStorage.getItem("us_finance_bank_customer_session");
+          if (sessRaw) {
+            const sess = JSON.parse(sessRaw);
+            if (
+              sess.customerName?.toLowerCase() === targetReq.customerName.toLowerCase() ||
+              sess.email?.toLowerCase() === targetReq.currentEmail.toLowerCase()
+            ) {
+              sess.customerName = targetReq.requestedName;
+              sess.email = targetReq.requestedEmail;
+              localStorage.setItem("us_finance_bank_customer_session", JSON.stringify(sess));
+            }
+          }
+        } catch {}
+      }
+
+      appendAuditLog(
+        "Users",
+        "Approved Customer Profile Edit",
+        `Request ${requestId} for ${targetReq.customerName}: New Name '${targetReq.requestedName}', Email '${targetReq.requestedEmail}', Phone '${targetReq.requestedPhone}'. Staff Admin Reason: ${adminReason || "Approved after review"}`,
+        requestId
+      );
+      setActionNotification(`Customer profile edit request #${requestId} APPROVED and applied to live account.`);
+    } else {
+      appendAuditLog(
+        "Users",
+        "Rejected Customer Profile Edit",
+        `Request ${requestId} for ${targetReq.customerName} rejected by Staff Admin. Reason: ${adminReason || "Documentation not accepted"}`,
+        requestId
+      );
+      setActionNotification(`Customer profile edit request #${requestId} DECLINED.`);
+    }
+
+    // Update pending edits status
+    const updatedEdits = pendingProfileEdits.map((r) =>
+      r.id === requestId
+        ? {
+            ...r,
+            status: approve ? "Approved" : "Rejected",
+            reviewedAt: "Today, Just now",
+            reviewedBy: "Staff Admin",
+            reviewNote: adminReason,
+          }
+        : r
+    );
+    persistPendingProfileEdits(updatedEdits);
+    setTimeout(() => setActionNotification(""), 6000);
   };
 
   const handleAddInternalAdminNote = (userId: string) => {
@@ -2671,6 +2785,101 @@ export function SoloAdminDashboard({
                   </p>
                 </div>
               </div>
+
+              {/* Customer Profile Self-Edit Approval Queue */}
+              {pendingProfileEdits.length > 0 && (
+                <div className="rounded-2xl border border-amber-300 bg-gradient-to-r from-amber-50 to-orange-50/40 p-4 sm:p-5 shadow-sm space-y-3">
+                  <div className="flex items-center justify-between border-b border-amber-200/80 pb-2.5">
+                    <div className="flex items-center gap-2">
+                      <UserCheck className="h-5 w-5 text-amber-700" />
+                      <div>
+                        <h3 className="font-display font-black text-sm text-slate-900">
+                          Customer Profile Edit Requests Awaiting Staff Admin Approval
+                        </h3>
+                        <p className="text-[0.7rem] text-slate-600">
+                          Customers have submitted personal details updates from their online banking dashboard. Review and verify before applying changes.
+                        </p>
+                      </div>
+                    </div>
+                    <span className="rounded-full bg-amber-200 px-2.5 py-0.5 text-xs font-bold text-amber-900">
+                      {pendingProfileEdits.filter((r) => r.status === "Pending Admin Approval").length} Pending
+                    </span>
+                  </div>
+
+                  <div className="space-y-2.5">
+                    {pendingProfileEdits.map((req) => (
+                      <div
+                        key={req.id}
+                        className="rounded-xl border border-amber-200 bg-white p-3.5 shadow-2xs flex flex-col md:flex-row md:items-center justify-between gap-3"
+                      >
+                        <div className="space-y-1 text-xs">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <span className="font-mono font-bold text-slate-500 text-[0.68rem]">{req.id}</span>
+                            <span className="font-bold text-slate-900">{req.customerName}</span>
+                            <span className="text-[0.68rem] text-slate-400">({req.submittedAt})</span>
+                            <span
+                              className={`rounded-full px-2 py-0.5 text-[0.65rem] font-bold border ${
+                                req.status === "Approved"
+                                  ? "bg-emerald-50 text-emerald-800 border-emerald-200"
+                                  : req.status === "Rejected"
+                                  ? "bg-rose-50 text-rose-800 border-rose-200"
+                                  : "bg-amber-100 text-amber-900 border-amber-300"
+                              }`}
+                            >
+                              {req.status}
+                            </span>
+                          </div>
+                          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 text-[0.72rem] text-slate-700 pt-1">
+                            <div>
+                              <span className="text-slate-400 block text-[0.65rem]">Requested Name:</span>
+                              <strong className="text-slate-900">{req.requestedName}</strong>
+                            </div>
+                            <div>
+                              <span className="text-slate-400 block text-[0.65rem]">Requested Email:</span>
+                              <strong className="text-slate-900 font-mono">{req.requestedEmail}</strong>
+                            </div>
+                            <div>
+                              <span className="text-slate-400 block text-[0.65rem]">Requested Phone & Region:</span>
+                              <strong className="text-slate-900">{req.requestedPhone}</strong>
+                              {req.requestedAddress && <span className="text-slate-500 block text-[0.65rem]">{req.requestedAddress}</span>}
+                            </div>
+                          </div>
+                        </div>
+
+                        {req.status === "Pending Admin Approval" ? (
+                          <div className="flex items-center gap-2 shrink-0 self-end md:self-auto">
+                            <Button
+                              size="sm"
+                              onClick={() => {
+                                const reason = prompt("Enter administrative approval verification notes for audit log:") || "Verified customer identity and KYC compliance.";
+                                handleApproveCustomerProfileEdit(req.id, true, reason);
+                              }}
+                              className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs h-8 px-3 shadow-xs"
+                            >
+                              ✓ Approve Edit
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => {
+                                const reason = prompt("Enter administrative decline reason for audit log:") || "Documentation does not match official bank records.";
+                                handleApproveCustomerProfileEdit(req.id, false, reason);
+                              }}
+                              className="border-rose-300 text-rose-700 hover:bg-rose-50 font-bold text-xs h-8 px-3 shadow-xs"
+                            >
+                              ✕ Decline
+                            </Button>
+                          </div>
+                        ) : (
+                          <div className="text-right text-[0.68rem] text-slate-500">
+                            <span>Reviewed by: {req.reviewedBy || "Staff Admin"}</span>
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
 
               {/* Users Table */}
               <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
