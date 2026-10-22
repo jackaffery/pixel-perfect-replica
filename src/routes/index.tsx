@@ -1114,7 +1114,7 @@ export function Index() {
   };
 
   // Wire transfer details calculation
-  const selectedWireCountryObj = WIRE_TRANSFER_COUNTRIES.find((c) => c.code === wireSelectedCountry) || WIRE_TRANSFER_COUNTRIES[0];
+  const selectedWireCountryObj = WIRE_TRANSFER_COUNTRIES.find((c) => c.code === wireSelectedCountry) || WIRE_TRANSFER_COUNTRIES[0]!;
   const wireTransferFee = transferType === "wire" ? 25.0 : 0.0;
   const transferProcessingTime = transferType === "wire" ? "1-2 Business Days" : "Instant ACH / RTGS (Same-Day)";
   const transferDailyLimit = transferType === "wire" ? 100000.0 : 25000.0;
@@ -3487,8 +3487,6 @@ export function Index() {
                             type="button"
                             variant="outline"
                             onClick={() => {
-                              setCustomerPassResetModal(true);
-                              setCustomerPassResetSuccess("");
                               setPasswordResetError("");
                             }}
                             className="w-full border-slate-300 text-slate-800 text-xs font-bold py-2"
