@@ -691,9 +691,11 @@ export function SoloAdminDashboard({
             id: `HIS-${Date.now().toString().slice(-4)}`,
             timestamp: "Today, " + new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
             actor: "Staff Admin",
-            action: "Customer Profile Self-Edit Request Approved",
+            action: targetReq.requestedProfilePicUrl
+              ? "Customer Profile Photo & Details Approved"
+              : "Customer Profile Self-Edit Request Approved",
             previousState: `Name: ${u.name}, Phone: ${u.phone}, Email: ${u.email}`,
-            newState: `Name: ${targetReq.requestedName}, Phone: ${targetReq.requestedPhone}, Email: ${targetReq.requestedEmail}`,
+            newState: `Name: ${targetReq.requestedName}, Phone: ${targetReq.requestedPhone}, Email: ${targetReq.requestedEmail}${targetReq.requestedProfilePicUrl ? " (Photo Updated)" : ""}`,
             reason: adminReason || "Verified customer identity and approved profile edit",
           };
           return {
@@ -702,6 +704,7 @@ export function SoloAdminDashboard({
             email: targetReq.requestedEmail || u.email,
             phone: targetReq.requestedPhone || u.phone,
             mailingAddress: targetReq.requestedAddress || u.mailingAddress,
+            profilePicUrl: targetReq.requestedProfilePicUrl || u.profilePicUrl,
             accessChangeHistory: [historyEntry, ...u.accessChangeHistory],
           };
         }
@@ -720,8 +723,11 @@ export function SoloAdminDashboard({
               sess.customerName?.toLowerCase() === targetReq.customerName.toLowerCase() ||
               sess.email?.toLowerCase() === targetReq.currentEmail.toLowerCase()
             ) {
-              sess.customerName = targetReq.requestedName;
-              sess.email = targetReq.requestedEmail;
+              sess.customerName = targetReq.requestedName || sess.customerName;
+              sess.email = targetReq.requestedEmail || sess.email;
+              if (targetReq.requestedProfilePicUrl) {
+                sess.profilePicUrl = targetReq.requestedProfilePicUrl;
+              }
               localStorage.setItem("us_finance_bank_customer_session", JSON.stringify(sess));
             }
           }
@@ -2844,6 +2850,17 @@ export function SoloAdminDashboard({
                               {req.requestedAddress && <span className="text-slate-500 block text-[0.65rem]">{req.requestedAddress}</span>}
                             </div>
                           </div>
+                          {req.requestedProfilePicUrl && (
+                            <div className="flex items-center gap-2 pt-2 border-t border-amber-100">
+                              <span className="text-slate-500 text-[0.68rem] font-bold">Uploaded Photo:</span>
+                              <img
+                                src={req.requestedProfilePicUrl}
+                                alt={req.requestedName}
+                                className="h-9 w-9 rounded-xl object-cover border border-amber-400 shadow-2xs"
+                              />
+                              <span className="text-emerald-700 font-bold text-[0.65rem]">New photo awaiting verification</span>
+                            </div>
+                          )}
                         </div>
 
                         {req.status === "Pending Admin Approval" ? (

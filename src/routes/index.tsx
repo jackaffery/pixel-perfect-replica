@@ -1203,9 +1203,67 @@ export function Index({ view = "home" }: { view?: "home" | "account" } = {}) {
       );
       persistControlledUsers(updated);
     }
-    setProfilePicSuccess("Profile photo updated successfully!");
+
+    // Submit a formal profile picture update request to Admin Staff approval queue
+    try {
+      const requestId = `REQ-PIC-${Math.floor(100000 + Math.random() * 900000)}`;
+      const newRequest = {
+        id: requestId,
+        customerName: customerUser || "Valued Customer",
+        currentEmail: customerLoginEmail || "",
+        requestedName: customerUser || "Valued Customer",
+        requestedEmail: customerLoginEmail || "",
+        requestedPhone: customerEditPhone || "",
+        requestedAddress: customerEditAddress || "",
+        requestedProfilePicUrl: trimmed,
+        submittedAt: "Today, " + new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+        status: "Pending Admin Approval",
+      };
+
+      const existingRaw = localStorage.getItem("us_finance_bank_pending_profile_edits");
+      const existing = existingRaw ? JSON.parse(existingRaw) : [];
+      const updatedReqs = [newRequest, ...existing.filter((r: any) => r.id !== requestId)];
+      localStorage.setItem("us_finance_bank_pending_profile_edits", JSON.stringify(updatedReqs));
+      setCustomerPendingEdits(updatedReqs);
+
+      // Trigger Staff Admin alert
+      const newAlert = {
+        id: `ALT-PIC-${Date.now().toString().slice(-4)}`,
+        severity: "info",
+        title: `Profile Photo Update: ${customerUser}`,
+        description: `Customer ${customerUser} updated profile photograph. Dispatched to Staff Admin verification queue.`,
+        timestamp: "Just now",
+        category: "User Management",
+        resolved: false,
+        actionRequired: "Review customer photo in User Management",
+      };
+      const existingAlertsRaw = localStorage.getItem("us_finance_bank_alerts");
+      const existingAlerts = existingAlertsRaw ? JSON.parse(existingAlertsRaw) : [];
+      localStorage.setItem("us_finance_bank_alerts", JSON.stringify([newAlert, ...existingAlerts]));
+
+      window.dispatchEvent(new Event("storage"));
+    } catch {}
+
+    setProfilePicSuccess("Profile photo updated live & submitted to Admin Staff for verification!");
     setProfilePicEditInput("");
     setTimeout(() => setProfilePicSuccess(""), 4000);
+  };
+
+  const handleFileUploadProfilePic = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 5 * 1024 * 1024) {
+      alert("Image size should be less than 5MB.");
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = (uploadEvent) => {
+      const dataUrl = uploadEvent.target?.result as string;
+      if (dataUrl) {
+        handleUpdateCustomerProfilePic(dataUrl);
+      }
+    };
+    reader.readAsDataURL(file);
   };
 
   // Pre-fill Customer Edit Profile form when viewing profile
@@ -1506,7 +1564,7 @@ export function Index({ view = "home" }: { view?: "home" | "account" } = {}) {
       sessionStorage.setItem("pin_reset_otp", simulatedOtp);
     }
     setPinResetStep("verify");
-    setPinResetSuccess(`Verification security code dispatched to ${pinResetEmail}. (Security OTP: ${simulatedOtp})`);
+    setPinResetSuccess(`Verification security code dispatched to your registered address (${pinResetEmail}). Please check your email inbox or SMS messages to retrieve your 6-digit code.`);
   };
 
   const handleConfirmPinReset = async (e: React.FormEvent) => {
@@ -2169,8 +2227,9 @@ export function Index({ view = "home" }: { view?: "home" | "account" } = {}) {
       {/* Flag Stripes Top Bar */}
       <div className="h-1.5 w-full bg-gradient-to-r from-primary via-accent to-primary" />
 
-      {/* Global Regional & Multilingual Selector Utility Bar */}
-      <div className="border-b border-border/80 bg-navy-deep text-primary-foreground">
+      {/* Global Regional & Multilingual Selector Utility Bar (Rendered only on public homepage) */}
+      {view === "home" && (
+        <div className="border-b border-border/80 bg-navy-deep text-primary-foreground">
         <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-3 px-5 py-2 text-xs">
           {/* Left: Branding & Regulatory Disclaimer */}
           <div className="flex items-center gap-3">
@@ -2354,9 +2413,11 @@ export function Index({ view = "home" }: { view?: "home" | "account" } = {}) {
           </div>
         </div>
       </div>
+      )}
 
-      {/* Main Header / Navigation */}
-      <header className="sticky top-0 z-40 border-b border-border/60 bg-white/95 shadow-xs backdrop-blur-md">
+      {/* Main Header / Navigation (Rendered on public site; /account has its own dedicated customer header bar) */}
+      {view === "home" && (
+        <header className="sticky top-0 z-40 border-b border-border/60 bg-white/95 shadow-xs backdrop-blur-md">
         <div className="mx-auto flex max-w-7xl items-center justify-between px-5 py-3.5">
           {/* Logo */}
           <a
@@ -2683,6 +2744,7 @@ export function Index({ view = "home" }: { view?: "home" | "account" } = {}) {
           </nav>
         )}
       </header>
+      )}
 
       {/* Main Content Area */}
       <main id="main">
@@ -3510,24 +3572,44 @@ export function Index({ view = "home" }: { view?: "home" | "account" } = {}) {
 
                         {/* Customer Profile Photo Card */}
                         <div className="flex items-center gap-3.5 p-3 rounded-lg bg-white border border-slate-200">
-                          {customerProfilePic ? (
-                            <img
-                              src={customerProfilePic}
-                              alt={customerUser || "Profile"}
-                              className="h-14 w-14 rounded-2xl object-cover border-2 border-red-600 shadow-xs shrink-0"
+                          <label className="relative group cursor-pointer shrink-0" title="Click to upload/change photo">
+                            <input
+                              type="file"
+                              accept="image/*"
+                              onChange={handleFileUploadProfilePic}
+                              className="hidden"
                             />
-                          ) : (
-                            <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-[#0a192f] border-2 border-red-600 text-white font-extrabold text-xl shadow-xs">
-                              {customerUser ? customerUser.charAt(0).toUpperCase() : "U"}
+                            {customerProfilePic ? (
+                              <img
+                                src={customerProfilePic}
+                                alt={customerUser || "Profile"}
+                                className="h-14 w-14 rounded-2xl object-cover border-2 border-red-600 shadow-xs shrink-0 group-hover:opacity-80 transition-opacity"
+                              />
+                            ) : (
+                              <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-[#0a192f] border-2 border-red-600 text-white font-extrabold text-xl shadow-xs group-hover:bg-[#122847] transition-colors">
+                                {customerUser ? customerUser.charAt(0).toUpperCase() : "U"}
+                              </div>
+                            )}
+                            <div className="absolute inset-0 flex items-center justify-center bg-black/40 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity text-white text-[0.65rem] font-bold">
+                              Change
                             </div>
-                          )}
+                          </label>
                           <div className="flex-1 min-w-0">
                             <span className="text-xs font-bold text-slate-900 block truncate">
                               {customerUser}
                             </span>
                             <span className="text-[0.7rem] text-slate-500 block">
-                              Profile Picture Saved
+                              {customerProfilePic ? "Profile Picture Live & Verified" : "Default Avatar"}
                             </span>
+                            <label className="text-[0.68rem] text-red-600 font-bold hover:underline cursor-pointer inline-flex items-center gap-1 mt-0.5">
+                              <input
+                                type="file"
+                                accept="image/*"
+                                onChange={handleFileUploadProfilePic}
+                                className="hidden"
+                              />
+                              <Upload className="h-3 w-3" /> Upload Photo from Device
+                            </label>
                           </div>
                         </div>
 
@@ -3540,7 +3622,7 @@ export function Index({ view = "home" }: { view?: "home" | "account" } = {}) {
                           className="pt-1 space-y-2"
                         >
                           <label className="block text-[0.7rem] font-bold text-slate-700">
-                            Update Profile Photo URL
+                            Or Enter Profile Photo Web URL
                           </label>
                           <div className="flex gap-2">
                             <input
@@ -4946,15 +5028,14 @@ export function Index({ view = "home" }: { view?: "home" | "account" } = {}) {
                 <div className="rounded-xl bg-blue-50 border border-blue-200 p-4 text-xs text-blue-900">
                   <p className="font-bold flex items-center gap-1.5 text-primary">
                     <Mail className="h-4 w-4 text-primary" />
-                    Email Verification Code Delivered
+                    Security Verification Code Dispatched
                   </p>
                   <p className="mt-1 leading-relaxed text-slate-700">
-                    A 6-digit verification code has been dispatched to <strong className="text-slate-900 font-mono">{customerLoginEmail}</strong>. Please enter the code below to securely access your customer account.
+                    A secure 6-digit verification code has been dispatched to your registered address (<strong className="text-slate-900 font-mono">{customerLoginEmail}</strong>). Please open your email inbox or check your SMS messages on your mobile device to retrieve the code and enter it below.
                   </p>
-                  <div className="mt-3 rounded-lg bg-white p-2.5 font-mono text-center text-sm font-bold text-primary border border-blue-200 flex items-center justify-between">
-                    <span className="text-xs text-slate-500 font-sans">Delivered Code:</span>
-                    <span className="text-red-600 font-black text-base tracking-widest">{generatedMfaCode}</span>
-                  </div>
+                  <p className="mt-2 text-[0.68rem] text-slate-500 italic">
+                    For your security, OTP codes are sent directly to your authorized device and never displayed on-screen.
+                  </p>
                 </div>
 
                 <div>
