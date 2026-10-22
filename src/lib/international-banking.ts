@@ -27,7 +27,14 @@ export const SUPPORTED_COUNTRIES: Record<string, CountryConfig> = {
     phoneFormat: "(555) 019-2834",
     dateFormat: "MM/DD/YYYY",
     regionsLabel: "State",
-    regions: ["California", "New York", "Texas", "Florida", "Illinois", "Pennsylvania", "Ohio", "Washington", "Massachusetts", "Georgia"],
+    regions: [
+      "Alabama", "Alaska", "Arizona", "Arkansas", "California", "Colorado", "Connecticut", "Delaware", "Florida", "Georgia",
+      "Hawaii", "Idaho", "Illinois", "Indiana", "Iowa", "Kansas", "Kentucky", "Louisiana", "Maine", "Maryland",
+      "Massachusetts", "Michigan", "Minnesota", "Mississippi", "Missouri", "Montana", "Nebraska", "Nevada", "New Hampshire", "New Jersey",
+      "New Mexico", "New York", "North Carolina", "North Dakota", "Ohio", "Oklahoma", "Oregon", "Pennsylvania", "Rhode Island", "South Carolina",
+      "South Dakota", "Tennessee", "Texas", "Utah", "Vermont", "Virginia", "Washington", "West Virginia", "Wisconsin", "Wyoming",
+      "Washington, D.C."
+    ],
     idTypes: [
       { id: "ssn", label: "Social Security Number (SSN) / ITIN", placeholder: "9-digit SSN / ITIN", reason: "Mandated by federal USA PATRIOT Act Customer Identification Program (CIP)." },
       { id: "driver_license", label: "State Driver's License or ID Card", placeholder: "State ID number", reason: "Standard government-issued photographic identity credential." },
@@ -211,6 +218,40 @@ export const SUPPORTED_COUNTRIES: Record<string, CountryConfig> = {
     ],
     regulatoryNote: "Operated in alignment with BaFin regulations and German Banking Act (KWG) standards.",
     languages: ["de", "en"]
+  },
+  ES: {
+    code: "ES",
+    name: "Spain (España)",
+    flag: "🇪🇸",
+    currency: { code: "EUR", symbol: "€", name: "Euro" },
+    phoneCode: "+34",
+    phoneFormat: "612 34 56 78",
+    dateFormat: "DD/MM/YYYY",
+    regionsLabel: "Autonomous Community / Province",
+    regions: ["Madrid", "Catalonia (Cataluña)", "Andalusia (Andalucía)", "Valencia", "Galicia", "Basque Country (País Vasco)", "Castile and León"],
+    idTypes: [
+      { id: "dni", label: "Documento Nacional de Identidad (DNI / NIE)", placeholder: "8 digits + letter", reason: "Mandatory official identification required by Banco de España." },
+      { id: "passport", label: "Spanish / EU Passport", placeholder: "Passport number", reason: "Official photographic identification under SEPBLAC AML regulations." }
+    ],
+    regulatoryNote: "Subject to Banco de España and European Central Bank regulations.",
+    languages: ["es", "en"]
+  },
+  FR: {
+    code: "FR",
+    name: "France",
+    flag: "🇫🇷",
+    currency: { code: "EUR", symbol: "€", name: "Euro" },
+    phoneCode: "+33",
+    phoneFormat: "06 12 34 56 78",
+    dateFormat: "DD/MM/YYYY",
+    regionsLabel: "Région / Département",
+    regions: ["Île-de-France (Paris)", "Auvergne-Rhône-Alpes (Lyon)", "Provence-Alpes-Côte d'Azur (Marseille)", "Occitanie", "Nouvelle-Aquitaine", "Hauts-de-France"],
+    idTypes: [
+      { id: "cni", label: "Carte Nationale d'Identité (CNI)", placeholder: "12-character ID number", reason: "Mandatory identity verification under ACPR French banking statutes." },
+      { id: "passport", label: "French / EU Passport", placeholder: "Passport number", reason: "Approved international biometric travel document." }
+    ],
+    regulatoryNote: "Operated in compliance with ACPR (Banque de France) and EU AML/CFT directives.",
+    languages: ["fr", "en"]
   }
 };
 

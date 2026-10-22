@@ -616,7 +616,18 @@ export function Index() {
   };
 
   // Customer Authentication & Email OTP Verification
-  const [customerUser, setCustomerUser] = useState<string | null>(null);
+  const [customerUser, setCustomerUser] = useState<string | null>(() => {
+    if (typeof window !== "undefined") {
+      try {
+        const saved = localStorage.getItem("us_finance_bank_customer_session");
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          return parsed.customerName || null;
+        }
+      } catch {}
+    }
+    return null;
+  });
   const [customerLoginEmail, setCustomerLoginEmail] = useState("");
   const [customerLoginPassword, setCustomerLoginPassword] = useState("");
   const [showCustomerPassword, setShowCustomerPassword] = useState(false);
@@ -633,8 +644,30 @@ export function Index() {
   // Customer Dashboard State (Default zero balance for new accounts)
   const [customerActiveTab, setCustomerActiveTab] = useState<"overview" | "transfers" | "cards" | "crypto" | "statements" | "profile">("overview");
   const [customerNavHistory, setCustomerNavHistory] = useState<("overview" | "transfers" | "cards" | "crypto" | "statements" | "profile")[]>(["overview"]);
-  const [checkingBalance, setCheckingBalance] = useState(0.0);
-  const [savingsBalance, setSavingsBalance] = useState(0.0);
+  const [checkingBalance, setCheckingBalance] = useState<number>(() => {
+    if (typeof window !== "undefined") {
+      try {
+        const saved = localStorage.getItem("us_finance_bank_customer_session");
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          return typeof parsed.checkingBalance === "number" ? parsed.checkingBalance : 0.0;
+        }
+      } catch {}
+    }
+    return 0.0;
+  });
+  const [savingsBalance, setSavingsBalance] = useState<number>(() => {
+    if (typeof window !== "undefined") {
+      try {
+        const saved = localStorage.getItem("us_finance_bank_customer_session");
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          return typeof parsed.savingsBalance === "number" ? parsed.savingsBalance : 0.0;
+        }
+      } catch {}
+    }
+    return 0.0;
+  });
   const [showAccountBalance, setShowAccountBalance] = useState(false);
   const [selectedCustomerTx, setSelectedCustomerTx] = useState<{
     id: string;
@@ -995,21 +1028,42 @@ export function Index() {
           u.name.toLowerCase() === identifier.toLowerCase()
       );
 
+      let loggedInName = "";
+      let chkBal = 0;
+      let savBal = 0;
+
       if (matchingUser) {
-        setCheckingBalance(matchingUser.checkingBalance);
-        setSavingsBalance(matchingUser.savingsBalance);
-        setCustomerUser(matchingUser.name);
+        chkBal = matchingUser.checkingBalance;
+        savBal = matchingUser.savingsBalance;
+        loggedInName = matchingUser.name;
       } else {
-        setCustomerUser(
-          customerLoginEmail.includes("@")
-            ? customerLoginEmail.split("@")[0] || customerLoginEmail
-            : customerLoginEmail
-        );
+        loggedInName = customerLoginEmail.includes("@")
+          ? customerLoginEmail.split("@")[0] || customerLoginEmail
+          : customerLoginEmail;
+      }
+
+      setCheckingBalance(chkBal);
+      setSavingsBalance(savBal);
+      setCustomerUser(loggedInName);
+
+      if (rememberCustomer) {
+        try {
+          localStorage.setItem(
+            "us_finance_bank_customer_session",
+            JSON.stringify({
+              customerName: loggedInName,
+              checkingBalance: chkBal,
+              savingsBalance: savBal,
+              email: customerLoginEmail,
+            })
+          );
+        } catch {}
       }
 
       setCustomerModalOpen(false);
       setCustomerLoginPassword("");
       setMfaCode("");
+      window.scrollTo({ top: 0, behavior: "smooth" });
     }, 500);
   };
 
@@ -1025,6 +1079,13 @@ export function Index() {
     setCustomerActiveTab(tab);
     setTransferError("");
     setTransferSuccess("");
+  };
+
+  const handleCustomerSignOut = () => {
+    setCustomerUser(null);
+    try {
+      localStorage.removeItem("us_finance_bank_customer_session");
+    } catch {}
   };
 
   const handleCustomerGoBack = () => {
@@ -2169,7 +2230,7 @@ export function Index() {
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => setCustomerUser(null)}
+                onClick={handleCustomerSignOut}
                 className="border-primary/30 text-primary hover:bg-primary/5"
               >
                 <LogOut className="mr-1.5 h-4 w-4" /> {t.signOut}
@@ -2416,7 +2477,7 @@ export function Index() {
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => setCustomerUser(null)}
+                      onClick={handleCustomerSignOut}
                       className="border-white/20 bg-white/10 text-white hover:bg-white/20 text-xs font-semibold ml-1"
                     >
                       <LogOut className="h-3.5 w-3.5 mr-1" /> {t.signOut}

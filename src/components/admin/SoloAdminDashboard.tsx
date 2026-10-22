@@ -290,7 +290,39 @@ export function SoloAdminDashboard({
   const [actionReason, setActionReason] = useState("");
   const [actionNotification, setActionNotification] = useState("");
 
-  // Individual User Management Action Modals
+  // 17 Account Actions State
+  const [actionsDropdownOpen, setActionsDropdownOpen] = useState(false);
+  const [creditDebitModal, setCreditDebitModal] = useState<{
+    type: "credit" | "debit";
+    user: AdminUserRecord;
+  } | null>(null);
+  const [creditDebitAmount, setCreditDebitAmount] = useState("");
+  const [creditDebitAccountType, setCreditDebitAccountType] = useState<"checking" | "savings">("checking");
+  const [creditDebitDescription, setCreditDebitDescription] = useState("");
+
+  const [generateTxModal, setGenerateTxModal] = useState<AdminUserRecord | null>(null);
+  const [genTxType, setGenTxType] = useState<"Direct Deposit" | "Wire Transfer" | "Card Settlement" | "Bill Pay" | "Internal Transfer" | "ACH Debit">("Direct Deposit");
+  const [genTxDirection, setGenTxDirection] = useState<"credit" | "debit">("credit");
+  const [genTxAmount, setGenTxAmount] = useState("");
+  const [genTxCounterparty, setGenTxCounterparty] = useState("");
+  const [genTxStatus, setGenTxStatus] = useState<"Completed" | "Processing" | "On hold">("Completed");
+
+  const [editBalanceModal, setEditBalanceModal] = useState<AdminUserRecord | null>(null);
+  const [editCheckingAmount, setEditCheckingAmount] = useState("");
+  const [editSavingsAmount, setEditSavingsAmount] = useState("");
+
+  const [accountUsageLimitsModal, setAccountUsageLimitsModal] = useState<AdminUserRecord | null>(null);
+  const [dailyTransferLimitInput, setDailyTransferLimitInput] = useState("50000");
+  const [dailyWithdrawalLimitInput, setDailyWithdrawalLimitInput] = useState("10000");
+
+  const [changeProfilePicModal, setChangeProfilePicModal] = useState<AdminUserRecord | null>(null);
+  const [profilePicUrlInput, setProfilePicUrlInput] = useState("");
+
+  const [sendEmailModal, setSendEmailModal] = useState<AdminUserRecord | null>(null);
+  const [emailSubjectInput, setEmailSubjectInput] = useState("");
+  const [emailMessageInput, setEmailMessageInput] = useState("");
+
+  const [loginActivityModal, setLoginActivityModal] = useState<AdminUserRecord | null>(null);
   const [userToDeleteModal, setUserToDeleteModal] = useState<AdminUserRecord | null>(null);
   const [deleteReason, setDeleteReason] = useState("");
   const [deleteConfirmChecked, setDeleteConfirmChecked] = useState(false);
@@ -1008,6 +1040,347 @@ export function SoloAdminDashboard({
     setEditingUserRecord(null);
     setActionNotification(`Profile for ${editUserFormData.name} (${targetUser.id}) updated and recorded.`);
     setTimeout(() => setActionNotification(""), 5000);
+  };
+
+  // 17 Account Actions Handlers
+  const handleExecuteCreditDebit = (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    if (!creditDebitModal) return;
+    const amt = parseFloat(creditDebitAmount);
+    if (isNaN(amt) || amt <= 0) {
+      alert("Please enter a valid positive amount.");
+      return;
+    }
+    const user = creditDebitModal.user;
+    const isCredit = creditDebitModal.type === "credit";
+    const accTypeLabel = creditDebitAccountType === "checking" ? "Advantage Checking" : "High-Yield Savings";
+
+    // Adjust user accounts
+    let targetAcc = accounts.find(
+      (a) => a.customerId === user.linkedCustomerId && a.accountType.toLowerCase().includes(creditDebitAccountType)
+    );
+    if (!targetAcc) {
+      targetAcc = accounts.find((a) => a.customerId === user.linkedCustomerId) || accounts[0];
+    }
+
+    if (targetAcc) {
+      const newBal = isCredit ? targetAcc.balance + amt : Math.max(0, targetAcc.balance - amt);
+      const updatedAccounts = accounts.map((a) =>
+        a.id === targetAcc!.id
+          ? { ...a, balance: newBal, availableBalance: newBal, lastActivity: "Today, Just now" }
+          : a
+      );
+      setAccounts(updatedAccounts);
+      try {
+        localStorage.setItem("us_finance_bank_accounts", JSON.stringify(updatedAccounts));
+      } catch {}
+    }
+
+    // Create realistic transaction ledger record
+    const newTx: BankTransactionRecord = {
+      id: `TX-${Date.now().toString().slice(-6)}`,
+      accountId: targetAcc ? targetAcc.id : "ACC-101",
+      accountMasked: targetAcc ? targetAcc.accountNumberMasked : "•••• 4892",
+      customerId: user.linkedCustomerId,
+      customerName: user.name,
+      type: isCredit ? "Direct Deposit" : "ACH Debit",
+      amount: amt,
+      currency: "USD",
+      direction: isCredit ? "credit" : "debit",
+      counterparty: creditDebitDescription.trim() || (isCredit ? "Administrative Credit Provision" : "Administrative Account Debit"),
+      timestamp: "Today, " + new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+      status: "Completed",
+      transferStatus: "Completed",
+    };
+
+    const nextTxs = [newTx, ...transactions];
+    setTransactions(nextTxs);
+    try {
+      localStorage.setItem("us_finance_bank_transactions", JSON.stringify(nextTxs));
+    } catch {}
+
+    appendAuditLog(
+      "Accounts",
+      `${isCredit ? "Credit" : "Debit"} Account Applied`,
+      `${isCredit ? "Credited" : "Debited"} $${amt.toFixed(2)} to ${accTypeLabel} for ${user.name} (${user.id}). Note: ${creditDebitDescription || "Admin action"}`,
+      user.id
+    );
+
+    setActionNotification(`Successfully ${isCredit ? "credited" : "debited"} $${amt.toFixed(2)} for ${user.name}.`);
+    setTimeout(() => setActionNotification(""), 5000);
+    setCreditDebitModal(null);
+    setCreditDebitAmount("");
+    setCreditDebitDescription("");
+  };
+
+  const handleExecuteGenerateTransaction = (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    if (!generateTxModal) return;
+    const amt = parseFloat(genTxAmount);
+    if (isNaN(amt) || amt <= 0) {
+      alert("Please enter a valid amount.");
+      return;
+    }
+    const user = generateTxModal;
+    const userAcc = accounts.find((a) => a.customerId === user.linkedCustomerId) || accounts[0];
+
+    const newTx: BankTransactionRecord = {
+      id: `TX-${Date.now().toString().slice(-6)}`,
+      accountId: userAcc ? userAcc.id : "ACC-GEN",
+      accountMasked: userAcc ? userAcc.accountNumberMasked : "•••• 4892",
+      customerId: user.linkedCustomerId,
+      customerName: user.name,
+      type: genTxType,
+      amount: amt,
+      currency: "USD",
+      direction: genTxDirection,
+      counterparty: genTxCounterparty.trim() || "Generated Transaction",
+      timestamp: "Today, " + new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+      status: genTxStatus,
+      transferStatus: genTxStatus,
+    };
+
+    // If completed and credit/debit, adjust account
+    if (userAcc && genTxStatus === "Completed") {
+      const newBal = genTxDirection === "credit" ? userAcc.balance + amt : Math.max(0, userAcc.balance - amt);
+      const updatedAccounts = accounts.map((a) =>
+        a.id === userAcc.id ? { ...a, balance: newBal, availableBalance: newBal } : a
+      );
+      setAccounts(updatedAccounts);
+      try {
+        localStorage.setItem("us_finance_bank_accounts", JSON.stringify(updatedAccounts));
+      } catch {}
+    }
+
+    const nextTxs = [newTx, ...transactions];
+    setTransactions(nextTxs);
+    try {
+      localStorage.setItem("us_finance_bank_transactions", JSON.stringify(nextTxs));
+    } catch {}
+
+    appendAuditLog(
+      "Transactions",
+      "Administrative Transaction Generated",
+      `Generated ${genTxType} of $${amt.toFixed(2)} (${genTxDirection}) for ${user.name} (${user.id}). Counterparty: ${genTxCounterparty || "N/A"}. Status: ${genTxStatus}`,
+      user.id
+    );
+
+    setActionNotification(`Generated transaction ${newTx.id} of $${amt.toFixed(2)} for ${user.name}.`);
+    setTimeout(() => setActionNotification(""), 5000);
+    setGenerateTxModal(null);
+    setGenTxAmount("");
+    setGenTxCounterparty("");
+  };
+
+  const handleExecuteEditBalance = (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    if (!editBalanceModal) return;
+    const checkAmt = parseFloat(editCheckingAmount);
+    const savAmt = parseFloat(editSavingsAmount);
+    if (isNaN(checkAmt) || isNaN(savAmt)) {
+      alert("Please enter valid numeric balance amounts.");
+      return;
+    }
+    const user = editBalanceModal;
+
+    const updatedAccounts = accounts.map((a) => {
+      if (a.customerId === user.linkedCustomerId) {
+        if (a.accountType.toLowerCase().includes("checking")) {
+          return { ...a, balance: checkAmt, availableBalance: checkAmt };
+        }
+        if (a.accountType.toLowerCase().includes("savings")) {
+          return { ...a, balance: savAmt, availableBalance: savAmt };
+        }
+      }
+      return a;
+    });
+
+    setAccounts(updatedAccounts);
+    try {
+      localStorage.setItem("us_finance_bank_accounts", JSON.stringify(updatedAccounts));
+    } catch {}
+
+    appendAuditLog(
+      "Accounts",
+      "Direct Balance Edit Applied",
+      `Edited ledger balances for ${user.name} (${user.id}): Checking $${checkAmt.toFixed(2)}, Savings $${savAmt.toFixed(2)}.`,
+      user.id
+    );
+
+    setActionNotification(`Balances updated for ${user.name}: Checking $${checkAmt.toFixed(2)}, Savings $${savAmt.toFixed(2)}.`);
+    setTimeout(() => setActionNotification(""), 5000);
+    setEditBalanceModal(null);
+  };
+
+  const handleExecuteSaveLimits = (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    if (!accountUsageLimitsModal) return;
+    const transferLim = parseFloat(dailyTransferLimitInput);
+    const withdrawLim = parseFloat(dailyWithdrawalLimitInput);
+    if (isNaN(transferLim) || isNaN(withdrawLim)) {
+      alert("Please enter valid numeric limits.");
+      return;
+    }
+    const user = accountUsageLimitsModal;
+
+    const updatedUsers = adminUsers.map((u) =>
+      u.id === user.id
+        ? { ...u, dailyTransferLimit: transferLim, dailyWithdrawalLimit: withdrawLim }
+        : u
+    );
+    persistAdminUsers(updatedUsers);
+
+    if (selectedUser?.id === user.id) {
+      setSelectedUser((prev) =>
+        prev ? { ...prev, dailyTransferLimit: transferLim, dailyWithdrawalLimit: withdrawLim } : null
+      );
+    }
+
+    appendAuditLog(
+      "Users",
+      "Account Usage Limits Updated",
+      `Set daily transfer limit to $${transferLim.toLocaleString()} and withdrawal limit to $${withdrawLim.toLocaleString()} for ${user.name} (${user.id}).`,
+      user.id
+    );
+
+    setActionNotification(`Updated usage limits for ${user.name}.`);
+    setTimeout(() => setActionNotification(""), 5000);
+    setAccountUsageLimitsModal(null);
+  };
+
+  const handleToggleTwoFactorAction = (user: AdminUserRecord) => {
+    const nextState = !user.security.twoFactorEnabled;
+    const updatedUsers = adminUsers.map((u) =>
+      u.id === user.id ? { ...u, security: { ...u.security, twoFactorEnabled: nextState } } : u
+    );
+    persistAdminUsers(updatedUsers);
+
+    if (selectedUser?.id === user.id) {
+      setSelectedUser((prev) =>
+        prev ? { ...prev, security: { ...prev.security, twoFactorEnabled: nextState } } : null
+      );
+    }
+
+    appendAuditLog(
+      "Users",
+      "Two-Factor Authentication Toggled",
+      `Staff Admin ${nextState ? "Enabled" : "Disabled"} 2FA for ${user.name} (${user.id}).`,
+      user.id
+    );
+
+    setActionNotification(`2FA for ${user.name} is now ${nextState ? "Enabled" : "Disabled"}.`);
+    setTimeout(() => setActionNotification(""), 5000);
+  };
+
+  const handleExecuteSaveProfilePic = (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    if (!changeProfilePicModal) return;
+    const user = changeProfilePicModal;
+    const url = profilePicUrlInput.trim();
+
+    const updatedUsers = adminUsers.map((u) =>
+      u.id === user.id ? { ...u, profilePicUrl: url } : u
+    );
+    persistAdminUsers(updatedUsers);
+
+    if (selectedUser?.id === user.id) {
+      setSelectedUser((prev) => (prev ? { ...prev, profilePicUrl: url } : null));
+    }
+
+    appendAuditLog(
+      "Users",
+      "Profile Picture Updated",
+      `Updated profile picture avatar for ${user.name} (${user.id}).`,
+      user.id
+    );
+
+    setActionNotification(`Profile picture updated for ${user.name}.`);
+    setTimeout(() => setActionNotification(""), 5000);
+    setChangeProfilePicModal(null);
+    setProfilePicUrlInput("");
+  };
+
+  const handleToggleDormantAction = (user: AdminUserRecord) => {
+    const nextDormant = !user.isDormant;
+    const updatedUsers = adminUsers.map((u) =>
+      u.id === user.id ? { ...u, isDormant: nextDormant } : u
+    );
+    persistAdminUsers(updatedUsers);
+
+    if (selectedUser?.id === user.id) {
+      setSelectedUser((prev) => (prev ? { ...prev, isDormant: nextDormant } : null));
+    }
+
+    appendAuditLog(
+      "Users",
+      nextDormant ? "Account Marked Dormant" : "Dormant Account Re-Activated",
+      `Staff Admin toggled dormant status for ${user.name} (${user.id}) to ${nextDormant ? "Dormant" : "Active"}.`,
+      user.id
+    );
+
+    setActionNotification(`Dormant status for ${user.name}: ${nextDormant ? "Turned On (Dormant)" : "Turned Off (Active)"}.`);
+    setTimeout(() => setActionNotification(""), 5000);
+  };
+
+  const handleExecuteClearAccount = (user: AdminUserRecord) => {
+    // Zero out fiat accounts
+    const updatedAccounts = accounts.map((a) =>
+      a.customerId === user.linkedCustomerId ? { ...a, balance: 0, availableBalance: 0 } : a
+    );
+    setAccounts(updatedAccounts);
+    try {
+      localStorage.setItem("us_finance_bank_accounts", JSON.stringify(updatedAccounts));
+    } catch {}
+
+    appendAuditLog(
+      "Accounts",
+      "Account Balances Cleared to $0.00",
+      `Staff Admin cleared all fiat cash balances to $0.00 for ${user.name} (${user.id}).`,
+      user.id
+    );
+
+    setActionNotification(`Cleared all account balances to $0.00 for ${user.name}.`);
+    setTimeout(() => setActionNotification(""), 5000);
+  };
+
+  const handleExecuteClearBTC = (user: AdminUserRecord) => {
+    const updatedUsers = adminUsers.map((u) =>
+      u.id === user.id ? { ...u, btcBalance: 0 } : u
+    );
+    persistAdminUsers(updatedUsers);
+
+    if (selectedUser?.id === user.id) {
+      setSelectedUser((prev) => (prev ? { ...prev, btcBalance: 0 } : null));
+    }
+
+    appendAuditLog(
+      "Accounts",
+      "BTC Balance Cleared to 0.00000000",
+      `Staff Admin cleared Bitcoin balance to 0 BTC for ${user.name} (${user.id}).`,
+      user.id
+    );
+
+    setActionNotification(`Cleared BTC balance to 0.00000000 BTC for ${user.name}.`);
+    setTimeout(() => setActionNotification(""), 5000);
+  };
+
+  const handleExecuteSendEmail = (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    if (!sendEmailModal) return;
+    const user = sendEmailModal;
+
+    appendAuditLog(
+      "Users",
+      "Administrative Email Dispatched",
+      `Dispatched email to ${user.name} (${user.email}). Subject: "${emailSubjectInput}". Message length: ${emailMessageInput.length} chars.`,
+      user.id
+    );
+
+    setActionNotification(`Official email dispatched to ${user.email}.`);
+    setTimeout(() => setActionNotification(""), 5000);
+    setSendEmailModal(null);
+    setEmailSubjectInput("");
+    setEmailMessageInput("");
   };
 
   // Applications Review & Decision Handler
@@ -2481,6 +2854,267 @@ export function SoloAdminDashboard({
               {selectedUser && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 overflow-y-auto">
                   <div className="relative w-full max-w-4xl rounded-3xl border border-slate-200 bg-white p-6 sm:p-8 shadow-2xl max-h-[90vh] overflow-y-auto text-slate-800">
+                    {/* Top Bar with Back Control and Actions Dropdown (Matching Screenshot 1) */}
+                    <div className="flex items-center justify-between border-b border-slate-100 pb-3 mb-4">
+                      <button
+                        type="button"
+                        onClick={() => setSelectedUser(null)}
+                        className="inline-flex items-center gap-1.5 text-xs font-bold text-slate-600 hover:text-slate-900 transition-colors px-2.5 py-1.5 rounded-lg hover:bg-slate-100 cursor-pointer"
+                      >
+                        <ChevronLeft className="h-4 w-4 text-slate-500" />
+                        <span>back</span>
+                      </button>
+
+                      {/* Purple Actions Dropdown with 17 Features */}
+                      <div className="relative">
+                        <Button
+                          size="sm"
+                          type="button"
+                          onClick={() => setActionsDropdownOpen(!actionsDropdownOpen)}
+                          className="bg-[#7c3aed] hover:bg-[#6d28d9] text-white text-xs font-bold px-3.5 py-1.5 rounded-lg shadow-sm flex items-center gap-1.5 cursor-pointer"
+                        >
+                          <span>Actions</span>
+                          <ChevronDown className="h-3.5 w-3.5" />
+                        </Button>
+
+                        {actionsDropdownOpen && (
+                          <div
+                            className="absolute right-0 mt-2 w-64 rounded-xl border border-slate-200 bg-white py-1.5 shadow-2xl z-50 text-xs font-semibold text-slate-700 animate-fadeIn divide-y divide-slate-100"
+                            onClick={() => setActionsDropdownOpen(false)}
+                          >
+                            <div className="py-1">
+                              {/* 1. Credit Account */}
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setCreditDebitModal({ type: "credit", user: selectedUser });
+                                  setCreditDebitAmount("");
+                                  setCreditDebitDescription("");
+                                }}
+                                className="w-full text-left px-3.5 py-2 hover:bg-slate-50 flex items-center gap-2 cursor-pointer text-slate-800"
+                              >
+                                <ArrowDownToLine className="h-3.5 w-3.5 text-emerald-600 shrink-0" />
+                                <span>Credit Account</span>
+                              </button>
+
+                              {/* 2. Debit Account */}
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setCreditDebitModal({ type: "debit", user: selectedUser });
+                                  setCreditDebitAmount("");
+                                  setCreditDebitDescription("");
+                                }}
+                                className="w-full text-left px-3.5 py-2 hover:bg-slate-50 flex items-center gap-2 cursor-pointer text-slate-800"
+                              >
+                                <ArrowUpRight className="h-3.5 w-3.5 text-rose-600 shrink-0" />
+                                <span>Debit Account</span>
+                              </button>
+
+                              {/* 3. Generate Transaction */}
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setGenerateTxModal(selectedUser);
+                                  setGenTxAmount("");
+                                  setGenTxCounterparty("");
+                                }}
+                                className="w-full text-left px-3.5 py-2 hover:bg-slate-50 flex items-center gap-2 cursor-pointer text-slate-800"
+                              >
+                                <FileText className="h-3.5 w-3.5 text-blue-600 shrink-0" />
+                                <span>Generate Transaction</span>
+                              </button>
+
+                              {/* 4. Edit Balance */}
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  const userAccounts = accounts.filter((a) => a.customerId === selectedUser.linkedCustomerId);
+                                  const chk = userAccounts.find((a) => a.accountType.toLowerCase().includes("checking"));
+                                  const sav = userAccounts.find((a) => a.accountType.toLowerCase().includes("savings"));
+                                  setEditCheckingAmount((chk?.balance ?? 0).toString());
+                                  setEditSavingsAmount((sav?.balance ?? 0).toString());
+                                  setEditBalanceModal(selectedUser);
+                                }}
+                                className="w-full text-left px-3.5 py-2 hover:bg-slate-50 flex items-center gap-2 cursor-pointer text-slate-800"
+                              >
+                                <Edit3 className="h-3.5 w-3.5 text-indigo-600 shrink-0" />
+                                <span>Edit Balance</span>
+                              </button>
+
+                              {/* 5. Account Usage Limits */}
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setDailyTransferLimitInput((selectedUser.dailyTransferLimit ?? 50000).toString());
+                                  setDailyWithdrawalLimitInput((selectedUser.dailyWithdrawalLimit ?? 10000).toString());
+                                  setAccountUsageLimitsModal(selectedUser);
+                                }}
+                                className="w-full text-left px-3.5 py-2 hover:bg-slate-50 flex items-center gap-2 cursor-pointer text-slate-800"
+                              >
+                                <TrendingUp className="h-3.5 w-3.5 text-amber-600 shrink-0" />
+                                <span>Account Usage Limits</span>
+                              </button>
+
+                              {/* 6. Manage Two-Factor Auth */}
+                              <button
+                                type="button"
+                                onClick={() => handleToggleTwoFactorAction(selectedUser)}
+                                className="w-full text-left px-3.5 py-2 hover:bg-slate-50 flex items-center gap-2 cursor-pointer text-slate-800"
+                              >
+                                <KeyRound className="h-3.5 w-3.5 text-purple-600 shrink-0" />
+                                <span>Manage Two-Factor Auth</span>
+                              </button>
+
+                              {/* 7. Change Profile Pics */}
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setProfilePicUrlInput(selectedUser.profilePicUrl || "");
+                                  setChangeProfilePicModal(selectedUser);
+                                }}
+                                className="w-full text-left px-3.5 py-2 hover:bg-slate-50 flex items-center gap-2 cursor-pointer text-slate-800"
+                              >
+                                <User className="h-3.5 w-3.5 text-slate-600 shrink-0" />
+                                <span>Change Profile Pics</span>
+                              </button>
+
+                              {/* 8. Reset Password */}
+                              <button
+                                type="button"
+                                onClick={() => handleConfirmSendPasswordResetLink(selectedUser, "Email")}
+                                className="w-full text-left px-3.5 py-2 hover:bg-slate-50 flex items-center gap-2 cursor-pointer text-slate-800"
+                              >
+                                <Lock className="h-3.5 w-3.5 text-amber-600 shrink-0" />
+                                <span>Reset Password</span>
+                              </button>
+
+                              {/* 9. Turn Off Dormant Account */}
+                              <button
+                                type="button"
+                                onClick={() => handleToggleDormantAction(selectedUser)}
+                                className="w-full text-left px-3.5 py-2 hover:bg-slate-50 flex items-center gap-2 cursor-pointer text-slate-800"
+                              >
+                                <PauseCircle className="h-3.5 w-3.5 text-indigo-500 shrink-0" />
+                                <span>{selectedUser.isDormant ? "Turn Off Dormant Account" : "Turn On Dormant Account"}</span>
+                              </button>
+
+                              {/* 10. Clear Account */}
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  if (confirm(`Are you sure you want to clear all cash account balances to $0.00 for ${selectedUser.name}?`)) {
+                                    handleExecuteClearAccount(selectedUser);
+                                  }
+                                }}
+                                className="w-full text-left px-3.5 py-2 hover:bg-slate-50 flex items-center gap-2 cursor-pointer text-slate-800"
+                              >
+                                <RefreshCw className="h-3.5 w-3.5 text-rose-500 shrink-0" />
+                                <span>Clear Account</span>
+                              </button>
+
+                              {/* 11. Clear BTC Account */}
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  if (confirm(`Are you sure you want to clear the Bitcoin account to 0 BTC for ${selectedUser.name}?`)) {
+                                    handleExecuteClearBTC(selectedUser);
+                                  }
+                                }}
+                                className="w-full text-left px-3.5 py-2 hover:bg-slate-50 flex items-center gap-2 cursor-pointer text-slate-800"
+                              >
+                                <span className="font-mono font-bold text-amber-500 shrink-0 text-xs">₿</span>
+                                <span>Clear BTC Account</span>
+                              </button>
+
+                              {/* 12. Edit (Profile) */}
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setUserEditForm({
+                                    name: selectedUser.name,
+                                    phone: selectedUser.phone,
+                                    mailingAddress: selectedUser.mailingAddress,
+                                    communicationPreferences: { ...selectedUser.communicationPreferences },
+                                  });
+                                  setUserEditModalOpen(true);
+                                }}
+                                className="w-full text-left px-3.5 py-2 hover:bg-slate-50 flex items-center gap-2 cursor-pointer text-slate-800"
+                              >
+                                <Edit3 className="h-3.5 w-3.5 text-blue-500 shrink-0" />
+                                <span>Edit</span>
+                              </button>
+
+                              {/* 13. Send Email */}
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setEmailSubjectInput(`Notice regarding your US Finance Bank Account`);
+                                  setEmailMessageInput(`Dear ${selectedUser.name},\n\nWe are writing to update you regarding your account...\n\nSincerely,\nUS Finance Bank Support`);
+                                  setSendEmailModal(selectedUser);
+                                }}
+                                className="w-full text-left px-3.5 py-2 hover:bg-slate-50 flex items-center gap-2 cursor-pointer text-slate-800"
+                              >
+                                <Mail className="h-3.5 w-3.5 text-slate-500 shrink-0" />
+                                <span>Send Email</span>
+                              </button>
+                            </div>
+
+                            <div className="py-1">
+                              {/* 14. Login as [Customer Name] in green */}
+                              <button
+                                type="button"
+                                onClick={() => handleInitiateOpenCustomerProfile(selectedUser)}
+                                className="w-full text-left px-3.5 py-2 hover:bg-emerald-50 text-emerald-600 font-bold flex items-center gap-2 cursor-pointer"
+                              >
+                                <ExternalLink className="h-3.5 w-3.5 shrink-0" />
+                                <span className="truncate">Login as {selectedUser.name}</span>
+                              </button>
+
+                              {/* 15. Login Activity */}
+                              <button
+                                type="button"
+                                onClick={() => setLoginActivityModal(selectedUser)}
+                                className="w-full text-left px-3.5 py-2 hover:bg-slate-50 flex items-center gap-2 cursor-pointer text-slate-800"
+                              >
+                                <Laptop className="h-3.5 w-3.5 text-slate-500 shrink-0" />
+                                <span>Login Activity</span>
+                              </button>
+
+                              {/* 16. Block / Suspend Account */}
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  const targetStatus = selectedUser.onlineAccessStatus === "Suspended" ? "Active" : "Suspended";
+                                  setUserToSuspendModal({ user: selectedUser, targetStatus });
+                                  setSuspendReason("");
+                                }}
+                                className="w-full text-left px-3.5 py-2 hover:bg-slate-50 text-amber-700 flex items-center gap-2 cursor-pointer"
+                              >
+                                <UserX className="h-3.5 w-3.5 shrink-0" />
+                                <span>{selectedUser.onlineAccessStatus === "Suspended" ? "Unblock Account" : "Block"}</span>
+                              </button>
+
+                              {/* 17. Delete [Customer Name] in red */}
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setUserToDeleteModal(selectedUser);
+                                  setDeleteReason("");
+                                  setDeleteConfirmChecked(false);
+                                  setDeleteError("");
+                                }}
+                                className="w-full text-left px-3.5 py-2 hover:bg-red-50 text-red-600 font-bold flex items-center gap-2 cursor-pointer"
+                              >
+                                <Trash2 className="h-3.5 w-3.5 shrink-0" />
+                                <span className="truncate">Delete {selectedUser.name}</span>
+                              </button>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
                     {/* Header */}
                     <div className="flex items-start justify-between border-b border-slate-100 pb-5">
                       <div>
@@ -3128,6 +3762,512 @@ export function SoloAdminDashboard({
                   </div>
                 </div>
               )}
+              {/* 17 ACTIONS INTERACTIVE DIALOG MODALS */}
+
+              {/* 1 & 2: Credit / Debit Account Modal */}
+              {creditDebitModal && (
+                <div role="dialog" aria-modal="true" className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4">
+                  <div className="w-full max-w-md rounded-3xl border border-slate-200 bg-white p-6 shadow-2xl text-slate-800">
+                    <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+                      <div className="flex items-center gap-2.5">
+                        <div className={`flex h-10 w-10 items-center justify-center rounded-xl font-bold ${creditDebitModal.type === "credit" ? "bg-emerald-100 text-emerald-700" : "bg-rose-100 text-rose-700"}`}>
+                          {creditDebitModal.type === "credit" ? <ArrowDownToLine className="h-5 w-5" /> : <ArrowUpRight className="h-5 w-5" />}
+                        </div>
+                        <div>
+                          <h3 className="font-bold text-slate-900 text-base">
+                            {creditDebitModal.type === "credit" ? "Credit Customer Account" : "Debit Customer Account"}
+                          </h3>
+                          <p className="text-xs text-slate-500">For {creditDebitModal.user.name} ({creditDebitModal.user.id})</p>
+                        </div>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setCreditDebitModal(null)}
+                        className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-800"
+                      >
+                        ✕
+                      </button>
+                    </div>
+
+                    <form onSubmit={handleExecuteCreditDebit} className="mt-4 space-y-4">
+                      <div>
+                        <label className="block text-xs font-bold text-slate-700 mb-1">Target Account</label>
+                        <select
+                          value={creditDebitAccountType}
+                          onChange={(e) => setCreditDebitAccountType(e.target.value as "checking" | "savings")}
+                          className="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2 text-xs font-semibold text-slate-800 focus:border-red-600 focus:outline-none"
+                        >
+                          <option value="checking">Advantage Checking</option>
+                          <option value="savings">High-Yield Savings</option>
+                        </select>
+                      </div>
+
+                      <div>
+                        <label className="block text-xs font-bold text-slate-700 mb-1">Amount (USD $)</label>
+                        <input
+                          type="number"
+                          step="0.01"
+                          required
+                          placeholder="e.g. 500.00"
+                          value={creditDebitAmount}
+                          onChange={(e) => setCreditDebitAmount(e.target.value)}
+                          className="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2 text-sm font-semibold text-slate-800 focus:border-red-600 focus:outline-none"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-xs font-bold text-slate-700 mb-1">Description / Memo</label>
+                        <input
+                          type="text"
+                          placeholder={creditDebitModal.type === "credit" ? "e.g. Administrative Credit Adjustment" : "e.g. Processing Fee Settlement"}
+                          value={creditDebitDescription}
+                          onChange={(e) => setCreditDebitDescription(e.target.value)}
+                          className="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2 text-xs text-slate-800 focus:border-red-600 focus:outline-none"
+                        />
+                      </div>
+
+                      <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-100">
+                        <Button
+                          type="button"
+                          variant="outline"
+                          onClick={() => setCreditDebitModal(null)}
+                          className="text-xs"
+                        >
+                          Cancel
+                        </Button>
+                        <Button
+                          type="submit"
+                          className={`text-xs font-bold text-white shadow-xs ${creditDebitModal.type === "credit" ? "bg-emerald-600 hover:bg-emerald-700" : "bg-rose-600 hover:bg-rose-700"}`}
+                        >
+                          Apply {creditDebitModal.type === "credit" ? "Credit" : "Debit"}
+                        </Button>
+                      </div>
+                    </form>
+                  </div>
+                </div>
+              )}
+
+              {/* 3: Generate Transaction Modal */}
+              {generateTxModal && (
+                <div role="dialog" aria-modal="true" className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4">
+                  <div className="w-full max-w-lg rounded-3xl border border-slate-200 bg-white p-6 shadow-2xl text-slate-800">
+                    <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+                      <div>
+                        <h3 className="font-bold text-slate-900 text-base">Generate Transaction Record</h3>
+                        <p className="text-xs text-slate-500">Creating custom ledger transaction for {generateTxModal.name}</p>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setGenerateTxModal(null)}
+                        className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-800"
+                      >
+                        ✕
+                      </button>
+                    </div>
+
+                    <form onSubmit={handleExecuteGenerateTransaction} className="mt-4 space-y-3.5">
+                      <div className="grid grid-cols-2 gap-3">
+                        <div>
+                          <label className="block text-xs font-bold text-slate-700 mb-1">Transaction Type</label>
+                          <select
+                            value={genTxType}
+                            onChange={(e) => setGenTxType(e.target.value as any)}
+                            className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs font-semibold text-slate-800 focus:border-red-600 focus:outline-none"
+                          >
+                            <option value="Direct Deposit">Direct Deposit</option>
+                            <option value="Wire Transfer">Wire Transfer</option>
+                            <option value="Card Settlement">Card Settlement</option>
+                            <option value="Bill Pay">Bill Pay</option>
+                            <option value="Internal Transfer">Internal Transfer</option>
+                            <option value="ACH Debit">ACH Debit</option>
+                          </select>
+                        </div>
+                        <div>
+                          <label className="block text-xs font-bold text-slate-700 mb-1">Direction</label>
+                          <select
+                            value={genTxDirection}
+                            onChange={(e) => setGenTxDirection(e.target.value as "credit" | "debit")}
+                            className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs font-semibold text-slate-800 focus:border-red-600 focus:outline-none"
+                          >
+                            <option value="credit">Credit (+)</option>
+                            <option value="debit">Debit (-)</option>
+                          </select>
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-3">
+                        <div>
+                          <label className="block text-xs font-bold text-slate-700 mb-1">Amount ($ USD)</label>
+                          <input
+                            type="number"
+                            step="0.01"
+                            required
+                            placeholder="0.00"
+                            value={genTxAmount}
+                            onChange={(e) => setGenTxAmount(e.target.value)}
+                            className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs font-semibold text-slate-800 focus:border-red-600 focus:outline-none"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-xs font-bold text-slate-700 mb-1">Status</label>
+                          <select
+                            value={genTxStatus}
+                            onChange={(e) => setGenTxStatus(e.target.value as any)}
+                            className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs font-semibold text-slate-800 focus:border-red-600 focus:outline-none"
+                          >
+                            <option value="Completed">Completed</option>
+                            <option value="Processing">Processing</option>
+                            <option value="On hold">On hold</option>
+                          </select>
+                        </div>
+                      </div>
+
+                      <div>
+                        <label className="block text-xs font-bold text-slate-700 mb-1">Counterparty / Merchant / Origin</label>
+                        <input
+                          type="text"
+                          required
+                          placeholder="e.g. Federal Reserve Bank / Payroll Direct"
+                          value={genTxCounterparty}
+                          onChange={(e) => setGenTxCounterparty(e.target.value)}
+                          className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs text-slate-800 focus:border-red-600 focus:outline-none"
+                        />
+                      </div>
+
+                      <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-100">
+                        <Button
+                          type="button"
+                          variant="outline"
+                          onClick={() => setGenerateTxModal(null)}
+                          className="text-xs"
+                        >
+                          Cancel
+                        </Button>
+                        <Button
+                          type="submit"
+                          className="bg-blue-600 hover:bg-blue-700 text-xs font-bold text-white shadow-xs"
+                        >
+                          Generate Record
+                        </Button>
+                      </div>
+                    </form>
+                  </div>
+                </div>
+              )}
+
+              {/* 4: Edit Balance Modal */}
+              {editBalanceModal && (
+                <div role="dialog" aria-modal="true" className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4">
+                  <div className="w-full max-w-md rounded-3xl border border-slate-200 bg-white p-6 shadow-2xl text-slate-800">
+                    <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+                      <div>
+                        <h3 className="font-bold text-slate-900 text-base">Edit Account Balances</h3>
+                        <p className="text-xs text-slate-500">Direct adjustment for {editBalanceModal.name}</p>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setEditBalanceModal(null)}
+                        className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-800"
+                      >
+                        ✕
+                      </button>
+                    </div>
+
+                    <form onSubmit={handleExecuteEditBalance} className="mt-4 space-y-4">
+                      <div>
+                        <label className="block text-xs font-bold text-slate-700 mb-1">Checking Account Balance ($)</label>
+                        <input
+                          type="number"
+                          step="0.01"
+                          required
+                          value={editCheckingAmount}
+                          onChange={(e) => setEditCheckingAmount(e.target.value)}
+                          className="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2 text-sm font-semibold text-slate-800 focus:border-red-600 focus:outline-none"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-xs font-bold text-slate-700 mb-1">High-Yield Savings Balance ($)</label>
+                        <input
+                          type="number"
+                          step="0.01"
+                          required
+                          value={editSavingsAmount}
+                          onChange={(e) => setEditSavingsAmount(e.target.value)}
+                          className="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2 text-sm font-semibold text-slate-800 focus:border-red-600 focus:outline-none"
+                        />
+                      </div>
+
+                      <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-100">
+                        <Button
+                          type="button"
+                          variant="outline"
+                          onClick={() => setEditBalanceModal(null)}
+                          className="text-xs"
+                        >
+                          Cancel
+                        </Button>
+                        <Button
+                          type="submit"
+                          className="bg-indigo-600 hover:bg-indigo-700 text-xs font-bold text-white shadow-xs"
+                        >
+                          Save Balances
+                        </Button>
+                      </div>
+                    </form>
+                  </div>
+                </div>
+              )}
+
+              {/* 5: Account Usage Limits Modal */}
+              {accountUsageLimitsModal && (
+                <div role="dialog" aria-modal="true" className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4">
+                  <div className="w-full max-w-md rounded-3xl border border-slate-200 bg-white p-6 shadow-2xl text-slate-800">
+                    <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+                      <div>
+                        <h3 className="font-bold text-slate-900 text-base">Account Usage Limits</h3>
+                        <p className="text-xs text-slate-500">Configure transfer & withdrawal limits for {accountUsageLimitsModal.name}</p>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setAccountUsageLimitsModal(null)}
+                        className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-800"
+                      >
+                        ✕
+                      </button>
+                    </div>
+
+                    <form onSubmit={handleExecuteSaveLimits} className="mt-4 space-y-4">
+                      <div>
+                        <label className="block text-xs font-bold text-slate-700 mb-1">Daily Transfer Limit ($)</label>
+                        <input
+                          type="number"
+                          step="100"
+                          required
+                          value={dailyTransferLimitInput}
+                          onChange={(e) => setDailyTransferLimitInput(e.target.value)}
+                          className="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2 text-sm font-semibold text-slate-800 focus:border-red-600 focus:outline-none"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-xs font-bold text-slate-700 mb-1">Daily ATM / Cash Withdrawal Limit ($)</label>
+                        <input
+                          type="number"
+                          step="50"
+                          required
+                          value={dailyWithdrawalLimitInput}
+                          onChange={(e) => setDailyWithdrawalLimitInput(e.target.value)}
+                          className="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2 text-sm font-semibold text-slate-800 focus:border-red-600 focus:outline-none"
+                        />
+                      </div>
+
+                      <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-100">
+                        <Button
+                          type="button"
+                          variant="outline"
+                          onClick={() => setAccountUsageLimitsModal(null)}
+                          className="text-xs"
+                        >
+                          Cancel
+                        </Button>
+                        <Button
+                          type="submit"
+                          className="bg-amber-600 hover:bg-amber-700 text-xs font-bold text-white shadow-xs"
+                        >
+                          Save Limits
+                        </Button>
+                      </div>
+                    </form>
+                  </div>
+                </div>
+              )}
+
+              {/* 7: Change Profile Pics Modal */}
+              {changeProfilePicModal && (
+                <div role="dialog" aria-modal="true" className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4">
+                  <div className="w-full max-w-md rounded-3xl border border-slate-200 bg-white p-6 shadow-2xl text-slate-800">
+                    <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+                      <div>
+                        <h3 className="font-bold text-slate-900 text-base">Change Profile Picture</h3>
+                        <p className="text-xs text-slate-500">Update avatar image URL for {changeProfilePicModal.name}</p>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setChangeProfilePicModal(null)}
+                        className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-800"
+                      >
+                        ✕
+                      </button>
+                    </div>
+
+                    <form onSubmit={handleExecuteSaveProfilePic} className="mt-4 space-y-4">
+                      <div>
+                        <label className="block text-xs font-bold text-slate-700 mb-1">Profile Photo Image URL</label>
+                        <input
+                          type="url"
+                          placeholder="https://images.unsplash.com/..."
+                          value={profilePicUrlInput}
+                          onChange={(e) => setProfilePicUrlInput(e.target.value)}
+                          className="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2 text-xs text-slate-800 focus:border-red-600 focus:outline-none"
+                        />
+                      </div>
+
+                      <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-100">
+                        <Button
+                          type="button"
+                          variant="outline"
+                          onClick={() => setChangeProfilePicModal(null)}
+                          className="text-xs"
+                        >
+                          Cancel
+                        </Button>
+                        <Button
+                          type="submit"
+                          className="bg-slate-900 hover:bg-slate-800 text-xs font-bold text-white shadow-xs"
+                        >
+                          Save Avatar
+                        </Button>
+                      </div>
+                    </form>
+                  </div>
+                </div>
+              )}
+
+              {/* 13: Send Email Modal */}
+              {sendEmailModal && (
+                <div role="dialog" aria-modal="true" className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4">
+                  <div className="w-full max-w-lg rounded-3xl border border-slate-200 bg-white p-6 shadow-2xl text-slate-800">
+                    <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+                      <div>
+                        <h3 className="font-bold text-slate-900 text-base">Send Official Administrative Email</h3>
+                        <p className="text-xs text-slate-500">To: {sendEmailModal.name} &lt;{sendEmailModal.email}&gt;</p>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setSendEmailModal(null)}
+                        className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-800"
+                      >
+                        ✕
+                      </button>
+                    </div>
+
+                    <form onSubmit={handleExecuteSendEmail} className="mt-4 space-y-3.5">
+                      <div>
+                        <label className="block text-xs font-bold text-slate-700 mb-1">Subject</label>
+                        <input
+                          type="text"
+                          required
+                          value={emailSubjectInput}
+                          onChange={(e) => setEmailSubjectInput(e.target.value)}
+                          className="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2 text-xs font-semibold text-slate-800 focus:border-red-600 focus:outline-none"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-xs font-bold text-slate-700 mb-1">Email Message Body</label>
+                        <textarea
+                          rows={5}
+                          required
+                          value={emailMessageInput}
+                          onChange={(e) => setEmailMessageInput(e.target.value)}
+                          className="w-full rounded-xl border border-slate-300 bg-white p-3 text-xs text-slate-800 focus:border-red-600 focus:outline-none"
+                        />
+                      </div>
+
+                      <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-100">
+                        <Button
+                          type="button"
+                          variant="outline"
+                          onClick={() => setSendEmailModal(null)}
+                          className="text-xs"
+                        >
+                          Cancel
+                        </Button>
+                        <Button
+                          type="submit"
+                          className="bg-red-600 hover:bg-red-700 text-xs font-bold text-white shadow-xs flex items-center gap-1.5"
+                        >
+                          <Send className="h-3.5 w-3.5" />
+                          <span>Dispatch Email</span>
+                        </Button>
+                      </div>
+                    </form>
+                  </div>
+                </div>
+              )}
+
+              {/* 15: Login Activity Modal */}
+              {loginActivityModal && (
+                <div role="dialog" aria-modal="true" className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4">
+                  <div className="w-full max-w-lg rounded-3xl border border-slate-200 bg-white p-6 shadow-2xl text-slate-800">
+                    <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+                      <div>
+                        <h3 className="font-bold text-slate-900 text-base">Customer Login Activity</h3>
+                        <p className="text-xs text-slate-500">Security and session audit trail for {loginActivityModal.name}</p>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setLoginActivityModal(null)}
+                        className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-800"
+                      >
+                        ✕
+                      </button>
+                    </div>
+
+                    <div className="mt-4 space-y-3">
+                      <div className="p-3 bg-slate-50 rounded-xl border border-slate-200 text-xs">
+                        <div className="flex items-center justify-between">
+                          <span className="font-bold text-slate-700">Last Sign-In Timestamp:</span>
+                          <span className="font-mono text-slate-900">{loginActivityModal.security.lastSignIn}</span>
+                        </div>
+                        <div className="flex items-center justify-between mt-1">
+                          <span className="font-bold text-slate-700">Origin IP Address:</span>
+                          <span className="font-mono text-slate-900">{loginActivityModal.security.lastSignInIp}</span>
+                        </div>
+                        <div className="flex items-center justify-between mt-1">
+                          <span className="font-bold text-slate-700">Active Live Sessions:</span>
+                          <span className="font-bold text-emerald-600">{loginActivityModal.security.activeSessionsCount} Active</span>
+                        </div>
+                        <div className="flex items-center justify-between mt-1">
+                          <span className="font-bold text-slate-700">2FA Protection:</span>
+                          <span className={`font-bold ${loginActivityModal.security.twoFactorEnabled ? "text-emerald-600" : "text-amber-600"}`}>
+                            {loginActivityModal.security.twoFactorEnabled ? "Enabled" : "Disabled"}
+                          </span>
+                        </div>
+                      </div>
+
+                      <h4 className="text-xs font-bold uppercase tracking-wider text-slate-400 mt-2">Recent Access Change Events</h4>
+                      <div className="max-h-48 overflow-y-auto space-y-2">
+                        {loginActivityModal.accessChangeHistory.length === 0 ? (
+                          <p className="text-xs text-slate-400 italic">No access modifications recorded.</p>
+                        ) : (
+                          loginActivityModal.accessChangeHistory.map((item) => (
+                            <div key={item.id} className="p-2.5 rounded-lg border border-slate-100 bg-slate-50 text-[0.72rem]">
+                              <div className="flex items-center justify-between text-slate-600">
+                                <span className="font-bold text-slate-800">{item.action}</span>
+                                <span>{item.timestamp}</span>
+                              </div>
+                              <p className="text-slate-500 mt-0.5">{item.reason}</p>
+                            </div>
+                          ))
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="flex items-center justify-end pt-4 border-t border-slate-100 mt-4">
+                      <Button
+                        type="button"
+                        onClick={() => setLoginActivityModal(null)}
+                        className="bg-slate-900 hover:bg-slate-800 text-xs font-bold text-white shadow-xs"
+                      >
+                        Close Activity Log
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              )}
+
               {userEditModalOpen && selectedUser && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4">
                   <div className="w-full max-w-lg rounded-3xl border border-slate-200 bg-white p-6 shadow-2xl text-slate-800">

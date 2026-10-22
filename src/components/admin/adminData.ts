@@ -25,6 +25,11 @@ export interface AdminUserRecord {
     lastSignInIp: string;
     passwordResetRequired: boolean;
   };
+  profilePicUrl?: string;
+  isDormant?: boolean;
+  btcBalance?: number;
+  dailyTransferLimit?: number;
+  dailyWithdrawalLimit?: number;
   adminNotes: string[];
   accessChangeHistory: {
     id: string;
