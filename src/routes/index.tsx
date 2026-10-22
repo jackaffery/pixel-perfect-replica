@@ -264,6 +264,7 @@ export interface AdminControlledUser {
   idType: string;
   idNumber: string;
   createdAt: string;
+  profilePicUrl?: string;
 }
 
 const INITIAL_USERS: AdminControlledUser[] = [
@@ -281,6 +282,7 @@ const INITIAL_USERS: AdminControlledUser[] = [
     idType: "Social Security Number (SSN)",
     idNumber: "•••-••-4892",
     createdAt: "Oct 12, 2026",
+    profilePicUrl: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=400&q=80",
   },
   {
     id: "USB-GB-401928",
@@ -296,6 +298,7 @@ const INITIAL_USERS: AdminControlledUser[] = [
     idType: "National Insurance (NI) Number",
     idNumber: "•• •• •• 89 C",
     createdAt: "Oct 15, 2026",
+    profilePicUrl: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=400&q=80",
   },
   {
     id: "USB-CA-884910",
@@ -311,6 +314,7 @@ const INITIAL_USERS: AdminControlledUser[] = [
     idType: "Social Insurance Number (SIN)",
     idNumber: "••• ••• 419",
     createdAt: "Today, 08:30 AM",
+    profilePicUrl: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=400&q=80",
   },
   {
     id: "USB-MX-301924",
@@ -326,6 +330,7 @@ const INITIAL_USERS: AdminControlledUser[] = [
     idType: "CURP / RFC",
     idNumber: "ROMS850215••••••",
     createdAt: "Oct 17, 2026",
+    profilePicUrl: "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&w=400&q=80",
   },
   {
     id: "USB-DE-662914",
@@ -341,6 +346,7 @@ const INITIAL_USERS: AdminControlledUser[] = [
     idType: "Personalausweis / Steuer-ID",
     idNumber: "T2200••••",
     createdAt: "Oct 10, 2026",
+    profilePicUrl: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?auto=format&fit=crop&w=400&q=80",
   },
   {
     id: "USB-JP-994102",
@@ -356,6 +362,7 @@ const INITIAL_USERS: AdminControlledUser[] = [
     idType: "My Number (Individual Number)",
     idNumber: "•••• •••• 9201",
     createdAt: "Oct 05, 2026",
+    profilePicUrl: "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&w=400&q=80",
   },
 ];
 
@@ -668,7 +675,21 @@ export function Index() {
     }
     return 0.0;
   });
+  const [customerProfilePic, setCustomerProfilePic] = useState<string | null>(() => {
+    if (typeof window !== "undefined") {
+      try {
+        const saved = localStorage.getItem("us_finance_bank_customer_session");
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          return parsed.profilePicUrl || null;
+        }
+      } catch {}
+    }
+    return null;
+  });
   const [showAccountBalance, setShowAccountBalance] = useState(false);
+  const [profilePicEditInput, setProfilePicEditInput] = useState("");
+  const [profilePicSuccess, setProfilePicSuccess] = useState("");
   const [selectedCustomerTx, setSelectedCustomerTx] = useState<{
     id: string;
     date: string;
@@ -843,7 +864,26 @@ export function Index() {
   const [adminAuthError, setAdminAuthError] = useState("");
 
   // Controlled Users Registry
-  const [adminUsers, setAdminUsers] = useState<AdminControlledUser[]>(INITIAL_USERS);
+  const [adminUsers, setAdminUsers] = useState<AdminControlledUser[]>(() => {
+    if (typeof window !== "undefined") {
+      const saved = localStorage.getItem("us_finance_bank_controlled_users");
+      if (saved) {
+        try {
+          return JSON.parse(saved);
+        } catch {}
+      }
+    }
+    return INITIAL_USERS;
+  });
+
+  const persistControlledUsers = (newUsers: AdminControlledUser[]) => {
+    setAdminUsers(newUsers);
+    if (typeof window !== "undefined") {
+      try {
+        localStorage.setItem("us_finance_bank_controlled_users", JSON.stringify(newUsers));
+      } catch {}
+    }
+  };
   const [adminSearchQuery, setAdminSearchQuery] = useState("");
   const [adminStatusFilter, setAdminStatusFilter] = useState<string>("all");
   const [adminActionNotice, setAdminActionNotice] = useState<string>("");
@@ -1031,11 +1071,13 @@ export function Index() {
       let loggedInName = "";
       let chkBal = 0;
       let savBal = 0;
+      let profPic: string | undefined = undefined;
 
       if (matchingUser) {
         chkBal = matchingUser.checkingBalance;
         savBal = matchingUser.savingsBalance;
         loggedInName = matchingUser.name;
+        profPic = matchingUser.profilePicUrl;
       } else {
         loggedInName = customerLoginEmail.includes("@")
           ? customerLoginEmail.split("@")[0] || customerLoginEmail
@@ -1045,6 +1087,9 @@ export function Index() {
       setCheckingBalance(chkBal);
       setSavingsBalance(savBal);
       setCustomerUser(loggedInName);
+      if (profPic) {
+        setCustomerProfilePic(profPic);
+      }
 
       if (rememberCustomer) {
         try {
@@ -1055,6 +1100,7 @@ export function Index() {
               checkingBalance: chkBal,
               savingsBalance: savBal,
               email: customerLoginEmail,
+              profilePicUrl: profPic,
             })
           );
         } catch {}
@@ -1083,9 +1129,39 @@ export function Index() {
 
   const handleCustomerSignOut = () => {
     setCustomerUser(null);
+    setCustomerProfilePic(null);
     try {
       localStorage.removeItem("us_finance_bank_customer_session");
     } catch {}
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
+  const handleUpdateCustomerProfilePic = (newUrl: string) => {
+    const trimmed = newUrl.trim();
+    if (!trimmed) return;
+    setCustomerProfilePic(trimmed);
+    // Update active session
+    try {
+      const saved = localStorage.getItem("us_finance_bank_customer_session");
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        parsed.profilePicUrl = trimmed;
+        localStorage.setItem("us_finance_bank_customer_session", JSON.stringify(parsed));
+      }
+    } catch {}
+
+    // Update adminUsers registry
+    if (customerUser) {
+      const updated = adminUsers.map((u) =>
+        u.name.toLowerCase() === customerUser.toLowerCase()
+          ? { ...u, profilePicUrl: trimmed }
+          : u
+      );
+      persistControlledUsers(updated);
+    }
+    setProfilePicSuccess("Profile photo updated successfully!");
+    setProfilePicEditInput("");
+    setTimeout(() => setProfilePicSuccess(""), 4000);
   };
 
   const handleCustomerGoBack = () => {
@@ -1908,6 +1984,7 @@ export function Index() {
           setCustomerUser(customer.name);
           if (customer.checkingBalance !== undefined) setCheckingBalance(customer.checkingBalance);
           if (customer.savingsBalance !== undefined) setSavingsBalance(customer.savingsBalance);
+          if (customer.profilePicUrl !== undefined) setCustomerProfilePic(customer.profilePicUrl);
           setAdminSupportSession({
             active: true,
             customerName: customer.name,
@@ -2216,27 +2293,45 @@ export function Index() {
 
           {/* Desktop Auth Actions */}
           <div className="hidden items-center gap-3 lg:flex">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setCheckStatusModalOpen(true)}
-              className="border-primary/20 text-xs font-semibold text-primary hover:bg-primary/5"
-            >
-              <FileCheck2 className="mr-1.5 h-3.5 w-3.5 text-accent" />
-              Check Status
-            </Button>
-
             {customerUser ? (
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleCustomerSignOut}
-                className="border-primary/30 text-primary hover:bg-primary/5"
-              >
-                <LogOut className="mr-1.5 h-4 w-4" /> {t.signOut}
-              </Button>
+              <div className="flex items-center gap-2.5">
+                <a
+                  href="#dashboard-title"
+                  className="flex items-center gap-2 rounded-xl border border-primary/20 bg-primary/5 hover:bg-primary/10 px-3 py-1.5 transition-colors cursor-pointer text-xs font-bold text-primary"
+                >
+                  {customerProfilePic ? (
+                    <img
+                      src={customerProfilePic}
+                      alt={customerUser}
+                      className="h-6 w-6 rounded-full object-cover border border-red-500 shadow-2xs shrink-0"
+                    />
+                  ) : (
+                    <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[#0a192f] text-white text-[0.68rem] font-bold">
+                      {customerUser.charAt(0).toUpperCase()}
+                    </div>
+                  )}
+                  <span>My Account</span>
+                </a>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleCustomerSignOut}
+                  className="border-primary/30 text-primary hover:bg-primary/5 text-xs font-semibold"
+                >
+                  <LogOut className="mr-1.5 h-3.5 w-3.5 text-red-600" /> {t.signOut}
+                </Button>
+              </div>
             ) : (
               <>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setCheckStatusModalOpen(true)}
+                  className="border-primary/20 text-xs font-semibold text-primary hover:bg-primary/5"
+                >
+                  <FileCheck2 className="mr-1.5 h-3.5 w-3.5 text-accent" />
+                  Check Status
+                </Button>
                 <Button
                   variant="outline"
                   size="sm"
@@ -2260,14 +2355,34 @@ export function Index() {
 
           {/* Mobile Drawer Toggle */}
           <div className="flex items-center gap-2 lg:hidden">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setCustomerModalOpen(true)}
-              className="text-xs"
-            >
-              Sign In
-            </Button>
+            {customerUser ? (
+              <a
+                href="#dashboard-title"
+                className="flex items-center gap-1.5 text-xs font-bold text-primary bg-primary/10 px-2.5 py-1 rounded-lg"
+              >
+                {customerProfilePic ? (
+                  <img
+                    src={customerProfilePic}
+                    alt={customerUser}
+                    className="h-5 w-5 rounded-full object-cover border border-red-500 shrink-0"
+                  />
+                ) : (
+                  <div className="h-5 w-5 rounded-full bg-[#0a192f] text-white text-[0.6rem] font-bold flex items-center justify-center">
+                    {customerUser.charAt(0).toUpperCase()}
+                  </div>
+                )}
+                <span>Account</span>
+              </a>
+            ) : (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setCustomerModalOpen(true)}
+                className="text-xs"
+              >
+                Sign In
+              </Button>
+            )}
             <Button
               variant="ghost"
               size="icon"
@@ -2485,15 +2600,28 @@ export function Index() {
                   </div>
                 </div>
 
-                {/* Subtitle & Welcome Back */}
-                <div className="mt-5 flex items-center justify-between">
-                  <div>
-                    <span className="text-[0.7rem] font-bold tracking-wider uppercase text-slate-300 block">
-                      CUSTOMER DASHBOARD
-                    </span>
-                    <h1 id="dashboard-title" className="text-2xl sm:text-3xl font-black text-white tracking-tight mt-0.5">
-                      Welcome back, {customerUser}
-                    </h1>
+                {/* Subtitle & Welcome Back with Customer Profile Picture Avatar */}
+                <div className="mt-5 flex items-center justify-between gap-4">
+                  <div className="flex items-center gap-3.5">
+                    {customerProfilePic ? (
+                      <img
+                        src={customerProfilePic}
+                        alt={customerUser}
+                        className="h-14 w-14 rounded-2xl object-cover border-2 border-red-500 shadow-lg shrink-0"
+                      />
+                    ) : (
+                      <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-white/10 border-2 border-red-500 text-white font-extrabold text-xl shadow-lg">
+                        {customerUser.charAt(0).toUpperCase()}
+                      </div>
+                    )}
+                    <div>
+                      <span className="text-[0.7rem] font-bold tracking-wider uppercase text-slate-300 block">
+                        CUSTOMER DASHBOARD
+                      </span>
+                      <h1 id="dashboard-title" className="text-2xl sm:text-3xl font-black text-white tracking-tight mt-0.5">
+                        Welcome back, {customerUser}
+                      </h1>
+                    </div>
                   </div>
                   {/* Accessible Back control in top-left / top-right of customer screens */}
                   {customerActiveTab !== "overview" && (
@@ -3245,10 +3373,73 @@ export function Index() {
                     <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
                       {/* Account Summary & Verification */}
                       <div className="rounded-xl border border-slate-200 p-4 bg-slate-50/50 space-y-3">
-                        <h4 className="font-bold text-xs uppercase tracking-wider text-slate-600">
-                          Account Profile
-                        </h4>
-                        <div className="space-y-2 text-xs">
+                        <div className="flex items-center justify-between">
+                          <h4 className="font-bold text-xs uppercase tracking-wider text-slate-600">
+                            Account Profile
+                          </h4>
+                          <span className="text-[0.65rem] font-bold text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded">
+                            Verified
+                          </span>
+                        </div>
+
+                        {/* Customer Profile Photo Card */}
+                        <div className="flex items-center gap-3.5 p-3 rounded-lg bg-white border border-slate-200">
+                          {customerProfilePic ? (
+                            <img
+                              src={customerProfilePic}
+                              alt={customerUser || "Profile"}
+                              className="h-14 w-14 rounded-2xl object-cover border-2 border-red-600 shadow-xs shrink-0"
+                            />
+                          ) : (
+                            <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-[#0a192f] border-2 border-red-600 text-white font-extrabold text-xl shadow-xs">
+                              {customerUser ? customerUser.charAt(0).toUpperCase() : "U"}
+                            </div>
+                          )}
+                          <div className="flex-1 min-w-0">
+                            <span className="text-xs font-bold text-slate-900 block truncate">
+                              {customerUser}
+                            </span>
+                            <span className="text-[0.7rem] text-slate-500 block">
+                              Profile Picture Saved
+                            </span>
+                          </div>
+                        </div>
+
+                        {/* Profile Picture Upload / URL Update Form */}
+                        <form
+                          onSubmit={(e) => {
+                            e.preventDefault();
+                            handleUpdateCustomerProfilePic(profilePicEditInput);
+                          }}
+                          className="pt-1 space-y-2"
+                        >
+                          <label className="block text-[0.7rem] font-bold text-slate-700">
+                            Update Profile Photo URL
+                          </label>
+                          <div className="flex gap-2">
+                            <input
+                              type="url"
+                              placeholder="https://images.unsplash.com/..."
+                              value={profilePicEditInput}
+                              onChange={(e) => setProfilePicEditInput(e.target.value)}
+                              className="flex-1 rounded-lg border border-slate-300 bg-white px-2.5 py-1.5 text-xs text-slate-800 focus:border-red-600 focus:outline-none"
+                            />
+                            <Button
+                              type="submit"
+                              size="sm"
+                              className="bg-red-600 hover:bg-red-700 text-white text-xs font-bold px-3 shrink-0"
+                            >
+                              Update
+                            </Button>
+                          </div>
+                          {profilePicSuccess && (
+                            <p className="text-[0.7rem] font-bold text-emerald-600 mt-1">
+                              ✓ {profilePicSuccess}
+                            </p>
+                          )}
+                        </form>
+
+                        <div className="space-y-2 text-xs pt-2 border-t border-slate-200/60">
                           <div className="flex justify-between py-1 border-b border-slate-200/60">
                             <span className="text-slate-500">Account Holder:</span>
                             <span className="font-bold text-slate-900">{customerUser}</span>

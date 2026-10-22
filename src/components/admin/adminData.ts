@@ -49,6 +49,7 @@ export interface AdminCustomer {
   phone: string;
   country: string;
   countryCode: string;
+  profilePicUrl?: string;
   verificationStatus: "Verified" | "Pending Review" | "Action Required" | "Rejected";
   riskLevel: "Low" | "Medium" | "High" | "Flagged";
   status: "Active" | "Restricted" | "Suspended" | "Frozen";
@@ -282,6 +283,7 @@ export const MOCK_ADMIN_USERS: AdminUserRecord[] = [
     email: "eleanor.vance@example.com",
     phone: "+1 (555) 234-8901",
     mailingAddress: "742 Evergreen Terrace, Springfield, IL 62704, United States",
+    profilePicUrl: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=400&q=80",
     dateJoined: "2025-10-12",
     displayDateJoined: "Oct 12, 2025",
     onlineAccessStatus: "Active",
@@ -322,6 +324,7 @@ export const MOCK_ADMIN_USERS: AdminUserRecord[] = [
     email: "liam.davies@example.co.uk",
     phone: "+44 20 7946 0912",
     mailingAddress: "14 Belgrave Square, Westminster, London SW1X 8PS, United Kingdom",
+    profilePicUrl: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=400&q=80",
     dateJoined: "2025-11-03",
     displayDateJoined: "Nov 03, 2025",
     onlineAccessStatus: "Active",
@@ -361,6 +364,7 @@ export const MOCK_ADMIN_USERS: AdminUserRecord[] = [
     email: "mathieu.t@example.ca",
     phone: "+1 (416) 555-0182",
     mailingAddress: "88 Bay Street, Suite 1400, Toronto, ON M5J 2R8, Canada",
+    profilePicUrl: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=400&q=80",
     dateJoined: "2026-10-19",
     displayDateJoined: "Yesterday",
     onlineAccessStatus: "Active",
@@ -400,6 +404,7 @@ export const MOCK_ADMIN_USERS: AdminUserRecord[] = [
     email: "sofia.rodriguez@example.mx",
     phone: "+52 55 1234 5678",
     mailingAddress: "Paseo de la Reforma 222, Piso 8, Cuauhtémoc, 06600 CDMX, Mexico",
+    profilePicUrl: "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&w=400&q=80",
     dateJoined: "2025-12-18",
     displayDateJoined: "Dec 18, 2025",
     onlineAccessStatus: "Active",
@@ -439,6 +444,7 @@ export const MOCK_ADMIN_USERS: AdminUserRecord[] = [
     email: "lukas.weber@example.de",
     phone: "+49 30 1234567",
     mailingAddress: "Friedrichstraße 43, 10117 Berlin, Germany",
+    profilePicUrl: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?auto=format&fit=crop&w=400&q=80",
     dateJoined: "2026-01-10",
     displayDateJoined: "Jan 10, 2026",
     onlineAccessStatus: "Suspended",
@@ -488,6 +494,7 @@ export const MOCK_ADMIN_USERS: AdminUserRecord[] = [
     email: "kenji.takahashi@example.jp",
     phone: "+81 3 5555 0143",
     mailingAddress: "Minato-ku, Roppongi 6-10-1, Tokyo 106-6108, Japan",
+    profilePicUrl: "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&w=400&q=80",
     dateJoined: "2026-02-01",
     displayDateJoined: "Feb 01, 2026",
     onlineAccessStatus: "Closed",

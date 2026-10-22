@@ -89,6 +89,7 @@ export interface SoloAdminDashboardProps {
     linkedCustomerId: string;
     checkingBalance?: number | undefined;
     savingsBalance?: number | undefined;
+    profilePicUrl?: string | undefined;
   }) => void;
 }
 
@@ -766,6 +767,7 @@ export function SoloAdminDashboard({
         linkedCustomerId: user.linkedCustomerId,
         checkingBalance: checkingAcc?.balance,
         savingsBalance: savingsAcc?.balance,
+        profilePicUrl: user.profilePicUrl,
       });
       return;
     }
@@ -2696,8 +2698,23 @@ export function SoloAdminDashboard({
                         filteredUsers.map((user) => (
                           <tr key={user.id} className="hover:bg-slate-50 transition-colors">
                             <td className="px-5 py-4">
-                              <div className="font-bold text-slate-900 text-sm">{user.name}</div>
-                              <div className="font-mono text-[0.7rem] text-slate-500">{user.id}</div>
+                              <div className="flex items-center gap-3">
+                                {user.profilePicUrl ? (
+                                  <img
+                                    src={user.profilePicUrl}
+                                    alt={user.name}
+                                    className="h-9 w-9 rounded-full object-cover border border-slate-300 shadow-2xs shrink-0"
+                                  />
+                                ) : (
+                                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#0a192f] text-white font-bold text-xs shadow-2xs">
+                                    {user.name.charAt(0)}
+                                  </div>
+                                )}
+                                <div>
+                                  <div className="font-bold text-slate-900 text-sm">{user.name}</div>
+                                  <div className="font-mono text-[0.7rem] text-slate-500">{user.id}</div>
+                                </div>
+                              </div>
                             </td>
                             <td className="px-5 py-4">
                               <div className="text-slate-800">{user.email}</div>
@@ -3117,25 +3134,38 @@ export function SoloAdminDashboard({
 
                     {/* Header */}
                     <div className="flex items-start justify-between border-b border-slate-100 pb-5">
-                      <div>
-                        <div className="flex items-center gap-2">
-                          <span className="rounded bg-[#0a192f] px-2 py-0.5 text-[0.68rem] font-bold text-white border border-[#0a192f]">
-                            USER ID: {selectedUser.id}
-                          </span>
-                          <span
-                            className={`rounded-full px-2 py-0.5 text-[0.68rem] font-bold ${
-                              selectedUser.onlineAccessStatus === "Active"
-                                ? "bg-emerald-100 text-emerald-800 border border-emerald-200"
-                                : "bg-red-100 text-red-800 border border-red-200"
-                            }`}
-                          >
-                            Online Access: {selectedUser.onlineAccessStatus}
-                          </span>
+                      <div className="flex items-center gap-3.5">
+                        {selectedUser.profilePicUrl ? (
+                          <img
+                            src={selectedUser.profilePicUrl}
+                            alt={selectedUser.name}
+                            className="h-14 w-14 shrink-0 rounded-2xl object-cover border-2 border-red-600 shadow-sm"
+                          />
+                        ) : (
+                          <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-[#0a192f] text-white font-bold text-xl border-2 border-red-600 shadow-sm">
+                            {selectedUser.name.charAt(0)}
+                          </div>
+                        )}
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <span className="rounded bg-[#0a192f] px-2 py-0.5 text-[0.68rem] font-bold text-white border border-[#0a192f]">
+                              USER ID: {selectedUser.id}
+                            </span>
+                            <span
+                              className={`rounded-full px-2 py-0.5 text-[0.68rem] font-bold ${
+                                selectedUser.onlineAccessStatus === "Active"
+                                  ? "bg-emerald-100 text-emerald-800 border border-emerald-200"
+                                  : "bg-red-100 text-red-800 border border-red-200"
+                              }`}
+                            >
+                              Online Access: {selectedUser.onlineAccessStatus}
+                            </span>
+                          </div>
+                          <h3 className="mt-1.5 text-2xl font-black text-[#0a192f]">{selectedUser.name}</h3>
+                          <p className="text-xs text-slate-500">
+                            Joined on {selectedUser.displayDateJoined} • Customer Link ID: {selectedUser.linkedCustomerId}
+                          </p>
                         </div>
-                        <h3 className="mt-2 text-2xl font-black text-[#0a192f]">{selectedUser.name}</h3>
-                        <p className="text-xs text-slate-500">
-                          Joined on {selectedUser.displayDateJoined} • Customer Link ID: {selectedUser.linkedCustomerId}
-                        </p>
                       </div>
                       <div className="flex items-center gap-2.5">
                         {/* Clearly labeled "Open customer profile" action */}
@@ -5366,8 +5396,27 @@ export function SoloAdminDashboard({
                         filteredCustomers.map((cust) => (
                           <tr key={cust.id} className="hover:bg-slate-800/40 transition-colors">
                             <td className="px-5 py-3.5">
-                              <div className="font-bold text-white text-sm">{cust.name}</div>
-                              <div className="text-[0.68rem] text-slate-500 font-mono">{cust.id} • {cust.email}</div>
+                              <div className="flex items-center gap-3">
+                                {(() => {
+                                  const matchingUser = adminUsers.find((u) => u.linkedCustomerId === cust.id || u.name === cust.name);
+                                  const pic = matchingUser?.profilePicUrl || cust.profilePicUrl;
+                                  return pic ? (
+                                    <img
+                                      src={pic}
+                                      alt={cust.name}
+                                      className="h-8 w-8 rounded-full object-cover border border-slate-700 shrink-0"
+                                    />
+                                  ) : (
+                                    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-slate-800 text-teal-400 font-bold text-xs border border-slate-700">
+                                      {cust.name.charAt(0)}
+                                    </div>
+                                  );
+                                })()}
+                                <div>
+                                  <div className="font-bold text-white text-sm">{cust.name}</div>
+                                  <div className="text-[0.68rem] text-slate-500 font-mono">{cust.id} • {cust.email}</div>
+                                </div>
+                              </div>
                             </td>
                             <td className="px-5 py-3.5">
                               <span className="font-semibold text-slate-200">{cust.country}</span>
@@ -5453,9 +5502,21 @@ export function SoloAdminDashboard({
                     </button>
 
                     <div className="flex items-center gap-3 border-b border-slate-800 pb-4">
-                      <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-blue-600 text-white font-bold text-lg">
-                        {selectedCustomer.name.slice(0, 2).toUpperCase()}
-                      </div>
+                      {(() => {
+                        const matchingUser = adminUsers.find((u) => u.linkedCustomerId === selectedCustomer.id || u.name === selectedCustomer.name);
+                        const pic = matchingUser?.profilePicUrl || selectedCustomer.profilePicUrl;
+                        return pic ? (
+                          <img
+                            src={pic}
+                            alt={selectedCustomer.name}
+                            className="h-12 w-12 rounded-xl object-cover border border-slate-700"
+                          />
+                        ) : (
+                          <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-blue-600 text-white font-bold text-lg">
+                            {selectedCustomer.name.slice(0, 2).toUpperCase()}
+                          </div>
+                        );
+                      })()}
                       <div>
                         <h3 className="text-lg font-bold text-white">{selectedCustomer.name}</h3>
                         <p className="text-xs text-slate-400 font-mono">
@@ -6960,9 +7021,17 @@ export function SoloAdminDashboard({
                 <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-xs">
                   <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                     <div className="flex items-center gap-4">
-                      <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-[#0a192f] text-white font-bold text-xl border-2 border-red-600 shadow-md">
-                        {customerProfileInspectionUser.name.charAt(0)}
-                      </div>
+                      {customerProfileInspectionUser.profilePicUrl ? (
+                        <img
+                          src={customerProfileInspectionUser.profilePicUrl}
+                          alt={customerProfileInspectionUser.name}
+                          className="h-14 w-14 shrink-0 rounded-2xl object-cover border-2 border-red-600 shadow-md"
+                        />
+                      ) : (
+                        <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-[#0a192f] text-white font-bold text-xl border-2 border-red-600 shadow-md">
+                          {customerProfileInspectionUser.name.charAt(0)}
+                        </div>
+                      )}
                       <div>
                         <div className="flex items-center gap-2">
                           <h2 className="text-2xl font-black text-[#0a192f]">
