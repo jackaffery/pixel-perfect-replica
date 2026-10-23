@@ -54,6 +54,7 @@ import {
   ArrowLeft,
   Settings,
   Sliders,
+  Upload,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import usFinanceBuildingHero from "@/assets/us-finance-bank-building.jpg";
