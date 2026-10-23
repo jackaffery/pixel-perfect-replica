@@ -2158,7 +2158,7 @@ export function SoloAdminDashboard({
                 US
               </span>
               <span className="font-display text-base sm:text-lg font-black tracking-tight text-white select-none truncate">
-                West Side Bank
+                West Side Financial Institution
               </span>
             </div>
           </div>
@@ -2300,7 +2300,7 @@ export function SoloAdminDashboard({
                 <div className="absolute right-0 mt-2 w-48 rounded-xl border border-slate-200 bg-white py-1 shadow-xl z-50 text-slate-800 animate-fadeIn">
                   <div className="px-4 py-2 border-b border-slate-100">
                     <p className="text-xs font-bold text-slate-800">Staff Admin</p>
-                    <p className="text-[0.68rem] text-slate-500">West Side Bank Internal</p>
+                    <p className="text-[0.68rem] text-slate-500">West Side Financial Institution Internal</p>
                   </div>
                   <button
                     type="button"
@@ -2696,7 +2696,7 @@ export function SoloAdminDashboard({
 
               {/* Copyright Footer matching screenshot */}
               <div className="pt-4 pb-2 text-center text-xs text-slate-500 border-t border-slate-200">
-                All Rights Reserved © West Side Bank {new Date().getFullYear()}
+                All Rights Reserved © West Side Financial Institution {new Date().getFullYear()}
               </div>
             </div>
           )}
@@ -3292,8 +3292,8 @@ export function SoloAdminDashboard({
                               <button
                                 type="button"
                                 onClick={() => {
-                                  setEmailSubjectInput(`Notice regarding your West Side Bank Account`);
-                                  setEmailMessageInput(`Dear ${selectedUser.name},\n\nWe are writing to update you regarding your account...\n\nSincerely,\nWest Side Bank Support`);
+                                  setEmailSubjectInput(`Notice regarding your West Side Financial Institution Account`);
+                                  setEmailMessageInput(`Dear ${selectedUser.name},\n\nWe are writing to update you regarding your account...\n\nSincerely,\nWest Side Financial Institution Support`);
                                   setSendEmailModal(selectedUser);
                                 }}
                                 className="w-full text-left px-3.5 py-2 hover:bg-slate-50 flex items-center gap-2 cursor-pointer text-slate-800"
@@ -7390,7 +7390,7 @@ export function SoloAdminDashboard({
                     <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-xs">
                       <div className="flex items-center justify-between">
                         <span className="text-xs font-bold uppercase tracking-wider text-slate-500">
-                          West Side Bank Platinum Debit
+                          West Side Financial Institution Platinum Debit
                         </span>
                         <span className="rounded bg-blue-100 px-2 py-0.5 text-[0.65rem] font-bold text-blue-800">
                           Active

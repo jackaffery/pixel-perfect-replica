@@ -5,9 +5,9 @@ export const Route = createFileRoute("/account")({
   ssr: false,
   head: () => ({
     meta: [
-      { title: "My Account | West Side Bank" },
+      { title: "My Account | West Side Financial Institution" },
       { name: "description", content: "Secure private customer account dashboard, balances, transfers, and security settings." },
-      { property: "og:title", content: "My Account | West Side Bank" },
+      { property: "og:title", content: "My Account | West Side Financial Institution" },
       { property: "og:description", content: "Secure private customer account portal." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },

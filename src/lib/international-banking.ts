@@ -312,7 +312,7 @@ export interface TranslationDict {
 
 export const TRANSLATIONS: Record<string, TranslationDict> = {
   en: {
-    brandName: "WEST SIDE BANK",
+    brandName: "WEST SIDE FINANCIAL INSTITUTION",
     tagline: "Online Banking",
     motto: "Stronger Together for a Brighter Future",
     heroHeadline: "Banking Made Simpler. Your Future, Your Finance.",
@@ -343,7 +343,7 @@ export const TRANSLATIONS: Record<string, TranslationDict> = {
     signOut: "Sign Out"
   },
   "en-GB": {
-    brandName: "WEST SIDE BANK",
+    brandName: "WEST SIDE FINANCIAL INSTITUTION",
     tagline: "Online Banking",
     motto: "Stronger Together for a Brighter Future",
     heroHeadline: "Banking Made Simpler. Your Future, Your Finance.",
@@ -374,7 +374,7 @@ export const TRANSLATIONS: Record<string, TranslationDict> = {
     signOut: "Sign Out"
   },
   "en-CA": {
-    brandName: "WEST SIDE BANK",
+    brandName: "WEST SIDE FINANCIAL INSTITUTION",
     tagline: "Online Banking",
     motto: "Stronger Together for a Brighter Future",
     heroHeadline: "Banking Made Simpler. Your Future, Your Finance.",
@@ -405,7 +405,7 @@ export const TRANSLATIONS: Record<string, TranslationDict> = {
     signOut: "Sign Out"
   },
   "es-MX": {
-    brandName: "WEST SIDE BANK",
+    brandName: "WEST SIDE FINANCIAL INSTITUTION",
     tagline: "Banca en Línea",
     motto: "Más Fuertes Juntos por un Futuro Más Brillante",
     heroHeadline: "Banca Más Sencilla. Tu Futuro, Tus Finanzas.",
@@ -436,7 +436,7 @@ export const TRANSLATIONS: Record<string, TranslationDict> = {
     signOut: "Cerrar Sesión"
   },
   "de-CH": {
-    brandName: "WEST SIDE BANK",
+    brandName: "WEST SIDE FINANCIAL INSTITUTION",
     tagline: "Online-Banking",
     motto: "Gemeinsam Stärker für eine Bessere Zukunft",
     heroHeadline: "Banking Einfach Gemacht. Ihre Zukunft, Ihre Finanzen.",
@@ -467,7 +467,7 @@ export const TRANSLATIONS: Record<string, TranslationDict> = {
     signOut: "Abmelden"
   },
   es: {
-    brandName: "WEST SIDE BANK",
+    brandName: "WEST SIDE FINANCIAL INSTITUTION",
     tagline: "Banca en Línea",
     motto: "Más Fuertes Juntos por un Futuro Más Brillante",
     heroHeadline: "Banca Más Sencilla. Tu Futuro, Tus Finanzas.",
@@ -498,7 +498,7 @@ export const TRANSLATIONS: Record<string, TranslationDict> = {
     signOut: "Cerrar Sesión"
   },
   fr: {
-    brandName: "WEST SIDE BANK",
+    brandName: "WEST SIDE FINANCIAL INSTITUTION",
     tagline: "Banque en Ligne",
     motto: "Plus Forts Ensemble pour un Avenir Meilleur",
     heroHeadline: "La Banque Plus Simple. Votre Avenir, Vos Finances.",
@@ -529,7 +529,7 @@ export const TRANSLATIONS: Record<string, TranslationDict> = {
     signOut: "Déconnexion"
   },
   de: {
-    brandName: "WEST SIDE BANK",
+    brandName: "WEST SIDE FINANCIAL INSTITUTION",
     tagline: "Online-Banking",
     motto: "Gemeinsam Stärker für eine Bessere Zukunft",
     heroHeadline: "Banking Einfach Gemacht. Ihre Zukunft, Ihre Finanzen.",
@@ -560,7 +560,7 @@ export const TRANSLATIONS: Record<string, TranslationDict> = {
     signOut: "Abmelden"
   },
   "zh-CN": {
-    brandName: "WEST SIDE BANK (美融银行)",
+    brandName: "WEST SIDE FINANCIAL INSTITUTION (美融银行)",
     tagline: "网上银行",
     motto: "携手共创更美好的未来",
     heroHeadline: "让金融更简捷。您的未来，您的财富。",
@@ -591,7 +591,7 @@ export const TRANSLATIONS: Record<string, TranslationDict> = {
     signOut: "安全退出"
   },
   "zh-TW": {
-    brandName: "WEST SIDE BANK (美融銀行)",
+    brandName: "WEST SIDE FINANCIAL INSTITUTION (美融銀行)",
     tagline: "網路銀行",
     motto: "攜手共創更美好的未來",
     heroHeadline: "讓金融更簡捷。您的未來，您的財富。",
@@ -622,7 +622,7 @@ export const TRANSLATIONS: Record<string, TranslationDict> = {
     signOut: "登出系統"
   },
   ja: {
-    brandName: "WEST SIDE BANK",
+    brandName: "WEST SIDE FINANCIAL INSTITUTION",
     tagline: "オンラインバンキング",
     motto: "ともにより明るい未来へ",
     heroHeadline: "バンキングをもっとシンプルに。未来を築く確かな金融。",
@@ -653,7 +653,7 @@ export const TRANSLATIONS: Record<string, TranslationDict> = {
     signOut: "ログアウト"
   },
   vi: {
-    brandName: "WEST SIDE BANK",
+    brandName: "WEST SIDE FINANCIAL INSTITUTION",
     tagline: "Ngân Hàng Trực Tuyến",
     motto: "Cùng Nhau Vững Bước Vì Một Tương Lai Tươi Sáng",
     heroHeadline: "Ngân Hàng Đơn Giản Hơn. Tương Lai Của Bạn, Tài Chính Của Bạn.",
@@ -684,7 +684,7 @@ export const TRANSLATIONS: Record<string, TranslationDict> = {
     signOut: "Đăng Xuất"
   },
   ko: {
-    brandName: "WEST SIDE BANK",
+    brandName: "WEST SIDE FINANCIAL INSTITUTION",
     tagline: "인터넷 뱅킹",
     motto: "더 밝은 내일을 향해 함께하는 금융",
     heroHeadline: "금융을 더 단순하고 명쾌하게. 당신의 미래, 당신의 자산.",

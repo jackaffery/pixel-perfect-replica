@@ -132,13 +132,13 @@ class AdminDashboardErrorBoundary extends React.Component<
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "West Side Bank | Online Banking" },
+      { title: "West Side Financial Institution | Online Banking" },
       {
         name: "description",
         content:
-          "Welcome to West Side Bank. Modern, secure, multilingual digital banking serving global clients with local currency, ID verification, and 24/7 account protection.",
+          "Welcome to West Side Financial Institution. Modern, secure, multilingual digital banking serving global clients with local currency, ID verification, and 24/7 account protection.",
       },
-      { property: "og:title", content: "West Side Bank | Online Banking" },
+      { property: "og:title", content: "West Side Financial Institution | Online Banking" },
       {
         property: "og:description",
         content: "Banking Made Simpler. Your Future, Your Finance.",
@@ -2294,7 +2294,7 @@ export function Index({ view = "home" }: { view?: "home" | "account" } = {}) {
           <div className="flex items-center gap-3">
             <span className="flex items-center gap-1.5 font-bold tracking-wide">
               <ShieldCheck className="h-4 w-4 text-accent shrink-0" />
-              West Side Bank • Global Digital Portal
+              West Side Financial Institution • Global Digital Portal
             </span>
             <span className="hidden text-white/30 sm:inline">|</span>
             <span className="hidden text-white/80 md:inline items-center gap-1.5">
@@ -2482,7 +2482,7 @@ export function Index({ view = "home" }: { view?: "home" | "account" } = {}) {
           <a
             href="#top"
             className="group flex min-w-0 items-center gap-3 rounded focus-visible:outline-2 focus-visible:outline-ring"
-            aria-label="West Side Bank, Online Banking home"
+            aria-label="West Side Financial Institution, Online Banking home"
           >
             <div className="relative flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-primary text-primary-foreground shadow-sm ring-2 ring-primary/20 transition-transform group-hover:scale-105">
               <Landmark className="h-6 w-6 text-white" />
@@ -2493,7 +2493,7 @@ export function Index({ view = "home" }: { view?: "home" | "account" } = {}) {
             </div>
             <div className="min-w-0 leading-tight">
               <span className="block text-base font-extrabold tracking-tight text-primary sm:text-lg">
-                WEST SIDE BANK
+                WEST SIDE FINANCIAL INSTITUTION
               </span>
               <span className="block text-xs font-semibold uppercase tracking-wider text-accent sm:text-[0.72rem]">
                 {t.tagline}
@@ -4094,7 +4094,7 @@ export function Index({ view = "home" }: { view?: "home" | "account" } = {}) {
           aria-labelledby="hero-heading"
           className="relative isolate overflow-hidden bg-navy-deep text-primary-foreground min-h-[640px] flex items-center"
         >
-          {/* USER'S EXACT WEST SIDE BANK HEADQUARTERS PHOTOGRAPH */}
+          {/* USER'S EXACT WEST SIDE FINANCIAL INSTITUTION HEADQUARTERS PHOTOGRAPH */}
           <img
             src={usFinanceBuildingHero}
             alt="West Side Financial Institution Modern Headquarters Tower"
@@ -4335,7 +4335,7 @@ export function Index({ view = "home" }: { view?: "home" | "account" } = {}) {
             </div>
 
             <div className="mt-6 rounded-lg bg-secondary/50 p-3 text-[0.7rem] text-muted-foreground leading-relaxed">
-              <strong>Compliance Notice:</strong> This country list represents West Side Bank's intended service coverage. All country-specific identity, tax, and AML requirements are configurable and must be verified by local qualified legal and regulatory professionals prior to commercial onboarding.
+              <strong>Compliance Notice:</strong> This country list represents West Side Financial Institution's intended service coverage. All country-specific identity, tax, and AML requirements are configurable and must be verified by local qualified legal and regulatory professionals prior to commercial onboarding.
             </div>
           </div>
         </section>
@@ -4600,11 +4600,11 @@ export function Index({ view = "home" }: { view?: "home" | "account" } = {}) {
                 id="about-heading"
                 className="mt-2 font-display text-3xl font-bold text-primary sm:text-4xl"
               >
-                About West Side Bank
+                About West Side Financial Institution
               </h2>
               <div className="mx-auto my-4 h-1 w-16 bg-accent" />
               <p className="text-base leading-relaxed text-muted-foreground">
-                West Side Bank is committed to delivering accessible, transparent, and
+                West Side Financial Institution is committed to delivering accessible, transparent, and
                 trustworthy banking services across the United States and international markets.
                 We blend cutting-edge digital convenience with steadfast financial security.
               </p>
@@ -4657,7 +4657,7 @@ export function Index({ view = "home" }: { view?: "home" | "account" } = {}) {
                   id="contact-heading"
                   className="mt-2 font-display text-3xl font-bold text-primary sm:text-4xl"
                 >
-                  Contact West Side Bank
+                  Contact West Side Financial Institution
                 </h2>
                 <p className="mt-3 leading-relaxed text-muted-foreground">
                   Have questions about opening an account, regional verification, or digital
@@ -4726,7 +4726,7 @@ export function Index({ view = "home" }: { view?: "home" | "account" } = {}) {
                     Security Notice
                   </p>
                   <p className="mt-1 leading-relaxed">
-                    West Side Bank officials will never ask for your password, PIN, or one-time
+                    West Side Financial Institution officials will never ask for your password, PIN, or one-time
                     verification codes via unsolicited email or phone.
                   </p>
                 </div>
@@ -4746,7 +4746,7 @@ export function Index({ view = "home" }: { view?: "home" | "account" } = {}) {
                       Message Dispatched
                     </h4>
                     <p className="mt-2 text-xs leading-relaxed text-emerald-800">
-                      Thank you for contacting West Side Bank. Your message has been routed to{" "}
+                      Thank you for contacting West Side Financial Institution. Your message has been routed to{" "}
                       <strong>westsidebankassistance@westsidebank.online</strong> (Hotline: +1-567-US) with ticket #
                       {Math.floor(100000 + Math.random() * 900000)}.
                     </p>
@@ -4844,7 +4844,7 @@ export function Index({ view = "home" }: { view?: "home" | "account" } = {}) {
               <div>
                 <div className="flex items-center gap-2">
                   <Landmark className="h-6 w-6 text-accent" />
-                  <span className="font-display font-bold text-lg text-white">WEST SIDE BANK</span>
+                  <span className="font-display font-bold text-lg text-white">WEST SIDE FINANCIAL INSTITUTION</span>
                 </div>
                 <p className="mt-3 text-xs leading-relaxed text-white/70">
                   Stronger Together for a Brighter Future. Modern digital banking with multilingual
@@ -4950,13 +4950,13 @@ export function Index({ view = "home" }: { view?: "home" | "account" } = {}) {
 
             <div className="mt-10 border-t border-white/10 pt-6 text-xs text-white/60">
               <p className="leading-relaxed">
-                Official West Side Bank portal. Contact: westsidebankassistance@westsidebank.online • Tel: +1-567-US. Treat the listed countries
+                Official West Side Financial Institution portal. Contact: westsidebankassistance@westsidebank.online • Tel: +1-567-US. Treat the listed countries
                 as the bank's intended service coverage, not as a claim of completed licensing or
                 charter. Country-specific compliance, tax reporting, and KYC frameworks are
                 customized per jurisdiction and subject to legal review before production launch.
               </p>
               <p className="mt-2">
-                © {new Date().getFullYear()} USFinanceBank • West Side Bank | Online Banking.
+                © {new Date().getFullYear()} USFinanceBank • West Side Financial Institution | Online Banking.
               </p>
             </div>
           </div>
@@ -4966,13 +4966,13 @@ export function Index({ view = "home" }: { view?: "home" | "account" } = {}) {
           <div className="mx-auto max-w-4xl px-4 flex flex-col sm:flex-row items-center justify-between gap-3">
             <div className="flex items-center gap-2">
               <span className="text-base" role="img" aria-label="USA Flag">🇺🇸</span>
-              <span className="font-bold text-white tracking-wide">WEST SIDE BANK CUSTOMER PORTAL</span>
+              <span className="font-bold text-white tracking-wide">WEST SIDE FINANCIAL INSTITUTION CUSTOMER PORTAL</span>
             </div>
             <p className="text-[0.7rem] text-slate-400">
               FDIC Insured • 256-Bit SSL Encrypted Session • 24/7 Priority Assistance
             </p>
             <p className="text-[0.68rem] text-slate-500 font-mono">
-              © {new Date().getFullYear()} West Side Bank Digital Systems
+              © {new Date().getFullYear()} West Side Financial Institution Digital Systems
             </p>
           </div>
         </footer>
@@ -5004,7 +5004,7 @@ export function Index({ view = "home" }: { view?: "home" | "account" } = {}) {
               <div>
                 <h3 className="text-lg font-bold text-primary">{t.signIn}</h3>
                 <p className="text-xs text-muted-foreground">
-                  West Side Bank • {country.name} Portal
+                  West Side Financial Institution • {country.name} Portal
                 </p>
               </div>
             </div>
@@ -5532,7 +5532,7 @@ export function Index({ view = "home" }: { view?: "home" | "account" } = {}) {
                   />
                   <label htmlFor="reg-consent" className="text-[0.72rem] text-muted-foreground leading-snug">
                     I verify that all submitted identity details are authentic. I agree to the
-                    standard {country.name} regulatory disclosure and understand that West Side Bank
+                    standard {country.name} regulatory disclosure and understand that West Side Financial Institution
                     Bank will never request my password or one-time codes.
                   </label>
                 </div>
@@ -5651,7 +5651,7 @@ export function Index({ view = "home" }: { view?: "home" | "account" } = {}) {
                     Staff Portal
                   </span>
                 </div>
-                <p className="text-xs text-white/60">Dedicated Administration Access • West Side Bank</p>
+                <p className="text-xs text-white/60">Dedicated Administration Access • West Side Financial Institution</p>
               </div>
             </div>
 
@@ -6589,7 +6589,7 @@ export function Index({ view = "home" }: { view?: "home" | "account" } = {}) {
               />
             </div>
             <p className="text-xs font-bold uppercase tracking-widest text-slate-300 animate-pulse">
-              West Side Bank Clearing
+              West Side Financial Institution Clearing
             </p>
             <span className="text-[0.65rem] text-slate-400 mt-1">
               Securing transmission with SHA-256...
