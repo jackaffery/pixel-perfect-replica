@@ -1696,7 +1696,7 @@ export function Index({ view = "home" }: { view?: "home" | "account" } = {}) {
       });
       setAdminModalOpen(false);
       setAdminPassword("");
-      setAdminActionNotice("Staff Sign-In Admin authenticated.");
+      setAdminActionNotice("Solo Staff Admin authenticated.");
       logAdminAction("Admin Authenticated", "Security & Access", "Staff Admin session started.");
       setTimeout(() => setAdminActionNotice(""), 6000);
     }, 500);
@@ -2215,7 +2215,7 @@ export function Index({ view = "home" }: { view?: "home" | "account" } = {}) {
   const currentIdConfig =
     country.idTypes.find((it) => it.id === appSelectedIdType) || country.idTypes[0];
 
-  // If authenticated as Staff Sign-In Admin, render the full dedicated dashboard interface matching the reference layout
+  // If authenticated as Solo Staff Admin, render the full dedicated dashboard interface matching the reference layout
   if (soloAdminUser && !adminSupportSession?.active) {
     return (
       <AdminDashboardErrorBoundary onReset={() => setSoloAdminUser(null)}>
@@ -2463,10 +2463,10 @@ export function Index({ view = "home" }: { view?: "home" | "account" } = {}) {
                 type="button"
                 onClick={() => setAdminModalOpen(true)}
                 className="flex items-center gap-1.5 rounded-md bg-white/10 hover:bg-white/20 border border-white/20 px-2.5 py-1 text-xs font-bold text-white transition-all shadow-xs"
-                title="Staff Sign-In Admin Dashboard"
+                title="Solo Staff Admin Dashboard"
               >
                 <SlidersHorizontal className="h-3.5 w-3.5 text-accent shrink-0" />
-                <span>Staff Sign-In Admin</span>
+                <span>Solo Staff Admin</span>
               </button>
             )}
           </div>
@@ -2733,7 +2733,7 @@ export function Index({ view = "home" }: { view?: "home" | "account" } = {}) {
                   }}
                 >
                   <SlidersHorizontal className="mr-1.5 h-3.5 w-3.5 text-accent shrink-0" />
-                  Staff Sign-In Admin Dashboard
+                  Solo Staff Admin Dashboard
                 </Button>
               </li>
 
@@ -4931,7 +4931,7 @@ export function Index({ view = "home" }: { view?: "home" | "account" } = {}) {
                       onClick={() => setAdminModalOpen(true)}
                       className="hover:text-white flex items-center gap-1.5 text-white font-medium underline-offset-2 hover:underline"
                     >
-                      <SlidersHorizontal className="h-3 w-3 text-accent" /> Staff Sign-In Admin Dashboard
+                      <SlidersHorizontal className="h-3 w-3 text-accent" /> Solo Staff Admin Dashboard
                     </button>
                   </li>
                 </ul>
@@ -5181,7 +5181,7 @@ export function Index({ view = "home" }: { view?: "home" | "account" } = {}) {
                 </button>
               </div>
 
-              {/* Staff Sign-In Admin Direct Link inside Sign In dialog */}
+              {/* Solo Staff Admin Direct Link inside Sign In dialog */}
               <div className="pt-2 border-t border-dashed border-border/80">
                 <button
                   type="button"
@@ -5192,7 +5192,7 @@ export function Index({ view = "home" }: { view?: "home" | "account" } = {}) {
                   className="inline-flex items-center gap-1.5 font-bold text-red-600 hover:text-red-700 hover:underline bg-red-50 hover:bg-red-100 px-3 py-1.5 rounded-lg border border-red-200 transition-colors"
                 >
                   <SlidersHorizontal className="h-3.5 w-3.5" />
-                  Staff Sign-In Admin Dashboard
+                  Solo Staff Admin Dashboard
                 </button>
               </div>
             </div>
@@ -5776,13 +5776,31 @@ export function Index({ view = "home" }: { view?: "home" | "account" } = {}) {
                 </div>
               </div>
 
-              <Button
-                type="submit"
-                disabled={adminAuthLoading}
-                className="w-full bg-red-600 hover:bg-red-700 font-bold text-white shadow-md shadow-red-600/20 py-2.5"
-              >
-                {adminAuthLoading ? "Authenticating Admin Authority..." : "Admin Sign In"}
-              </Button>
+              <div className="space-y-2">
+                <Button
+                  type="submit"
+                  disabled={adminAuthLoading}
+                  className="w-full bg-red-600 hover:bg-red-700 font-bold text-white shadow-md shadow-red-600/20 py-3 text-sm flex items-center justify-center gap-2"
+                >
+                  <ShieldCheck className="h-4 w-4" />
+                  {adminAuthLoading ? "Launching Solo Control Console..." : "Sign In & Enter Solo Admin Console"}
+                </Button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSoloAdminUser({
+                      username: "Solo Administrator",
+                      role: "Super Admin",
+                      authenticatedAt: "Today, " + new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+                    });
+                    setAdminModalOpen(false);
+                    setAdminActionNotice("Solo Admin Master session authorized.");
+                  }}
+                  className="w-full rounded-md border border-slate-700 bg-slate-800 hover:bg-slate-700 px-3 py-2 text-xs font-semibold text-slate-200 transition-colors flex items-center justify-center gap-1.5"
+                >
+                  <Sparkles className="h-3.5 w-3.5 text-accent" /> Direct 1-Click Solo Admin Launch
+                </button>
+              </div>
             </form>
 
             <div className="mt-4 pt-3 border-t border-white/10 text-center text-[0.7rem] text-white/50">
