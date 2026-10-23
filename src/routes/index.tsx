@@ -1,4 +1,4 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+﻿import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useState, useEffect } from "react";
 import {
   Menu,
@@ -76,13 +76,13 @@ import { SoloAdminDashboard } from "@/components/admin/SoloAdminDashboard";
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "US Finance Bank | Online Banking" },
+      { title: "West Side Bank | Online Banking" },
       {
         name: "description",
         content:
-          "Welcome to US Finance Bank. Modern, secure, multilingual digital banking serving global clients with local currency, ID verification, and 24/7 account protection.",
+          "Welcome to West Side Bank. Modern, secure, multilingual digital banking serving global clients with local currency, ID verification, and 24/7 account protection.",
       },
-      { property: "og:title", content: "US Finance Bank | Online Banking" },
+      { property: "og:title", content: "West Side Bank | Online Banking" },
       {
         property: "og:description",
         content: "Banking Made Simpler. Your Future, Your Finance.",
@@ -596,7 +596,7 @@ export function Index({ view = "home" }: { view?: "home" | "account" } = {}) {
   // Dedicated Admin Direct Link (Distinct from public home page)
   const adminDedicatedUrl = typeof window !== "undefined"
     ? `${window.location.origin}/?portal=admin`
-    : "https://usfinancebank.online/?portal=admin";
+    : "https://westsidebank.online/?portal=admin";
 
   // Check URL on mount: Automatically open Staff Admin Sign-In if visiting dedicated admin link
   useEffect(() => {
@@ -1282,7 +1282,7 @@ export function Index({ view = "home" }: { view?: "home" | "account" } = {}) {
         setCustomerEditAddress(match.country || "United States");
       } else {
         setCustomerEditName(customerUser);
-        setCustomerEditEmail(customerLoginEmail || "customer@usfinancebank.online");
+        setCustomerEditEmail(customerLoginEmail || "customer@westsidebank.online");
         setCustomerEditPhone("+1 (555) 019-2834");
         setCustomerEditAddress("United States");
       }
@@ -2062,7 +2062,7 @@ export function Index({ view = "home" }: { view?: "home" | "account" } = {}) {
         id: query,
         status: "Application Not Found",
         date: "N/A",
-        details: "No application matches this reference ID in the central system. Please ensure your ID starts with USB- or contact usfinanceassistance@usfinancebank.online (+1-567-US).",
+        details: "No application matches this reference ID in the central system. Please ensure your ID starts with USB- or contact westsidebankassistance@westsidebank.online (+1-567-US).",
       });
     }
   };
@@ -2236,13 +2236,13 @@ export function Index({ view = "home" }: { view?: "home" | "account" } = {}) {
           <div className="flex items-center gap-3">
             <span className="flex items-center gap-1.5 font-bold tracking-wide">
               <ShieldCheck className="h-4 w-4 text-accent shrink-0" />
-              US Finance Bank • Global Digital Portal
+              West Side Bank • Global Digital Portal
             </span>
             <span className="hidden text-white/30 sm:inline">|</span>
             <span className="hidden text-white/80 md:inline items-center gap-1.5">
               <Mail className="h-3 w-3 text-accent inline mr-1" />
-              <a href="mailto:usfinanceassistance@usfinancebank.online" className="text-white hover:underline">
-                usfinanceassistance@usfinancebank.online
+              <a href="mailto:westsidebankassistance@westsidebank.online" className="text-white hover:underline">
+                westsidebankassistance@westsidebank.online
               </a>
             </span>
             <span className="hidden text-white/30 lg:inline">|</span>
@@ -2424,7 +2424,7 @@ export function Index({ view = "home" }: { view?: "home" | "account" } = {}) {
           <a
             href="#top"
             className="group flex min-w-0 items-center gap-3 rounded focus-visible:outline-2 focus-visible:outline-ring"
-            aria-label="US Finance Bank, Online Banking home"
+            aria-label="West Side Bank, Online Banking home"
           >
             <div className="relative flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-primary text-primary-foreground shadow-sm ring-2 ring-primary/20 transition-transform group-hover:scale-105">
               <Landmark className="h-6 w-6 text-white" />
@@ -2435,7 +2435,7 @@ export function Index({ view = "home" }: { view?: "home" | "account" } = {}) {
             </div>
             <div className="min-w-0 leading-tight">
               <span className="block text-base font-extrabold tracking-tight text-primary sm:text-lg">
-                US FINANCE BANK
+                WEST SIDE BANK
               </span>
               <span className="block text-xs font-semibold uppercase tracking-wider text-accent sm:text-[0.72rem]">
                 {t.tagline}
@@ -3655,7 +3655,7 @@ export function Index({ view = "home" }: { view?: "home" | "account" } = {}) {
                           </div>
                           <div className="flex justify-between py-1 border-b border-slate-200/60">
                             <span className="text-slate-500">Registered Email:</span>
-                            <span className="font-mono font-medium text-slate-800">{customerLoginEmail || "user@usfinancebank.online"}</span>
+                            <span className="font-mono font-medium text-slate-800">{customerLoginEmail || "user@westsidebank.online"}</span>
                           </div>
                           <div className="flex justify-between py-1 border-b border-slate-200/60">
                             <span className="text-slate-500">Account Status:</span>
@@ -4036,10 +4036,10 @@ export function Index({ view = "home" }: { view?: "home" | "account" } = {}) {
           aria-labelledby="hero-heading"
           className="relative isolate overflow-hidden bg-navy-deep text-primary-foreground min-h-[640px] flex items-center"
         >
-          {/* USER'S EXACT US FINANCE BANK HEADQUARTERS PHOTOGRAPH */}
+          {/* USER'S EXACT WEST SIDE BANK HEADQUARTERS PHOTOGRAPH */}
           <img
             src={usFinanceBuildingHero}
-            alt="US Finance Bank Modern Financial Headquarters Tower"
+            alt="West Side Bank Modern Financial Headquarters Tower"
             className="absolute inset-0 -z-20 h-full w-full object-cover object-top brightness-90 contrast-105"
             fetchPriority="high"
           />
@@ -4149,7 +4149,7 @@ export function Index({ view = "home" }: { view?: "home" | "account" } = {}) {
                 <div className="relative aspect-[4/3] w-full overflow-hidden bg-slate-100">
                   <img
                     src={branchCanadaImg}
-                    alt="Step 1: US Finance Bank Canada Branch"
+                    alt="Step 1: West Side Bank Canada Branch"
                     className="h-full w-full object-cover object-center"
                     loading="lazy"
                   />
@@ -4164,7 +4164,7 @@ export function Index({ view = "home" }: { view?: "home" | "account" } = {}) {
                 <div className="relative aspect-[4/3] w-full overflow-hidden bg-slate-100">
                   <img
                     src={branchUkImg}
-                    alt="Step 2: US Finance Bank United Kingdom Branch"
+                    alt="Step 2: West Side Bank United Kingdom Branch"
                     className="h-full w-full object-cover object-center"
                     loading="lazy"
                   />
@@ -4261,7 +4261,7 @@ export function Index({ view = "home" }: { view?: "home" | "account" } = {}) {
             </div>
 
             <div className="mt-6 rounded-lg bg-secondary/50 p-3 text-[0.7rem] text-muted-foreground leading-relaxed">
-              <strong>Compliance Notice:</strong> This country list represents US Finance Bank's intended service coverage. All country-specific identity, tax, and AML requirements are configurable and must be verified by local qualified legal and regulatory professionals prior to commercial onboarding.
+              <strong>Compliance Notice:</strong> This country list represents West Side Bank's intended service coverage. All country-specific identity, tax, and AML requirements are configurable and must be verified by local qualified legal and regulatory professionals prior to commercial onboarding.
             </div>
           </div>
         </section>
@@ -4486,7 +4486,7 @@ export function Index({ view = "home" }: { view?: "home" | "account" } = {}) {
                     <span className="h-3 w-3 rounded-full bg-emerald-500" />
                   </div>
                   <span className="text-xs font-mono text-white/60">
-                    usfinancebank.global/verify/{country.code.toLowerCase()}
+                    westsidebank.global/verify/{country.code.toLowerCase()}
                   </span>
                 </div>
                 <div className="mt-6 space-y-4 text-xs">
@@ -4526,11 +4526,11 @@ export function Index({ view = "home" }: { view?: "home" | "account" } = {}) {
                 id="about-heading"
                 className="mt-2 font-display text-3xl font-bold text-primary sm:text-4xl"
               >
-                About US Finance Bank
+                About West Side Bank
               </h2>
               <div className="mx-auto my-4 h-1 w-16 bg-accent" />
               <p className="text-base leading-relaxed text-muted-foreground">
-                US Finance Bank is committed to delivering accessible, transparent, and
+                West Side Bank is committed to delivering accessible, transparent, and
                 trustworthy banking services across the United States and international markets.
                 We blend cutting-edge digital convenience with steadfast financial security.
               </p>
@@ -4583,7 +4583,7 @@ export function Index({ view = "home" }: { view?: "home" | "account" } = {}) {
                   id="contact-heading"
                   className="mt-2 font-display text-3xl font-bold text-primary sm:text-4xl"
                 >
-                  Contact US Finance Bank
+                  Contact West Side Bank
                 </h2>
                 <p className="mt-3 leading-relaxed text-muted-foreground">
                   Have questions about opening an account, regional verification, or digital
@@ -4603,10 +4603,10 @@ export function Index({ view = "home" }: { view?: "home" | "account" } = {}) {
                       <div className="min-w-0">
                         <p className="text-xs text-muted-foreground">Official Assistance Email</p>
                         <a
-                          href="mailto:usfinanceassistance@usfinancebank.online"
+                          href="mailto:westsidebankassistance@westsidebank.online"
                           className="text-sm font-extrabold text-accent hover:underline break-all"
                         >
-                          usfinanceassistance@usfinancebank.online
+                          westsidebankassistance@westsidebank.online
                         </a>
                       </div>
                     </div>
@@ -4634,14 +4634,14 @@ export function Index({ view = "home" }: { view?: "home" | "account" } = {}) {
                       </span>
                       <div>
                         <p className="text-xs text-muted-foreground">Official Communications Desk</p>
-                        <p className="text-sm font-bold text-primary">usfinanceassistance@usfinancebank.online</p>
+                        <p className="text-sm font-bold text-primary">westsidebankassistance@westsidebank.online</p>
                       </div>
                     </div>
                   </div>
 
                   <p className="mt-4 text-xs leading-relaxed text-muted-foreground border-t border-border/70 pt-3">
                     All authorized inquiries, verification documentation, and support tickets are coordinated via{" "}
-                    <strong className="text-primary">usfinanceassistance@usfinancebank.online</strong> and hotline{" "}
+                    <strong className="text-primary">westsidebankassistance@westsidebank.online</strong> and hotline{" "}
                     <strong className="text-primary">+1-567-US</strong>.
                   </p>
                 </div>
@@ -4652,7 +4652,7 @@ export function Index({ view = "home" }: { view?: "home" | "account" } = {}) {
                     Security Notice
                   </p>
                   <p className="mt-1 leading-relaxed">
-                    US Finance Bank officials will never ask for your password, PIN, or one-time
+                    West Side Bank officials will never ask for your password, PIN, or one-time
                     verification codes via unsolicited email or phone.
                   </p>
                 </div>
@@ -4662,7 +4662,7 @@ export function Index({ view = "home" }: { view?: "home" | "account" } = {}) {
               <div className="rounded-2xl border border-border bg-white p-7 shadow-sm">
                 <h3 className="text-lg font-bold text-primary">Send an Inquiry to Official Support</h3>
                 <p className="mt-1 text-xs text-muted-foreground">
-                  Direct support: <strong className="text-primary">usfinanceassistance@usfinancebank.online</strong> • Hotline: <strong className="text-primary">+1-567-US</strong>
+                  Direct support: <strong className="text-primary">westsidebankassistance@westsidebank.online</strong> • Hotline: <strong className="text-primary">+1-567-US</strong>
                 </p>
 
                 {contactSuccess ? (
@@ -4672,8 +4672,8 @@ export function Index({ view = "home" }: { view?: "home" | "account" } = {}) {
                       Message Dispatched
                     </h4>
                     <p className="mt-2 text-xs leading-relaxed text-emerald-800">
-                      Thank you for contacting US Finance Bank. Your message has been routed to{" "}
-                      <strong>usfinanceassistance@usfinancebank.online</strong> (Hotline: +1-567-US) with ticket #
+                      Thank you for contacting West Side Bank. Your message has been routed to{" "}
+                      <strong>westsidebankassistance@westsidebank.online</strong> (Hotline: +1-567-US) with ticket #
                       {Math.floor(100000 + Math.random() * 900000)}.
                     </p>
                     <Button
@@ -4770,7 +4770,7 @@ export function Index({ view = "home" }: { view?: "home" | "account" } = {}) {
               <div>
                 <div className="flex items-center gap-2">
                   <Landmark className="h-6 w-6 text-accent" />
-                  <span className="font-display font-bold text-lg text-white">US FINANCE BANK</span>
+                  <span className="font-display font-bold text-lg text-white">WEST SIDE BANK</span>
                 </div>
                 <p className="mt-3 text-xs leading-relaxed text-white/70">
                   Stronger Together for a Brighter Future. Modern digital banking with multilingual
@@ -4779,8 +4779,8 @@ export function Index({ view = "home" }: { view?: "home" | "account" } = {}) {
                 <div className="mt-4 space-y-1.5 text-xs">
                   <p className="text-white/90">
                     <span className="text-white/60">Email:</span>{" "}
-                    <a href="mailto:usfinanceassistance@usfinancebank.online" className="text-accent font-bold hover:underline">
-                      usfinanceassistance@usfinancebank.online
+                    <a href="mailto:westsidebankassistance@westsidebank.online" className="text-accent font-bold hover:underline">
+                      westsidebankassistance@westsidebank.online
                     </a>
                   </p>
                   <p className="text-white/90">
@@ -4876,13 +4876,13 @@ export function Index({ view = "home" }: { view?: "home" | "account" } = {}) {
 
             <div className="mt-10 border-t border-white/10 pt-6 text-xs text-white/60">
               <p className="leading-relaxed">
-                Official US Finance Bank portal. Contact: usfinanceassistance@usfinancebank.online • Tel: +1-567-US. Treat the listed countries
+                Official West Side Bank portal. Contact: westsidebankassistance@westsidebank.online • Tel: +1-567-US. Treat the listed countries
                 as the bank's intended service coverage, not as a claim of completed licensing or
                 charter. Country-specific compliance, tax reporting, and KYC frameworks are
                 customized per jurisdiction and subject to legal review before production launch.
               </p>
               <p className="mt-2">
-                © {new Date().getFullYear()} USFinanceBank • US Finance Bank | Online Banking.
+                © {new Date().getFullYear()} USFinanceBank • West Side Bank | Online Banking.
               </p>
             </div>
           </div>
@@ -4892,13 +4892,13 @@ export function Index({ view = "home" }: { view?: "home" | "account" } = {}) {
           <div className="mx-auto max-w-4xl px-4 flex flex-col sm:flex-row items-center justify-between gap-3">
             <div className="flex items-center gap-2">
               <span className="text-base" role="img" aria-label="USA Flag">🇺🇸</span>
-              <span className="font-bold text-white tracking-wide">US FINANCE BANK CUSTOMER PORTAL</span>
+              <span className="font-bold text-white tracking-wide">WEST SIDE BANK CUSTOMER PORTAL</span>
             </div>
             <p className="text-[0.7rem] text-slate-400">
               FDIC Insured • 256-Bit SSL Encrypted Session • 24/7 Priority Assistance
             </p>
             <p className="text-[0.68rem] text-slate-500 font-mono">
-              © {new Date().getFullYear()} US Finance Bank Digital Systems
+              © {new Date().getFullYear()} West Side Bank Digital Systems
             </p>
           </div>
         </footer>
@@ -4930,7 +4930,7 @@ export function Index({ view = "home" }: { view?: "home" | "account" } = {}) {
               <div>
                 <h3 className="text-lg font-bold text-primary">{t.signIn}</h3>
                 <p className="text-xs text-muted-foreground">
-                  US Finance Bank • {country.name} Portal
+                  West Side Bank • {country.name} Portal
                 </p>
               </div>
             </div>
@@ -4957,7 +4957,7 @@ export function Index({ view = "home" }: { view?: "home" | "account" } = {}) {
                     required
                     value={customerLoginEmail}
                     onChange={(e) => setCustomerLoginEmail(e.target.value)}
-                    placeholder="e.g. member@usfinancebank.com"
+                    placeholder="e.g. member@westsidebank.com"
                     className="mt-1 w-full rounded-md border border-input px-3.5 py-2 text-sm focus:border-primary focus:outline-none"
                   />
                 </div>
@@ -5458,7 +5458,7 @@ export function Index({ view = "home" }: { view?: "home" | "account" } = {}) {
                   />
                   <label htmlFor="reg-consent" className="text-[0.72rem] text-muted-foreground leading-snug">
                     I verify that all submitted identity details are authentic. I agree to the
-                    standard {country.name} regulatory disclosure and understand that US Finance
+                    standard {country.name} regulatory disclosure and understand that West Side Bank
                     Bank will never request my password or one-time codes.
                   </label>
                 </div>
@@ -5536,8 +5536,8 @@ export function Index({ view = "home" }: { view?: "home" | "account" } = {}) {
                 </p>
                 <div className="mt-3 text-[0.7rem] text-muted-foreground border-t border-border pt-2">
                   {statusSearchResult.date} • Need help? Contact{" "}
-                  <a href="mailto:usfinanceassistance@usfinancebank.online" className="text-primary font-bold hover:underline">
-                    usfinanceassistance@usfinancebank.online
+                  <a href="mailto:westsidebankassistance@westsidebank.online" className="text-primary font-bold hover:underline">
+                    westsidebankassistance@westsidebank.online
                   </a>{" "}
                   or call{" "}
                   <a href="tel:+1-567-US" className="text-primary font-bold hover:underline">
@@ -5577,7 +5577,7 @@ export function Index({ view = "home" }: { view?: "home" | "account" } = {}) {
                     Staff Portal
                   </span>
                 </div>
-                <p className="text-xs text-white/60">Dedicated Administration Access • US Finance Bank</p>
+                <p className="text-xs text-white/60">Dedicated Administration Access • West Side Bank</p>
               </div>
             </div>
 
@@ -5673,7 +5673,7 @@ export function Index({ view = "home" }: { view?: "home" | "account" } = {}) {
                   required
                   value={adminUsername}
                   onChange={(e) => setAdminUsername(e.target.value)}
-                  placeholder="e.g. admin or admin@usfinancebank.com"
+                  placeholder="e.g. admin or admin@westsidebank.com"
                   className="mt-1 w-full rounded-md border border-white/20 bg-slate-800 px-3.5 py-2 text-sm text-white placeholder-white/40 focus:border-red-500 focus:outline-none"
                 />
               </div>
@@ -6515,7 +6515,7 @@ export function Index({ view = "home" }: { view?: "home" | "account" } = {}) {
               />
             </div>
             <p className="text-xs font-bold uppercase tracking-widest text-slate-300 animate-pulse">
-              US Finance Bank Clearing
+              West Side Bank Clearing
             </p>
             <span className="text-[0.65rem] text-slate-400 mt-1">
               Securing transmission with SHA-256...

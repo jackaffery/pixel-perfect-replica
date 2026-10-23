@@ -1,4 +1,4 @@
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+﻿import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import {
   Outlet,
   Link,
@@ -78,13 +78,13 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "US Finance Bank | Online Banking" },
-      { name: "description", content: "Experience modern digital banking with US Finance Bank. Secure accounts, digital services, and financial tools designed for your future." },
-      { property: "og:title", content: "US Finance Bank | Online Banking" },
+      { title: "West Side Bank | Online Banking" },
+      { name: "description", content: "Experience modern digital banking with West Side Bank. Secure accounts, digital services, and financial tools designed for your future." },
+      { property: "og:title", content: "West Side Bank | Online Banking" },
       { property: "og:description", content: "Banking Made Simpler. Your Future, Your Finance." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
-      { name: "twitter:title", content: "US Finance Bank | Online Banking" },
+      { name: "twitter:title", content: "West Side Bank | Online Banking" },
       { name: "twitter:description", content: "Banking Made Simpler. Your Future, Your Finance." },
     ],
     scripts: [
@@ -93,10 +93,10 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
         children: JSON.stringify({
           "@context": "https://schema.org",
           "@type": "FinancialService",
-          name: "US Finance Bank",
+          name: "West Side Bank",
           description: "Modern, secure, multilingual digital banking serving global clients with local currency, ID verification, and 24/7 account protection.",
-          url: "https://usfinancebank.internal",
-          logo: "https://usfinancebank.internal/favicon.ico",
+          url: "https://westsidebank.internal",
+          logo: "https://westsidebank.internal/favicon.ico",
           currenciesAccepted: "USD, EUR, GBP, CAD, MXN, JPY, CHF, AUD, SGD, VND",
           paymentAccepted: "Credit Card, Wire Transfer, Direct Deposit, Debit Card",
           openingHours: "Mo-Su 00:00-24:00"

@@ -1,4 +1,4 @@
-// Mock data types and realistic banking records for US Finance Bank Solo Admin Workspace
+﻿// Mock data types and realistic banking records for West Side Bank Solo Admin Workspace
 // Designed strictly for fictional administrative simulation
 
 export interface AdminUserRecord {
