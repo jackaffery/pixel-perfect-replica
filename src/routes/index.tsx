@@ -1,4 +1,5 @@
 ﻿import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import * as React from "react";
 import { useState, useEffect } from "react";
 import {
   Menu,
@@ -86,10 +87,10 @@ class AdminDashboardErrorBoundary extends React.Component<
   static getDerivedStateFromError(error: Error) {
     return { hasError: true, error };
   }
-  componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
+  override componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
     console.error("Staff Admin Dashboard error boundary caught:", error, errorInfo);
   }
-  render() {
+  override render() {
     if (this.state.hasError) {
       return (
         <div className="flex min-h-screen flex-col items-center justify-center bg-[#0a192f] p-6 text-white text-center">
