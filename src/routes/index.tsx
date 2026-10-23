@@ -73,6 +73,61 @@ import { WIRE_TRANSFER_COUNTRIES, type WireCountry } from "@/lib/wire-countries"
 import { hashPin, type PinState } from "@/lib/pin-security";
 import { SoloAdminDashboard } from "@/components/admin/SoloAdminDashboard";
 
+
+// Safe Error Boundary for Admin Dashboard Protection
+class AdminDashboardErrorBoundary extends React.Component<
+  { children: React.ReactNode; onReset: () => void },
+  { hasError: boolean; error: Error | null }
+> {
+  constructor(props: { children: React.ReactNode; onReset: () => void }) {
+    super(props);
+    this.state = { hasError: false, error: null };
+  }
+  static getDerivedStateFromError(error: Error) {
+    return { hasError: true, error };
+  }
+  componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
+    console.error("Staff Admin Dashboard error boundary caught:", error, errorInfo);
+  }
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className="flex min-h-screen flex-col items-center justify-center bg-[#0a192f] p-6 text-white text-center">
+          <div className="max-w-md w-full rounded-2xl border border-red-500/40 bg-slate-900/90 p-6 shadow-2xl">
+            <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-red-600/20 text-red-400 mb-4 border border-red-500/30">
+              <ShieldAlert className="h-7 w-7" />
+            </div>
+            <h2 className="text-xl font-bold text-white mb-2">Staff Admin Dashboard Session Restored</h2>
+            <p className="text-xs text-slate-300 mb-4 leading-relaxed">
+              The administrative dashboard encountered an unexpected state. Your admin authentication remains active. Click below to refresh the console view safely.
+            </p>
+            <div className="flex gap-2 justify-center">
+              <button
+                type="button"
+                onClick={() => {
+                  this.setState({ hasError: false, error: null });
+                  window.location.reload();
+                }}
+                className="rounded-lg bg-red-600 hover:bg-red-700 px-4 py-2 text-xs font-bold text-white shadow-md transition-all"
+              >
+                Reload Admin Console
+              </button>
+              <button
+                type="button"
+                onClick={this.props.onReset}
+                className="rounded-lg border border-slate-700 bg-slate-800 hover:bg-slate-700 px-4 py-2 text-xs font-semibold text-slate-200 transition-all"
+              >
+                Return to Public Home
+              </button>
+            </div>
+          </div>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
+
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
@@ -2162,7 +2217,8 @@ export function Index({ view = "home" }: { view?: "home" | "account" } = {}) {
   // If authenticated as Staff Sign-In Admin, render the full dedicated dashboard interface matching the reference layout
   if (soloAdminUser && !adminSupportSession?.active) {
     return (
-      <SoloAdminDashboard
+      <AdminDashboardErrorBoundary onReset={() => setSoloAdminUser(null)}>
+        <SoloAdminDashboard
         onSignOut={() => setSoloAdminUser(null)}
         adminUsername={soloAdminUser.username}
         onOpenCustomerDashboard={(customer) => {
@@ -2179,6 +2235,7 @@ export function Index({ view = "home" }: { view?: "home" | "account" } = {}) {
           window.scrollTo({ top: 0, behavior: "smooth" });
         }}
       />
+      </AdminDashboardErrorBoundary>
     );
   }
 
@@ -4039,7 +4096,7 @@ export function Index({ view = "home" }: { view?: "home" | "account" } = {}) {
           {/* USER'S EXACT WEST SIDE BANK HEADQUARTERS PHOTOGRAPH */}
           <img
             src={usFinanceBuildingHero}
-            alt="West Side Bank Modern Financial Headquarters Tower"
+            alt="West Side Financial Institution Modern Headquarters Tower"
             className="absolute inset-0 -z-20 h-full w-full object-cover object-top brightness-90 contrast-105"
             fetchPriority="high"
           />
@@ -4149,12 +4206,16 @@ export function Index({ view = "home" }: { view?: "home" | "account" } = {}) {
                 <div className="relative aspect-[4/3] w-full overflow-hidden bg-slate-100">
                   <img
                     src={branchCanadaImg}
-                    alt="Step 1: West Side Bank Canada Branch"
+                    alt="Step 1: West Side Financial Institution Canada Branch"
                     className="h-full w-full object-cover object-center"
                     loading="lazy"
                   />
                   <div className="absolute top-3 left-3 rounded-md bg-navy-deep/90 px-3 py-1 text-xs font-extrabold uppercase tracking-wider text-white shadow-sm backdrop-blur-xs">
                     Step 1
+                  </div>
+                  <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-slate-950/90 via-slate-950/60 to-transparent p-3 pt-6 text-white text-center">
+                    <p className="text-xs font-bold tracking-wide text-white drop-shadow-md">West Side Financial Institution</p>
+                    <p className="text-[0.65rem] text-slate-300">Canada Branch & Operations</p>
                   </div>
                 </div>
               </div>
@@ -4164,12 +4225,16 @@ export function Index({ view = "home" }: { view?: "home" | "account" } = {}) {
                 <div className="relative aspect-[4/3] w-full overflow-hidden bg-slate-100">
                   <img
                     src={branchUkImg}
-                    alt="Step 2: West Side Bank United Kingdom Branch"
+                    alt="Step 2: West Side Financial Institution United Kingdom Branch"
                     className="h-full w-full object-cover object-center"
                     loading="lazy"
                   />
                   <div className="absolute top-3 left-3 rounded-md bg-navy-deep/90 px-3 py-1 text-xs font-extrabold uppercase tracking-wider text-white shadow-sm backdrop-blur-xs">
                     Step 2
+                  </div>
+                  <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-slate-950/90 via-slate-950/60 to-transparent p-3 pt-6 text-white text-center">
+                    <p className="text-xs font-bold tracking-wide text-white drop-shadow-md">West Side Financial Institution</p>
+                    <p className="text-[0.65rem] text-slate-300">United Kingdom Branch & Operations</p>
                   </div>
                 </div>
               </div>
@@ -4179,12 +4244,16 @@ export function Index({ view = "home" }: { view?: "home" | "account" } = {}) {
                 <div className="relative aspect-[4/3] w-full overflow-hidden bg-slate-100">
                   <img
                     src={mobileCardBankingImg}
-                    alt="Step 3: Mobile Banking and Debit Card"
+                    alt="Step 3: West Side Financial Institution Mobile Banking and Debit Card"
                     className="h-full w-full object-cover object-center"
                     loading="lazy"
                   />
                   <div className="absolute top-3 left-3 rounded-md bg-navy-deep/90 px-3 py-1 text-xs font-extrabold uppercase tracking-wider text-white shadow-sm backdrop-blur-xs">
                     Step 3
+                  </div>
+                  <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-slate-950/90 via-slate-950/60 to-transparent p-3 pt-6 text-white text-center">
+                    <p className="text-xs font-bold tracking-wide text-white drop-shadow-md">West Side Financial Institution</p>
+                    <p className="text-[0.65rem] text-slate-300">Digital Banking & Debit Card</p>
                   </div>
                 </div>
               </div>
@@ -4194,12 +4263,16 @@ export function Index({ view = "home" }: { view?: "home" | "account" } = {}) {
                 <div className="relative aspect-[4/3] w-full overflow-hidden bg-slate-100">
                   <img
                     src={officerSupportImg}
-                    alt="Step 4: Banking Officer Support Desk"
+                    alt="Step 4: West Side Financial Institution Banking Officer Support Desk"
                     className="h-full w-full object-cover object-center"
                     loading="lazy"
                   />
                   <div className="absolute top-3 left-3 rounded-md bg-navy-deep/90 px-3 py-1 text-xs font-extrabold uppercase tracking-wider text-white shadow-sm backdrop-blur-xs">
                     Step 4
+                  </div>
+                  <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-slate-950/90 via-slate-950/60 to-transparent p-3 pt-6 text-white text-center">
+                    <p className="text-xs font-bold tracking-wide text-white drop-shadow-md">West Side Financial Institution</p>
+                    <p className="text-[0.65rem] text-slate-300">Banking Officer Support Desk</p>
                   </div>
                 </div>
               </div>
