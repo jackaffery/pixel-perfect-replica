@@ -59,8 +59,8 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import usFinanceBuildingHero from "@/assets/west-side-skyscraper-hero.png";
-import branchCanadaImg from "@/assets/branch-canada.jpg";
-import branchUkImg from "@/assets/branch-uk.jpg";
+import branchCanadaImg from "@/assets/west-side-branch-step1.jpg";
+import branchUkImg from "@/assets/west-side-card-step2.png";
 import mobileCardBankingImg from "@/assets/mobile-card-banking.jpg";
 import officerSupportImg from "@/assets/officer-support.jpg";
 import {
@@ -93,7 +93,7 @@ class AdminDashboardErrorBoundary extends React.Component<
   override render() {
     if (this.state.hasError) {
       return (
-        <div className="flex min-h-screen flex-col items-center justify-center bg-[#0a192f] p-6 text-white text-center">
+        <div className="flex min-h-screen flex-col items-center justify-center bg-[#0055b8] p-6 text-white text-center">
           <div className="max-w-md w-full rounded-2xl border border-red-500/40 bg-slate-900/90 p-6 shadow-2xl">
             <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-red-600/20 text-red-400 mb-4 border border-red-500/30">
               <ShieldAlert className="h-7 w-7" />
@@ -2254,7 +2254,7 @@ export function Index({ view = "home" }: { view?: "home" | "account" } = {}) {
       {adminSupportSession?.active && (
         <aside
           aria-label="Staff Admin Support Session"
-          className="sticky top-0 z-50 bg-[#0a192f] border-b-2 border-red-600 px-4 py-2.5 text-white shadow-xl flex flex-wrap items-center justify-between gap-3 text-xs"
+          className="sticky top-0 z-50 bg-[#0055b8] border-b-2 border-red-600 px-4 py-2.5 text-white shadow-xl flex flex-wrap items-center justify-between gap-3 text-xs"
         >
           <div className="flex items-center gap-2.5">
             <span className="flex h-6 w-6 items-center justify-center rounded bg-red-600 font-black text-white text-[0.65rem] shadow-xs">
@@ -2288,7 +2288,7 @@ export function Index({ view = "home" }: { view?: "home" | "account" } = {}) {
 
       {/* Global Regional & Multilingual Selector Utility Bar (Rendered only on public homepage) */}
       {view === "home" && (
-        <div className="border-b border-border/80 bg-navy-deep text-primary-foreground">
+        <div className="border-b border-border/80 bg-[#0066d6] text-primary-foreground">
         <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-3 px-5 py-2 text-xs">
           {/* Left: Branding & Regulatory Disclaimer */}
           <div className="flex items-center gap-3">
@@ -2340,7 +2340,7 @@ export function Index({ view = "home" }: { view?: "home" | "account" } = {}) {
                       onClick={() => setCountryDropdownOpen(false)}
                       aria-hidden="true"
                     />
-                    <div className="absolute right-0 top-full mt-1.5 w-72 rounded-lg border border-white/20 bg-[#0a192f] p-1.5 shadow-2xl z-50 text-white animate-fadeIn max-h-80 overflow-y-auto">
+                    <div className="absolute right-0 top-full mt-1.5 w-72 rounded-lg border border-white/20 bg-[#0055b8] p-1.5 shadow-2xl z-50 text-white animate-fadeIn max-h-80 overflow-y-auto">
                       <div className="px-3 py-1.5 border-b border-white/10 text-[10px] font-bold uppercase tracking-wider text-accent flex items-center justify-between">
                         <span>Specify Currency & Region</span>
                         <span className="text-white/50 text-[9px]">{Object.keys(SUPPORTED_COUNTRIES).length} Options</span>
@@ -2407,7 +2407,7 @@ export function Index({ view = "home" }: { view?: "home" | "account" } = {}) {
                       onClick={() => setLangDropdownOpen(false)}
                       aria-hidden="true"
                     />
-                    <div className="absolute right-0 top-full mt-1.5 w-64 rounded-lg border border-white/20 bg-[#0a192f] p-1.5 shadow-2xl z-50 text-white animate-fadeIn max-h-80 overflow-y-auto">
+                    <div className="absolute right-0 top-full mt-1.5 w-64 rounded-lg border border-white/20 bg-[#0055b8] p-1.5 shadow-2xl z-50 text-white animate-fadeIn max-h-80 overflow-y-auto">
                       <div className="px-3 py-1.5 border-b border-white/10 text-[10px] font-bold uppercase tracking-wider text-accent flex items-center justify-between">
                         <span>Specify Language</span>
                         <span className="text-white/50 text-[9px]">
@@ -2552,7 +2552,7 @@ export function Index({ view = "home" }: { view?: "home" | "account" } = {}) {
                       className="h-6 w-6 rounded-full object-cover border border-red-500 shadow-2xs shrink-0"
                     />
                   ) : (
-                    <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[#0a192f] text-white text-[0.68rem] font-bold">
+                    <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[#0055b8] text-white text-[0.68rem] font-bold">
                       {customerUser.charAt(0).toUpperCase()}
                     </div>
                   )}
@@ -2613,7 +2613,7 @@ export function Index({ view = "home" }: { view?: "home" | "account" } = {}) {
                     className="h-5 w-5 rounded-full object-cover border border-red-500 shrink-0"
                   />
                 ) : (
-                  <div className="h-5 w-5 rounded-full bg-[#0a192f] text-white text-[0.6rem] font-bold flex items-center justify-center">
+                  <div className="h-5 w-5 rounded-full bg-[#0055b8] text-white text-[0.6rem] font-bold flex items-center justify-center">
                     {customerUser.charAt(0).toUpperCase()}
                   </div>
                 )}
@@ -2811,7 +2811,7 @@ export function Index({ view = "home" }: { view?: "home" | "account" } = {}) {
         {view === "account" && customerUser && (
           <section
             aria-labelledby="dashboard-title"
-            className="border-b border-border bg-[#0a192f] text-white py-6 sm:py-10"
+            className="border-b border-border bg-[#0055b8] text-white py-6 sm:py-10"
           >
             <div className="mx-auto max-w-4xl px-4 sm:px-6">
               {/* App-like Container matching customer dashboard mockup */}
@@ -3645,7 +3645,7 @@ export function Index({ view = "home" }: { view?: "home" | "account" } = {}) {
                                 className="h-14 w-14 rounded-2xl object-cover border-2 border-red-600 shadow-xs shrink-0 group-hover:opacity-80 transition-opacity"
                               />
                             ) : (
-                              <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-[#0a192f] border-2 border-red-600 text-white font-extrabold text-xl shadow-xs group-hover:bg-[#122847] transition-colors">
+                              <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-[#0055b8] border-2 border-red-600 text-white font-extrabold text-xl shadow-xs group-hover:bg-[#122847] transition-colors">
                                 {customerUser ? customerUser.charAt(0).toUpperCase() : "U"}
                               </div>
                             )}
@@ -3746,7 +3746,7 @@ export function Index({ view = "home" }: { view?: "home" | "account" } = {}) {
                           <Button
                             type="button"
                             onClick={handleInitiatePinReset}
-                            className="w-full bg-[#0a192f] hover:bg-[#122847] text-white text-xs font-bold py-2"
+                            className="w-full bg-[#0055b8] hover:bg-[#122847] text-white text-xs font-bold py-2"
                           >
                             <KeyRound className="h-3.5 w-3.5 mr-1.5" /> Reset or Change Transfer PIN
                           </Button>
@@ -4092,7 +4092,7 @@ export function Index({ view = "home" }: { view?: "home" | "account" } = {}) {
         {/* HERO SECTION WITH USER UPLOADED BANK BUILDING PHOTOGRAPH */}
         <section
           aria-labelledby="hero-heading"
-          className="relative isolate overflow-hidden bg-navy-deep text-primary-foreground min-h-[640px] flex items-center"
+          className="relative isolate overflow-hidden bg-[#0066d6] text-primary-foreground min-h-[640px] flex items-center"
         >
           {/* USER'S EXACT WEST SIDE FINANCIAL INSTITUTION HEADQUARTERS PHOTOGRAPH */}
           <img
@@ -4200,79 +4200,41 @@ export function Index({ view = "home" }: { view?: "home" | "account" } = {}) {
               <div className="mx-auto mt-3 h-1 w-16 bg-accent" />
             </div>
 
-            <div className="flex flex-wrap justify-center gap-6 sm:gap-8">
-              {/* Step 1: Canada Branch */}
-              <div className="w-full sm:w-[calc(50%-1rem)] lg:w-[calc(33.333%-1.5rem)] max-w-sm overflow-hidden rounded-2xl border border-border/80 bg-white shadow-xs transition-transform hover:-translate-y-1 hover:shadow-md">
-                <div className="relative aspect-[4/3] w-full overflow-hidden bg-slate-100">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-5xl mx-auto">
+              {/* Step 1: Branch Team & Main Headquarters */}
+              <div className="overflow-hidden rounded-3xl border-2 border-[#0066d6]/30 bg-white shadow-xl transition-all duration-300 hover:-translate-y-1.5 hover:shadow-2xl">
+                <div className="relative aspect-[16/11] w-full overflow-hidden bg-slate-100">
                   <img
                     src={branchCanadaImg}
-                    alt="Step 1: West Side Financial Institution Canada Branch"
+                    alt="Step 1: Welcome to West Side Financial Institution Branch Team"
                     className="h-full w-full object-cover object-center"
                     loading="lazy"
                   />
-                  <div className="absolute top-3 left-3 rounded-md bg-navy-deep/90 px-3 py-1 text-xs font-extrabold uppercase tracking-wider text-white shadow-sm backdrop-blur-xs">
+                  <div className="absolute top-4 left-4 rounded-xl bg-[#0066d6] px-4 py-1.5 text-xs font-black uppercase tracking-wider text-white shadow-lg backdrop-blur-xs">
                     Step 1
                   </div>
-                  <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-slate-950/90 via-slate-950/60 to-transparent p-3 pt-6 text-white text-center">
-                    <p className="text-xs font-bold tracking-wide text-white drop-shadow-md">West Side Financial Institution</p>
-                    <p className="text-[0.65rem] text-slate-300">Canada Branch & Operations</p>
+                  <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-slate-950/90 via-slate-950/60 to-transparent p-4 pt-10 text-white text-center">
+                    <p className="text-sm font-bold tracking-wide text-white drop-shadow-md">Welcome to West Side Financial Institution</p>
+                    <p className="text-xs text-blue-200">Full-Service Branch & Banking Officers</p>
                   </div>
                 </div>
               </div>
 
-              {/* Step 2: United Kingdom Branch */}
-              <div className="w-full sm:w-[calc(50%-1rem)] lg:w-[calc(33.333%-1.5rem)] max-w-sm overflow-hidden rounded-2xl border border-border/80 bg-white shadow-xs transition-transform hover:-translate-y-1 hover:shadow-md">
-                <div className="relative aspect-[4/3] w-full overflow-hidden bg-slate-100">
+              {/* Step 2: Digital Mobile App & Physical Debit Card */}
+              <div className="overflow-hidden rounded-3xl border-2 border-[#0066d6]/30 bg-white shadow-xl transition-all duration-300 hover:-translate-y-1.5 hover:shadow-2xl">
+                <div className="relative aspect-[16/11] w-full overflow-hidden bg-slate-100">
                   <img
                     src={branchUkImg}
-                    alt="Step 2: West Side Financial Institution United Kingdom Branch"
+                    alt="Step 2: West Side Financial Institution Mobile App and Visa Debit Card"
                     className="h-full w-full object-cover object-center"
                     loading="lazy"
                   />
-                  <div className="absolute top-3 left-3 rounded-md bg-navy-deep/90 px-3 py-1 text-xs font-extrabold uppercase tracking-wider text-white shadow-sm backdrop-blur-xs">
+                  <div className="absolute top-4 left-4 rounded-xl bg-[#0066d6] px-4 py-1.5 text-xs font-black uppercase tracking-wider text-white shadow-lg backdrop-blur-xs">
                     Step 2
                   </div>
-                  <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-slate-950/90 via-slate-950/60 to-transparent p-3 pt-6 text-white text-center">
-                    <p className="text-xs font-bold tracking-wide text-white drop-shadow-md">West Side Financial Institution</p>
-                    <p className="text-[0.65rem] text-slate-300">United Kingdom Branch & Operations</p>
-                  </div>
-                </div>
-              </div>
-
-              {/* Step 3: Digital Card & Mobile Banking */}
-              <div className="w-full sm:w-[calc(50%-1rem)] lg:w-[calc(33.333%-1.5rem)] max-w-sm overflow-hidden rounded-2xl border border-border/80 bg-white shadow-xs transition-transform hover:-translate-y-1 hover:shadow-md">
-                <div className="relative aspect-[4/3] w-full overflow-hidden bg-slate-100">
-                  <img
-                    src={mobileCardBankingImg}
-                    alt="Step 3: West Side Financial Institution Mobile Banking and Debit Card"
-                    className="h-full w-full object-cover object-center"
-                    loading="lazy"
-                  />
-                  <div className="absolute top-3 left-3 rounded-md bg-navy-deep/90 px-3 py-1 text-xs font-extrabold uppercase tracking-wider text-white shadow-sm backdrop-blur-xs">
-                    Step 3
-                  </div>
-                  <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-slate-950/90 via-slate-950/60 to-transparent p-3 pt-6 text-white text-center">
-                    <p className="text-xs font-bold tracking-wide text-white drop-shadow-md">West Side Financial Institution</p>
-                    <p className="text-[0.65rem] text-slate-300">Digital Banking & Debit Card</p>
-                  </div>
-                </div>
-              </div>
-
-              {/* Step 4: Officer Customer Support */}
-              <div className="w-full sm:w-[calc(50%-1rem)] lg:w-[calc(33.333%-1.5rem)] max-w-sm overflow-hidden rounded-2xl border border-border/80 bg-white shadow-xs transition-transform hover:-translate-y-1 hover:shadow-md">
-                <div className="relative aspect-[4/3] w-full overflow-hidden bg-slate-100">
-                  <img
-                    src={officerSupportImg}
-                    alt="Step 4: West Side Financial Institution Banking Officer Support Desk"
-                    className="h-full w-full object-cover object-center"
-                    loading="lazy"
-                  />
-                  <div className="absolute top-3 left-3 rounded-md bg-navy-deep/90 px-3 py-1 text-xs font-extrabold uppercase tracking-wider text-white shadow-sm backdrop-blur-xs">
-                    Step 4
-                  </div>
-                  <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-slate-950/90 via-slate-950/60 to-transparent p-3 pt-6 text-white text-center">
-                    <p className="text-xs font-bold tracking-wide text-white drop-shadow-md">West Side Financial Institution</p>
-                    <p className="text-[0.65rem] text-slate-300">Banking Officer Support Desk</p>
+                  <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-slate-950/90 via-slate-950/60 to-transparent p-4 pt-10 text-white text-center">
+                    <p className="text-sm font-bold tracking-wide text-white drop-shadow-md">West Side Financial Institution</p>
+                    <p className="text-xs text-blue-200">Mobile Banking & Contactless Visa Debit Card</p>
                   </div>
                 </div>
               </div>
@@ -4488,7 +4450,7 @@ export function Index({ view = "home" }: { view?: "home" | "account" } = {}) {
         <section
           id="online-banking"
           aria-labelledby="online-heading"
-          className="bg-navy-deep text-primary-foreground py-16 lg:py-24"
+          className="bg-[#0066d6] text-primary-foreground py-16 lg:py-24"
         >
           <div className="mx-auto max-w-7xl px-5">
             <div className="grid gap-12 lg:grid-cols-2 lg:items-center">
@@ -4837,7 +4799,7 @@ export function Index({ view = "home" }: { view?: "home" | "account" } = {}) {
 
       {/* FOOTER (Rendered on public site; private account view has its own dedicated portal bar) */}
       {view === "home" ? (
-        <footer className="border-t-4 border-accent bg-navy-deep text-primary-foreground">
+        <footer className="border-t-4 border-accent bg-[#0066d6] text-primary-foreground">
           <div className="mx-auto max-w-7xl px-5 py-12">
             <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-4">
               <div>
@@ -6601,7 +6563,7 @@ export function Index({ view = "home" }: { view?: "home" | "account" } = {}) {
           aria-label="Secure command processing..."
           className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-black/40 backdrop-blur-xs select-none"
         >
-          <div className="flex flex-col items-center justify-center p-6 rounded-2xl bg-[#0a192f]/90 border border-white/10 shadow-2xl">
+          <div className="flex flex-col items-center justify-center p-6 rounded-2xl bg-[#0055b8]/90 border border-white/10 shadow-2xl">
             {/* Low-contrast faint bank logo treatment */}
             <div className="relative flex items-center justify-center w-24 h-24 mb-3">
               <div className="absolute inset-0 rounded-full border-2 border-red-500/20 animate-ping" />
