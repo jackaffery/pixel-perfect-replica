@@ -99,6 +99,33 @@ export function SoloAdminDashboard({
   onOpenCustomerDashboard,
 }: SoloAdminDashboardProps) {
   // Navigation
+  const [adminDisplayName, setAdminDisplayName] = useState<string>(() => {
+    if (typeof window !== "undefined") {
+      try {
+        const saved = localStorage.getItem("westside_admin_profile");
+        if (saved) return JSON.parse(saved).name || "Master Bank Administrator";
+      } catch {}
+    }
+    return "Master Bank Administrator";
+  });
+  const [adminEmail, setAdminEmail] = useState<string>(() => {
+    if (typeof window !== "undefined") {
+      try {
+        const saved = localStorage.getItem("westside_admin_profile");
+        if (saved) return JSON.parse(saved).email || "admin@westsidebank.online";
+      } catch {}
+    }
+    return "admin@westsidebank.online";
+  });
+  const [adminPhotoUrl, setAdminPhotoUrl] = useState<string>(() => {
+    if (typeof window !== "undefined") {
+      try {
+        const saved = localStorage.getItem("westside_admin_profile");
+        if (saved) return JSON.parse(saved).photoUrl || "";
+      } catch {}
+    }
+    return "";
+  });
   const [activeSection, setActiveSection] = useState<
     "overview" | "users" | "applications" | "customers" | "accounts" | "transactions" | "compliance" | "support" | "reports" | "audit" | "settings"
   >("overview");
@@ -2290,10 +2317,14 @@ export function SoloAdminDashboard({
               <button
                 type="button"
                 onClick={() => setShowProfileMenu(!showProfileMenu)}
-                className="flex items-center justify-center h-9 w-9 rounded-full bg-white/20 hover:bg-white/30 text-white transition-colors"
+                className="flex items-center justify-center h-9 w-9 rounded-full overflow-hidden border border-red-500 bg-white/20 hover:bg-white/30 text-white transition-colors shadow-sm"
                 title="Admin Profile Menu"
               >
-                <User className="h-5 w-5" />
+                {adminPhotoUrl ? (
+                  <img src={adminPhotoUrl} alt="Admin" className="h-full w-full object-cover" />
+                ) : (
+                  <User className="h-5 w-5" />
+                )}
               </button>
 
               {showProfileMenu && (
@@ -6934,26 +6965,138 @@ export function SoloAdminDashboard({
                 </p>
               </div>
 
-              {/* Administrator Profile Card */}
-              <div className="rounded-2xl border border-slate-800 bg-slate-900/60 p-6 space-y-4">
-                <div className="flex items-center gap-3">
-                  <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-teal-500 text-slate-950 font-black text-lg">
-                    SA
+              {/* Administrator Profile Card & Full Reset/Re-add Controls */}
+              <div className="rounded-2xl border border-slate-700 bg-slate-900 p-6 space-y-4 shadow-xl">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                  <div className="flex items-center gap-3.5">
+                    {adminPhotoUrl ? (
+                      <img
+                        src={adminPhotoUrl}
+                        alt="Staff Admin Profile"
+                        className="h-14 w-14 rounded-2xl object-cover border-2 border-red-500 shadow-md shrink-0"
+                      />
+                    ) : (
+                      <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-red-600 text-white font-black text-xl shadow-md shrink-0">
+                        SA
+                      </div>
+                    )}
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <h3 className="font-bold text-white text-base">{adminDisplayName}</h3>
+                        <span className="rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 px-2 py-0.5 text-[0.65rem] font-bold">
+                          ACTIVE SOLO ADMIN
+                        </span>
+                      </div>
+                      <p className="text-xs text-red-400 font-mono">CENTRAL BANK AUTHORITY • {adminEmail}</p>
+                    </div>
                   </div>
-                  <div>
-                    <h3 className="font-bold text-white text-base">Designated Staff Admin</h3>
-                    <p className="text-xs text-teal-400 font-mono">ROLE: SOLO_ADMIN (Central Authority)</p>
+
+                  <div className="flex flex-wrap items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        // Reset/delete current admin profile and re-add fresh
+                        localStorage.removeItem("westside_admin_profile");
+                        setAdminDisplayName("Master Bank Administrator");
+                        setAdminEmail("admin@westsidebank.online");
+                        setAdminPhotoUrl("");
+                        appendAuditLog(
+                          "Security",
+                          "Admin Profile Reset & Re-Added",
+                          "Master Staff Admin profile was refreshed and freshly re-initialized.",
+                          "ADMIN-01"
+                        );
+                      }}
+                      className="rounded-lg border border-red-500/40 bg-red-600/20 hover:bg-red-600/30 px-3 py-1.5 text-xs font-bold text-red-300 transition-colors flex items-center gap-1.5"
+                    >
+                      <RefreshCw className="h-3.5 w-3.5" /> Reset & Re-Add Admin Profile
+                    </button>
                   </div>
                 </div>
 
-                <div className="grid gap-3 sm:grid-cols-2 text-xs border-t border-slate-800 pt-4">
-                  <div>
-                    <span className="text-slate-500">Authorized Operator:</span>
-                    <p className="font-bold text-white">admin admin</p>
+                {/* Edit & Re-add Admin Profile Form */}
+                <div className="border-t border-slate-800 pt-4 space-y-3">
+                  <h4 className="text-xs font-bold text-slate-300 uppercase tracking-wider">Configure Admin Profile Details</h4>
+                  <div className="grid gap-3 sm:grid-cols-2 text-xs">
+                    <div>
+                      <label className="block text-slate-400 font-semibold mb-1">Admin Display Name</label>
+                      <input
+                        type="text"
+                        value={adminDisplayName}
+                        onChange={(e) => {
+                          setAdminDisplayName(e.target.value);
+                          const prof = { name: e.target.value, email: adminEmail, photoUrl: adminPhotoUrl };
+                          localStorage.setItem("westside_admin_profile", JSON.stringify(prof));
+                        }}
+                        placeholder="e.g. Master Bank Administrator"
+                        className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-white text-xs focus:border-red-500 focus:outline-none"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-slate-400 font-semibold mb-1">Official Administrative Email</label>
+                      <input
+                        type="email"
+                        value={adminEmail}
+                        onChange={(e) => {
+                          setAdminEmail(e.target.value);
+                          const prof = { name: adminDisplayName, email: e.target.value, photoUrl: adminPhotoUrl };
+                          localStorage.setItem("westside_admin_profile", JSON.stringify(prof));
+                        }}
+                        placeholder="e.g. admin@westsidebank.online"
+                        className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-white text-xs focus:border-red-500 focus:outline-none"
+                      />
+                    </div>
                   </div>
+
+                  {/* Profile Picture Upload & Re-Add */}
                   <div>
-                    <span className="text-slate-500">Internal Console Address:</span>
-                    <p className="font-mono text-white">127.0.0.1 (Local Authenticated)</p>
+                    <label className="block text-slate-400 font-semibold mb-1 text-xs">Admin Avatar / Profile Photograph</label>
+                    <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+                      <input
+                        type="text"
+                        value={adminPhotoUrl}
+                        onChange={(e) => {
+                          setAdminPhotoUrl(e.target.value);
+                          const prof = { name: adminDisplayName, email: adminEmail, photoUrl: e.target.value };
+                          localStorage.setItem("westside_admin_profile", JSON.stringify(prof));
+                        }}
+                        placeholder="Enter image URL or choose file below..."
+                        className="flex-1 rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-white text-xs focus:border-red-500 focus:outline-none"
+                      />
+                      <label className="cursor-pointer inline-flex items-center justify-center gap-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-600 px-3.5 py-2 text-xs font-bold text-white transition-colors shrink-0">
+                        <Upload className="h-3.5 w-3.5 text-red-400" />
+                        <span>Upload Photo</span>
+                        <input
+                          type="file"
+                          accept="image/*"
+                          className="sr-only"
+                          onChange={(e) => {
+                            const file = e.target.files?.[0];
+                            if (file) {
+                              const reader = new FileReader();
+                              reader.onloadend = () => {
+                                const result = reader.result as string;
+                                setAdminPhotoUrl(result);
+                                const prof = { name: adminDisplayName, email: adminEmail, photoUrl: result };
+                                localStorage.setItem("westside_admin_profile", JSON.stringify(prof));
+                              };
+                              reader.readAsDataURL(file);
+                            }
+                          }}
+                        />
+                      </label>
+                    </div>
+                  </div>
+
+                  <div className="grid gap-3 sm:grid-cols-2 text-xs border-t border-slate-800 pt-3">
+                    <div>
+                      <span className="text-slate-500">Security Access Level:</span>
+                      <p className="font-bold text-white">Full Solo Administrator (Tier-1 Root)</p>
+                    </div>
+                    <div>
+                      <span className="text-slate-500">Workspace Status:</span>
+                      <p className="font-mono text-emerald-400">Authenticated & Provisioned</p>
+                    </div>
                   </div>
                 </div>
               </div>
