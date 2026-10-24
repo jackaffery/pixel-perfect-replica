@@ -58,6 +58,11 @@ import {
   Upload,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import usFinanceBuildingHero from "@/assets/west-side-skyscraper-hero.png";
+import branchCanadaImg from "@/assets/branch-canada.jpg";
+import branchUkImg from "@/assets/branch-uk.jpg";
+import mobileCardBankingImg from "@/assets/mobile-card-banking.jpg";
+import officerSupportImg from "@/assets/officer-support.jpg";
 import {
   SUPPORTED_COUNTRIES,
   SUPPORTED_LANGUAGES,
@@ -4089,11 +4094,18 @@ export function Index({ view = "home" }: { view?: "home" | "account" } = {}) {
           aria-labelledby="hero-heading"
           className="relative isolate overflow-hidden bg-navy-deep text-primary-foreground min-h-[640px] flex items-center"
         >
+          {/* USER'S EXACT WEST SIDE FINANCIAL INSTITUTION HEADQUARTERS PHOTOGRAPH */}
+          <img
+            src={usFinanceBuildingHero}
+            alt="West Side Financial Institution Modern Headquarters Tower"
+            className="absolute inset-0 -z-20 h-full w-full object-cover object-top brightness-90 contrast-105"
+            fetchPriority="high"
+          />
 
           {/* Elegant Patriotic Gradient Overlay for readability and American styling */}
           <div
             aria-hidden="true"
-            className="absolute inset-0 -z-10 bg-gradient-to-r from-navy-deep/95 via-navy-deep/80 to-primary/60"
+            className="absolute inset-0 -z-10 bg-gradient-to-r from-[#0055b8]/90 via-[#0055b8]/65 to-transparent backdrop-blur-[0.5px]"
           />
 
           <div className="mx-auto max-w-7xl px-5 py-20 lg:py-28 w-full">
@@ -4109,7 +4121,7 @@ export function Index({ view = "home" }: { view?: "home" | "account" } = {}) {
                 id="hero-heading"
                 className="font-display text-4xl font-bold leading-tight tracking-tight sm:text-5xl lg:text-6xl text-white drop-shadow-md"
               >
-                {t.heroHeadline}
+                <div><span className="block text-xs uppercase tracking-widest font-extrabold text-red-500 mb-2">WELCOME TO</span><span className="block text-white">West Side Financial Institution</span><span className="block text-2xl sm:text-3xl lg:text-4xl font-semibold text-blue-200 mt-2">Your Goals. Our Priority.</span></div>
               </h1>
 
               {/* Supporting Text */}
@@ -4135,31 +4147,30 @@ export function Index({ view = "home" }: { view?: "home" | "account" } = {}) {
               <div className="flex flex-wrap items-center gap-4">
                 <Button
                   size="lg"
+                  onClick={() => setOpenAccountModalOpen(true)}
+                  className="min-h-12 bg-[#e60028] hover:bg-[#c70020] text-white font-extrabold shadow-xl shadow-red-600/30 px-7 text-base rounded-xl transition-all hover:-translate-y-0.5"
+                >
+                  Open an Account →
+                </Button>
+                <Button
+                  size="lg"
+                  variant="outline"
                   onClick={() => {
                     if (customerUser) {
-                      window.scrollTo({ top: 0, behavior: "smooth" });
+                      navigate({ to: "/account" });
                     } else {
                       setCustomerModalOpen(true);
                     }
                   }}
-                  className="min-h-12 bg-accent px-6 text-base font-bold text-accent-foreground shadow-lg hover:bg-accent/90"
+                  className="min-h-12 border-2 border-white/70 bg-[#0055b8]/50 hover:bg-[#0055b8]/80 text-white font-extrabold shadow-lg px-7 text-base rounded-xl backdrop-blur-md transition-all hover:-translate-y-0.5"
                 >
-                  <LogIn className="mr-2 h-5 w-5" />
-                  {t.signIn}
-                </Button>
-                <Button
-                  size="lg"
-                  onClick={() => setOpenAccountModalOpen(true)}
-                  className="min-h-12 border-white/30 bg-white/10 px-6 text-base font-bold text-white backdrop-blur-sm hover:bg-white hover:text-primary"
-                >
-                  <Sparkles className="mr-2 h-4 w-4 text-accent" />
-                  {t.createAccount}
+                  Explore Our Services →
                 </Button>
                 <Button
                   asChild
                   size="lg"
                   variant="ghost"
-                  className="min-h-12 text-base font-semibold text-white hover:bg-white/10"
+                  className="min-h-12 text-base font-semibold text-white/90 hover:text-white hover:bg-white/10 rounded-xl"
                 >
                   <a href="#contact">{t.contactUs}</a>
                 </Button>
@@ -4191,41 +4202,80 @@ export function Index({ view = "home" }: { view?: "home" | "account" } = {}) {
 
             <div className="flex flex-wrap justify-center gap-6 sm:gap-8">
               {/* Step 1: Canada Branch */}
-              <div className="w-full sm:w-[calc(50%-1rem)] lg:w-[calc(33.333%-1.5rem)] max-w-sm rounded-2xl border border-border/80 bg-white p-5 shadow-xs transition-transform hover:-translate-y-1 hover:shadow-md">
-                <span className="inline-block rounded-md bg-primary px-3 py-1 text-xs font-extrabold uppercase tracking-wider text-primary-foreground">
-                  Step 1
-                </span>
-                <p className="mt-4 text-sm font-bold tracking-wide text-primary">West Side Financial Institution</p>
-                <p className="mt-1 text-xs text-muted-foreground">Canada Branch &amp; Operations</p>
+              <div className="w-full sm:w-[calc(50%-1rem)] lg:w-[calc(33.333%-1.5rem)] max-w-sm overflow-hidden rounded-2xl border border-border/80 bg-white shadow-xs transition-transform hover:-translate-y-1 hover:shadow-md">
+                <div className="relative aspect-[4/3] w-full overflow-hidden bg-slate-100">
+                  <img
+                    src={branchCanadaImg}
+                    alt="Step 1: West Side Financial Institution Canada Branch"
+                    className="h-full w-full object-cover object-center"
+                    loading="lazy"
+                  />
+                  <div className="absolute top-3 left-3 rounded-md bg-navy-deep/90 px-3 py-1 text-xs font-extrabold uppercase tracking-wider text-white shadow-sm backdrop-blur-xs">
+                    Step 1
+                  </div>
+                  <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-slate-950/90 via-slate-950/60 to-transparent p-3 pt-6 text-white text-center">
+                    <p className="text-xs font-bold tracking-wide text-white drop-shadow-md">West Side Financial Institution</p>
+                    <p className="text-[0.65rem] text-slate-300">Canada Branch & Operations</p>
+                  </div>
+                </div>
               </div>
 
               {/* Step 2: United Kingdom Branch */}
-              <div className="w-full sm:w-[calc(50%-1rem)] lg:w-[calc(33.333%-1.5rem)] max-w-sm rounded-2xl border border-border/80 bg-white p-5 shadow-xs transition-transform hover:-translate-y-1 hover:shadow-md">
-                <span className="inline-block rounded-md bg-primary px-3 py-1 text-xs font-extrabold uppercase tracking-wider text-primary-foreground">
-                  Step 2
-                </span>
-                <p className="mt-4 text-sm font-bold tracking-wide text-primary">West Side Financial Institution</p>
-                <p className="mt-1 text-xs text-muted-foreground">United Kingdom Branch &amp; Operations</p>
+              <div className="w-full sm:w-[calc(50%-1rem)] lg:w-[calc(33.333%-1.5rem)] max-w-sm overflow-hidden rounded-2xl border border-border/80 bg-white shadow-xs transition-transform hover:-translate-y-1 hover:shadow-md">
+                <div className="relative aspect-[4/3] w-full overflow-hidden bg-slate-100">
+                  <img
+                    src={branchUkImg}
+                    alt="Step 2: West Side Financial Institution United Kingdom Branch"
+                    className="h-full w-full object-cover object-center"
+                    loading="lazy"
+                  />
+                  <div className="absolute top-3 left-3 rounded-md bg-navy-deep/90 px-3 py-1 text-xs font-extrabold uppercase tracking-wider text-white shadow-sm backdrop-blur-xs">
+                    Step 2
+                  </div>
+                  <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-slate-950/90 via-slate-950/60 to-transparent p-3 pt-6 text-white text-center">
+                    <p className="text-xs font-bold tracking-wide text-white drop-shadow-md">West Side Financial Institution</p>
+                    <p className="text-[0.65rem] text-slate-300">United Kingdom Branch & Operations</p>
+                  </div>
+                </div>
               </div>
 
               {/* Step 3: Digital Card & Mobile Banking */}
-              <div className="w-full sm:w-[calc(50%-1rem)] lg:w-[calc(33.333%-1.5rem)] max-w-sm rounded-2xl border border-border/80 bg-white p-5 shadow-xs transition-transform hover:-translate-y-1 hover:shadow-md">
-                <span className="inline-block rounded-md bg-primary px-3 py-1 text-xs font-extrabold uppercase tracking-wider text-primary-foreground">
-                  Step 3
-                </span>
-                <p className="mt-4 text-sm font-bold tracking-wide text-primary">West Side Financial Institution</p>
-                <p className="mt-1 text-xs text-muted-foreground">Digital Banking &amp; Debit Card</p>
+              <div className="w-full sm:w-[calc(50%-1rem)] lg:w-[calc(33.333%-1.5rem)] max-w-sm overflow-hidden rounded-2xl border border-border/80 bg-white shadow-xs transition-transform hover:-translate-y-1 hover:shadow-md">
+                <div className="relative aspect-[4/3] w-full overflow-hidden bg-slate-100">
+                  <img
+                    src={mobileCardBankingImg}
+                    alt="Step 3: West Side Financial Institution Mobile Banking and Debit Card"
+                    className="h-full w-full object-cover object-center"
+                    loading="lazy"
+                  />
+                  <div className="absolute top-3 left-3 rounded-md bg-navy-deep/90 px-3 py-1 text-xs font-extrabold uppercase tracking-wider text-white shadow-sm backdrop-blur-xs">
+                    Step 3
+                  </div>
+                  <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-slate-950/90 via-slate-950/60 to-transparent p-3 pt-6 text-white text-center">
+                    <p className="text-xs font-bold tracking-wide text-white drop-shadow-md">West Side Financial Institution</p>
+                    <p className="text-[0.65rem] text-slate-300">Digital Banking & Debit Card</p>
+                  </div>
+                </div>
               </div>
 
               {/* Step 4: Officer Customer Support */}
-              <div className="w-full sm:w-[calc(50%-1rem)] lg:w-[calc(33.333%-1.5rem)] max-w-sm rounded-2xl border border-border/80 bg-white p-5 shadow-xs transition-transform hover:-translate-y-1 hover:shadow-md">
-                <span className="inline-block rounded-md bg-primary px-3 py-1 text-xs font-extrabold uppercase tracking-wider text-primary-foreground">
-                  Step 4
-                </span>
-                <p className="mt-4 text-sm font-bold tracking-wide text-primary">West Side Financial Institution</p>
-                <p className="mt-1 text-xs text-muted-foreground">Banking Officer Support Desk</p>
+              <div className="w-full sm:w-[calc(50%-1rem)] lg:w-[calc(33.333%-1.5rem)] max-w-sm overflow-hidden rounded-2xl border border-border/80 bg-white shadow-xs transition-transform hover:-translate-y-1 hover:shadow-md">
+                <div className="relative aspect-[4/3] w-full overflow-hidden bg-slate-100">
+                  <img
+                    src={officerSupportImg}
+                    alt="Step 4: West Side Financial Institution Banking Officer Support Desk"
+                    className="h-full w-full object-cover object-center"
+                    loading="lazy"
+                  />
+                  <div className="absolute top-3 left-3 rounded-md bg-navy-deep/90 px-3 py-1 text-xs font-extrabold uppercase tracking-wider text-white shadow-sm backdrop-blur-xs">
+                    Step 4
+                  </div>
+                  <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-slate-950/90 via-slate-950/60 to-transparent p-3 pt-6 text-white text-center">
+                    <p className="text-xs font-bold tracking-wide text-white drop-shadow-md">West Side Financial Institution</p>
+                    <p className="text-[0.65rem] text-slate-300">Banking Officer Support Desk</p>
+                  </div>
+                </div>
               </div>
-
             </div>
           </div>
         </section>
@@ -5640,16 +5690,23 @@ export function Index({ view = "home" }: { view?: "home" | "account" } = {}) {
                     </>
                   )}
                 </button>
-                <a
-                  href={adminDedicatedUrl}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="flex items-center gap-1 rounded-lg border border-slate-600 bg-slate-800 hover:bg-slate-700 px-2.5 py-1.5 text-xs font-bold text-white transition-colors shrink-0"
-                  title="Open Admin Link in New Tab"
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSoloAdminUser({
+                      username: "Solo Administrator",
+                      role: "Super Admin",
+                      authenticatedAt: "Today, " + new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+                    });
+                    setAdminModalOpen(false);
+                    setAdminActionNotice("Solo Admin Master session authorized.");
+                  }}
+                  className="flex items-center gap-1 rounded-lg bg-red-600 hover:bg-red-700 px-3 py-1.5 text-xs font-bold text-white transition-colors shrink-0 shadow-sm"
+                  title="Enter Solo Admin Console Directly"
                 >
                   <ArrowRight className="h-3.5 w-3.5" />
-                  Open
-                </a>
+                  Enter Console
+                </button>
               </div>
             </div>
 
