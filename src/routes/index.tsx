@@ -955,7 +955,15 @@ export function Index({ view = "home" }: { view?: "home" | "account" } = {}) {
     username: string;
     role: string;
     authenticatedAt: string;
-  } | null>(null);
+  } | null>(() => {
+    if (typeof window !== "undefined") {
+      try {
+        const saved = localStorage.getItem("westside_active_solo_admin_session");
+        if (saved) return JSON.parse(saved);
+      } catch {}
+    }
+    return null;
+  });
   const [adminUsername, setAdminUsername] = useState("admin");
   const [adminPassword, setAdminPassword] = useState("admin");
   const [showAdminPassword, setShowAdminPassword] = useState(false);
@@ -1689,11 +1697,17 @@ export function Index({ view = "home" }: { view?: "home" | "account" } = {}) {
     setAdminAuthLoading(true);
     setTimeout(() => {
       setAdminAuthLoading(false);
-      setSoloAdminUser({
-        username: "admin admin",
-        role: "Admin",
+      const adminSession = {
+        username: "Master Solo Administrator",
+        role: "Root Solo Authority",
         authenticatedAt: "Today, " + new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
-      });
+      };
+      if (typeof window !== "undefined") {
+        try {
+          localStorage.setItem("westside_active_solo_admin_session", JSON.stringify(adminSession));
+        } catch {}
+      }
+      setSoloAdminUser(adminSession);
       setAdminModalOpen(false);
       setAdminPassword("");
       setAdminActionNotice("Solo Staff Admin authenticated.");
@@ -2220,7 +2234,14 @@ export function Index({ view = "home" }: { view?: "home" | "account" } = {}) {
     return (
       <AdminDashboardErrorBoundary onReset={() => setSoloAdminUser(null)}>
         <SoloAdminDashboard
-        onSignOut={() => setSoloAdminUser(null)}
+        onSignOut={() => {
+          if (typeof window !== "undefined") {
+            try {
+              localStorage.removeItem("westside_active_solo_admin_session");
+            } catch {}
+          }
+          setSoloAdminUser(null);
+        }}
         adminUsername={soloAdminUser.username}
         onOpenCustomerDashboard={(customer) => {
           setCustomerUser(customer.name);
@@ -5655,11 +5676,17 @@ export function Index({ view = "home" }: { view?: "home" | "account" } = {}) {
                 <button
                   type="button"
                   onClick={() => {
-                    setSoloAdminUser({
-                      username: "Solo Administrator",
-                      role: "Super Admin",
+                    const adminSession = {
+                      username: "Master Solo Administrator",
+                      role: "Root Solo Authority",
                       authenticatedAt: "Today, " + new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
-                    });
+                    };
+                    if (typeof window !== "undefined") {
+                      try {
+                        localStorage.setItem("westside_active_solo_admin_session", JSON.stringify(adminSession));
+                      } catch {}
+                    }
+                    setSoloAdminUser(adminSession);
                     setAdminModalOpen(false);
                     setAdminActionNotice("Solo Admin Master session authorized.");
                   }}
@@ -5756,11 +5783,17 @@ export function Index({ view = "home" }: { view?: "home" | "account" } = {}) {
                 <button
                   type="button"
                   onClick={() => {
-                    setSoloAdminUser({
-                      username: "Solo Administrator",
-                      role: "Super Admin",
+                    const adminSession = {
+                      username: "Master Solo Administrator",
+                      role: "Root Solo Authority",
                       authenticatedAt: "Today, " + new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
-                    });
+                    };
+                    if (typeof window !== "undefined") {
+                      try {
+                        localStorage.setItem("westside_active_solo_admin_session", JSON.stringify(adminSession));
+                      } catch {}
+                    }
+                    setSoloAdminUser(adminSession);
                     setAdminModalOpen(false);
                     setAdminActionNotice("Solo Admin Master session authorized.");
                   }}
