@@ -660,7 +660,7 @@ export function Index({ view = "home" }: { view?: "home" | "account" } = {}) {
       const params = new URLSearchParams(window.location.search);
       const hash = window.location.hash.toLowerCase();
       if (
-        params.get("portal") === "admin" ||
+        params.get("portal") === "admin" || window.location.pathname.includes("/staff") ||
         params.get("admin") === "portal" ||
         params.get("admin") === "true" ||
         params.get("admin") === "signin" ||
