@@ -58,11 +58,6 @@ import {
   Upload,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import usFinanceBuildingHero from "@/assets/us-finance-bank-building.jpg";
-import branchCanadaImg from "@/assets/branch-canada.jpg";
-import branchUkImg from "@/assets/branch-uk.jpg";
-import mobileCardBankingImg from "@/assets/mobile-card-banking.jpg";
-import officerSupportImg from "@/assets/officer-support.jpg";
 import {
   SUPPORTED_COUNTRIES,
   SUPPORTED_LANGUAGES,
@@ -4094,13 +4089,6 @@ export function Index({ view = "home" }: { view?: "home" | "account" } = {}) {
           aria-labelledby="hero-heading"
           className="relative isolate overflow-hidden bg-navy-deep text-primary-foreground min-h-[640px] flex items-center"
         >
-          {/* USER'S EXACT WEST SIDE FINANCIAL INSTITUTION HEADQUARTERS PHOTOGRAPH */}
-          <img
-            src={usFinanceBuildingHero}
-            alt="West Side Financial Institution Modern Headquarters Tower"
-            className="absolute inset-0 -z-20 h-full w-full object-cover object-top brightness-90 contrast-105"
-            fetchPriority="high"
-          />
 
           {/* Elegant Patriotic Gradient Overlay for readability and American styling */}
           <div
@@ -4203,80 +4191,41 @@ export function Index({ view = "home" }: { view?: "home" | "account" } = {}) {
 
             <div className="flex flex-wrap justify-center gap-6 sm:gap-8">
               {/* Step 1: Canada Branch */}
-              <div className="w-full sm:w-[calc(50%-1rem)] lg:w-[calc(33.333%-1.5rem)] max-w-sm overflow-hidden rounded-2xl border border-border/80 bg-white shadow-xs transition-transform hover:-translate-y-1 hover:shadow-md">
-                <div className="relative aspect-[4/3] w-full overflow-hidden bg-slate-100">
-                  <img
-                    src={branchCanadaImg}
-                    alt="Step 1: West Side Financial Institution Canada Branch"
-                    className="h-full w-full object-cover object-center"
-                    loading="lazy"
-                  />
-                  <div className="absolute top-3 left-3 rounded-md bg-navy-deep/90 px-3 py-1 text-xs font-extrabold uppercase tracking-wider text-white shadow-sm backdrop-blur-xs">
-                    Step 1
-                  </div>
-                  <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-slate-950/90 via-slate-950/60 to-transparent p-3 pt-6 text-white text-center">
-                    <p className="text-xs font-bold tracking-wide text-white drop-shadow-md">West Side Financial Institution</p>
-                    <p className="text-[0.65rem] text-slate-300">Canada Branch & Operations</p>
-                  </div>
-                </div>
+              <div className="w-full sm:w-[calc(50%-1rem)] lg:w-[calc(33.333%-1.5rem)] max-w-sm rounded-2xl border border-border/80 bg-white p-5 shadow-xs transition-transform hover:-translate-y-1 hover:shadow-md">
+                <span className="inline-block rounded-md bg-primary px-3 py-1 text-xs font-extrabold uppercase tracking-wider text-primary-foreground">
+                  Step 1
+                </span>
+                <p className="mt-4 text-sm font-bold tracking-wide text-primary">West Side Financial Institution</p>
+                <p className="mt-1 text-xs text-muted-foreground">Canada Branch &amp; Operations</p>
               </div>
 
               {/* Step 2: United Kingdom Branch */}
-              <div className="w-full sm:w-[calc(50%-1rem)] lg:w-[calc(33.333%-1.5rem)] max-w-sm overflow-hidden rounded-2xl border border-border/80 bg-white shadow-xs transition-transform hover:-translate-y-1 hover:shadow-md">
-                <div className="relative aspect-[4/3] w-full overflow-hidden bg-slate-100">
-                  <img
-                    src={branchUkImg}
-                    alt="Step 2: West Side Financial Institution United Kingdom Branch"
-                    className="h-full w-full object-cover object-center"
-                    loading="lazy"
-                  />
-                  <div className="absolute top-3 left-3 rounded-md bg-navy-deep/90 px-3 py-1 text-xs font-extrabold uppercase tracking-wider text-white shadow-sm backdrop-blur-xs">
-                    Step 2
-                  </div>
-                  <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-slate-950/90 via-slate-950/60 to-transparent p-3 pt-6 text-white text-center">
-                    <p className="text-xs font-bold tracking-wide text-white drop-shadow-md">West Side Financial Institution</p>
-                    <p className="text-[0.65rem] text-slate-300">United Kingdom Branch & Operations</p>
-                  </div>
-                </div>
+              <div className="w-full sm:w-[calc(50%-1rem)] lg:w-[calc(33.333%-1.5rem)] max-w-sm rounded-2xl border border-border/80 bg-white p-5 shadow-xs transition-transform hover:-translate-y-1 hover:shadow-md">
+                <span className="inline-block rounded-md bg-primary px-3 py-1 text-xs font-extrabold uppercase tracking-wider text-primary-foreground">
+                  Step 2
+                </span>
+                <p className="mt-4 text-sm font-bold tracking-wide text-primary">West Side Financial Institution</p>
+                <p className="mt-1 text-xs text-muted-foreground">United Kingdom Branch &amp; Operations</p>
               </div>
 
               {/* Step 3: Digital Card & Mobile Banking */}
-              <div className="w-full sm:w-[calc(50%-1rem)] lg:w-[calc(33.333%-1.5rem)] max-w-sm overflow-hidden rounded-2xl border border-border/80 bg-white shadow-xs transition-transform hover:-translate-y-1 hover:shadow-md">
-                <div className="relative aspect-[4/3] w-full overflow-hidden bg-slate-100">
-                  <img
-                    src={mobileCardBankingImg}
-                    alt="Step 3: West Side Financial Institution Mobile Banking and Debit Card"
-                    className="h-full w-full object-cover object-center"
-                    loading="lazy"
-                  />
-                  <div className="absolute top-3 left-3 rounded-md bg-navy-deep/90 px-3 py-1 text-xs font-extrabold uppercase tracking-wider text-white shadow-sm backdrop-blur-xs">
-                    Step 3
-                  </div>
-                  <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-slate-950/90 via-slate-950/60 to-transparent p-3 pt-6 text-white text-center">
-                    <p className="text-xs font-bold tracking-wide text-white drop-shadow-md">West Side Financial Institution</p>
-                    <p className="text-[0.65rem] text-slate-300">Digital Banking & Debit Card</p>
-                  </div>
-                </div>
+              <div className="w-full sm:w-[calc(50%-1rem)] lg:w-[calc(33.333%-1.5rem)] max-w-sm rounded-2xl border border-border/80 bg-white p-5 shadow-xs transition-transform hover:-translate-y-1 hover:shadow-md">
+                <span className="inline-block rounded-md bg-primary px-3 py-1 text-xs font-extrabold uppercase tracking-wider text-primary-foreground">
+                  Step 3
+                </span>
+                <p className="mt-4 text-sm font-bold tracking-wide text-primary">West Side Financial Institution</p>
+                <p className="mt-1 text-xs text-muted-foreground">Digital Banking &amp; Debit Card</p>
               </div>
 
               {/* Step 4: Officer Customer Support */}
-              <div className="w-full sm:w-[calc(50%-1rem)] lg:w-[calc(33.333%-1.5rem)] max-w-sm overflow-hidden rounded-2xl border border-border/80 bg-white shadow-xs transition-transform hover:-translate-y-1 hover:shadow-md">
-                <div className="relative aspect-[4/3] w-full overflow-hidden bg-slate-100">
-                  <img
-                    src={officerSupportImg}
-                    alt="Step 4: West Side Financial Institution Banking Officer Support Desk"
-                    className="h-full w-full object-cover object-center"
-                    loading="lazy"
-                  />
-                  <div className="absolute top-3 left-3 rounded-md bg-navy-deep/90 px-3 py-1 text-xs font-extrabold uppercase tracking-wider text-white shadow-sm backdrop-blur-xs">
-                    Step 4
-                  </div>
-                  <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-slate-950/90 via-slate-950/60 to-transparent p-3 pt-6 text-white text-center">
-                    <p className="text-xs font-bold tracking-wide text-white drop-shadow-md">West Side Financial Institution</p>
-                    <p className="text-[0.65rem] text-slate-300">Banking Officer Support Desk</p>
-                  </div>
-                </div>
+              <div className="w-full sm:w-[calc(50%-1rem)] lg:w-[calc(33.333%-1.5rem)] max-w-sm rounded-2xl border border-border/80 bg-white p-5 shadow-xs transition-transform hover:-translate-y-1 hover:shadow-md">
+                <span className="inline-block rounded-md bg-primary px-3 py-1 text-xs font-extrabold uppercase tracking-wider text-primary-foreground">
+                  Step 4
+                </span>
+                <p className="mt-4 text-sm font-bold tracking-wide text-primary">West Side Financial Institution</p>
+                <p className="mt-1 text-xs text-muted-foreground">Banking Officer Support Desk</p>
               </div>
+
             </div>
           </div>
         </section>
