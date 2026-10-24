@@ -1,4 +1,4 @@
-﻿import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import * as React from "react";
 import { useState, useEffect } from "react";
 import {
@@ -73,6 +73,7 @@ import {
 import { WIRE_TRANSFER_COUNTRIES, type WireCountry } from "@/lib/wire-countries";
 import { hashPin, type PinState } from "@/lib/pin-security";
 import { SoloAdminDashboard } from "@/components/admin/SoloAdminDashboard";
+import { RegisterModal } from "@/components/auth/RegisterModal";
 
 
 // Safe Error Boundary for Admin Dashboard Protection
@@ -5182,351 +5183,37 @@ export function Index({ view = "home" }: { view?: "home" | "account" } = {}) {
         </div>
       )}
 
-      {/* OPEN ACCOUNT / SIGN-UP REGISTRATION MODAL WITH JURISDICTION KYC */}
-      {openAccountModalOpen && (
-        <div
-          role="dialog"
-          aria-modal="true"
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/65 p-4 backdrop-blur-xs"
-        >
-          <div className="relative w-full max-w-xl rounded-2xl border border-border bg-white p-7 shadow-2xl max-h-[90vh] overflow-y-auto">
-            <button
-              type="button"
-              onClick={() => {
-                setOpenAccountModalOpen(false);
-                setAppSubmissionSuccess(null);
-              }}
-              className="absolute right-4 top-4 rounded-full p-1 text-muted-foreground hover:bg-muted"
-            >
-              <X className="h-5 w-5" />
-            </button>
-
-            <div className="flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-accent text-white">
-                <Sparkles className="h-5 w-5" />
-              </div>
-              <div>
-                <h3 className="text-lg font-bold text-primary">
-                  Open an Account • {country.name}
-                </h3>
-                <p className="text-xs text-muted-foreground">
-                  Tailored to local banking framework & currency ({country.currency.code})
-                </p>
-              </div>
-            </div>
-
-            {appSubmissionSuccess ? (
-              <div className="mt-6 rounded-xl bg-emerald-50 border border-emerald-200 p-6 text-center">
-                <CheckCircle2 className="mx-auto h-12 w-12 text-emerald-600" />
-                <h4 className="mt-3 text-base font-bold text-emerald-900">
-                  Application Logged Successfully
-                </h4>
-                <p className="mt-2 text-xs leading-relaxed text-emerald-800">
-                  Thank you, <strong>{appFullName}</strong>. Your account application has been
-                  assigned tracking ID:
-                </p>
-                <div className="my-3 rounded bg-white p-3 font-mono text-base font-extrabold text-primary border border-emerald-300">
-                  {appSubmissionSuccess}
-                </div>
-                <p className="text-xs text-emerald-700 leading-relaxed">
-                  Confirmation routed to {appEmail}. You can track this application anytime using the
-                  "Check Status" button.
-                </p>
-                <Button
-                  size="sm"
-                  onClick={() => {
-                    setOpenAccountModalOpen(false);
-                    setCustomerUser(appFullName.split(" ")[0] || "");
-                    setAppSubmissionSuccess(null);
-                  }}
-                  className="mt-4 bg-primary text-white"
-                >
-                  Enter Online Banking Dashboard
-                </Button>
-              </div>
-            ) : (
-              <form onSubmit={handleApplicationSubmit} className="mt-5 space-y-4">
-                {/* Notice explaining why information is required */}
-                <div className="rounded-lg bg-blue-50 border border-blue-200 p-3 text-xs text-blue-900 flex items-start gap-2">
-                  <HelpCircle className="h-4 w-4 text-primary shrink-0 mt-0.5" />
-                  <div>
-                    <span className="font-bold">Why we collect this:</span> Financial regulations
-                    require identity verification (KYC/AML) to prevent fraud. Data is encrypted end-to-end and passwords are never stored in plain text.
-                  </div>
-                </div>
-
-                <div className="grid gap-3 sm:grid-cols-2">
-                  <div>
-                    <label htmlFor="reg-name" className="block text-xs font-bold text-foreground">
-                      Legal Full Name (as on ID)
-                    </label>
-                    <input
-                      id="reg-name"
-                      type="text"
-                      required
-                      value={appFullName}
-                      onChange={(e) => setAppFullName(e.target.value)}
-                      placeholder="e.g. John Doe"
-                      className="mt-1 w-full rounded-md border border-input px-3.5 py-2 text-sm focus:border-primary focus:outline-none"
-                    />
-                  </div>
-
-                  <div>
-                    <label htmlFor="reg-email" className="block text-xs font-bold text-foreground">
-                      Email Address
-                    </label>
-                    <input
-                      id="reg-email"
-                      type="email"
-                      required
-                      value={appEmail}
-                      onChange={(e) => setAppEmail(e.target.value)}
-                      placeholder="john@example.com"
-                      className="mt-1 w-full rounded-md border border-input px-3.5 py-2 text-sm focus:border-primary focus:outline-none"
-                    />
-                  </div>
-                </div>
-
-                <div className="grid gap-3 sm:grid-cols-2">
-                  <div>
-                    <label htmlFor="reg-phone" className="block text-xs font-bold text-foreground">
-                      Phone Number ({country.phoneCode})
-                    </label>
-                    <input
-                      id="reg-phone"
-                      type="tel"
-                      required
-                      value={appPhone}
-                      onChange={(e) => setAppPhone(e.target.value)}
-                      placeholder={`${country.phoneCode} ${country.phoneFormat}`}
-                      className="mt-1 w-full rounded-md border border-input px-3.5 py-2 text-sm focus:border-primary focus:outline-none"
-                    />
-                  </div>
-
-                  <div>
-                    <label htmlFor="reg-pass" className="block text-xs font-bold text-foreground">
-                      Create Strong Password
-                    </label>
-                    <div className="relative mt-1">
-                      <input
-                        id="reg-pass"
-                        type={showAppPassword ? "text" : "password"}
-                        required
-                        value={appPassword}
-                        onChange={(e) => setAppPassword(e.target.value)}
-                        placeholder="At least 8 characters"
-                        className="w-full rounded-md border border-input px-3.5 py-2 pr-10 text-sm focus:border-primary focus:outline-none"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => setShowAppPassword(!showAppPassword)}
-                        className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                      >
-                        {showAppPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                      </button>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Mandatory 4-to-6 digit Security Transfer PIN */}
-                <div className="rounded-xl border border-red-200 bg-red-50/50 p-4">
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-xs font-bold text-red-950 flex items-center gap-1.5">
-                      <KeyRound className="h-4 w-4 text-red-600" />
-                      Create Transfer PIN (Required for Fund Transfers)
-                    </span>
-                    <button
-                      type="button"
-                      onClick={() => setShowAppPin(!showAppPin)}
-                      className="text-[0.68rem] text-red-600 font-bold hover:underline"
-                    >
-                      {showAppPin ? "Hide PIN" : "Show PIN"}
-                    </button>
-                  </div>
-                  <p className="text-[0.7rem] text-slate-600 leading-relaxed mb-3">
-                    Your transfer PIN is encrypted and stored as a secure one-way hash. It is required to approve all domestic and international wire transfers.
-                  </p>
-                  <div className="grid gap-3 sm:grid-cols-2">
-                    <div>
-                      <label htmlFor="reg-pin" className="block text-[0.7rem] font-bold text-foreground">
-                        4-to-6 Digit Security PIN
-                      </label>
-                      <input
-                        id="reg-pin"
-                        type={showAppPin ? "text" : "password"}
-                        required
-                        maxLength={6}
-                        value={appTransferPin}
-                        onChange={(e) => setAppTransferPin(e.target.value.replace(/\D/g, ""))}
-                        placeholder="4 to 6 numbers"
-                        className="mt-1 w-full font-mono text-center tracking-widest rounded-md border border-input px-3.5 py-2 text-sm focus:border-red-600 focus:outline-none"
-                      />
-                    </div>
-                    <div>
-                      <label htmlFor="reg-pin-confirm" className="block text-[0.7rem] font-bold text-foreground">
-                        Confirm Security PIN
-                      </label>
-                      <input
-                        id="reg-pin-confirm"
-                        type={showAppPin ? "text" : "password"}
-                        required
-                        maxLength={6}
-                        value={appConfirmTransferPin}
-                        onChange={(e) => setAppConfirmTransferPin(e.target.value.replace(/\D/g, ""))}
-                        placeholder="Re-enter PIN"
-                        className="mt-1 w-full font-mono text-center tracking-widest rounded-md border border-input px-3.5 py-2 text-sm focus:border-red-600 focus:outline-none"
-                      />
-                    </div>
-                  </div>
-                </div>
-
-                {/* Country Specific Region & Address */}
-                <div className="grid gap-3 sm:grid-cols-2">
-                  <div>
-                    <label htmlFor="reg-region" className="block text-xs font-bold text-foreground">
-                      {country.regionsLabel}
-                    </label>
-                    <select
-                      id="reg-region"
-                      value={appRegion}
-                      onChange={(e) => setAppRegion(e.target.value)}
-                      className="mt-1 w-full rounded-md border border-input bg-white px-3 py-2 text-sm focus:border-primary focus:outline-none"
-                    >
-                      {country.regions.map((r) => (
-                        <option key={r} value={r}>
-                          {r}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-
-                  <div>
-                    <label htmlFor="reg-addr" className="block text-xs font-bold text-foreground">
-                      Street Address
-                    </label>
-                    <input
-                      id="reg-addr"
-                      type="text"
-                      required
-                      value={appAddress}
-                      onChange={(e) => setAppAddress(e.target.value)}
-                      placeholder="Street, City, Postal Code"
-                      className="mt-1 w-full rounded-md border border-input px-3.5 py-2 text-sm focus:border-primary focus:outline-none"
-                    />
-                  </div>
-                </div>
-
-                {/* Country Specific ID Verification */}
-                <div className="rounded-xl border border-border p-4 bg-secondary/20">
-                  <div className="text-xs font-bold text-primary flex items-center gap-1.5">
-                    <Fingerprint className="h-4 w-4 text-accent" />
-                    Jurisdiction Identity Verification ({country.name})
-                  </div>
-                  <div className="mt-3 grid gap-3 sm:grid-cols-2">
-                    <div>
-                      <label htmlFor="id-type" className="block text-[0.7rem] font-bold text-foreground">
-                        Document Type
-                      </label>
-                      <select
-                        id="id-type"
-                        value={appSelectedIdType}
-                        onChange={(e) => setAppSelectedIdType(e.target.value)}
-                        className="mt-1 w-full rounded-md border border-input bg-white px-2.5 py-1.5 text-xs focus:border-primary focus:outline-none"
-                      >
-                        {country.idTypes.map((it) => (
-                          <option key={it.id} value={it.id}>
-                            {it.label}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-
-                    <div>
-                      <label htmlFor="id-number" className="block text-[0.7rem] font-bold text-foreground">
-                        Document Identification Number
-                      </label>
-                      <input
-                        id="id-number"
-                        type="text"
-                        required
-                        value={appIdNumber}
-                        onChange={(e) => setAppIdNumber(e.target.value)}
-                        placeholder={currentIdConfig?.placeholder}
-                        className="mt-1 w-full rounded-md border border-input px-2.5 py-1.5 text-xs focus:border-primary focus:outline-none"
-                      />
-                    </div>
-                  </div>
-
-                  <p className="mt-2 text-[0.68rem] text-muted-foreground italic">
-                    Reason required: {currentIdConfig?.reason}
-                  </p>
-                </div>
-
-                {/* Account Type & Funding */}
-                <div className="grid gap-3 sm:grid-cols-2">
-                  <div>
-                    <label htmlFor="reg-type" className="block text-xs font-bold text-foreground">
-                      Account Type Requested
-                    </label>
-                    <select
-                      id="reg-type"
-                      value={appAccountType}
-                      onChange={(e) => setAppAccountType(e.target.value)}
-                      className="mt-1 w-full rounded-md border border-input bg-white px-3 py-2 text-sm focus:border-primary focus:outline-none"
-                    >
-                      <option value="Checking & Savings">
-                        Advantage Checking & High-Yield Savings ({country.currency.code})
-                      </option>
-                      <option value="Commercial Business">
-                        Commercial Business Account ({country.currency.code})
-                      </option>
-                      <option value="Fixed CD">Certificate of Deposit (CD)</option>
-                    </select>
-                  </div>
-
-                  <div>
-                    <label htmlFor="reg-funds" className="block text-xs font-bold text-foreground">
-                      Source of Funds (AML Requirement)
-                    </label>
-                    <select
-                      id="reg-funds"
-                      value={appSourceOfFunds}
-                      onChange={(e) => setAppSourceOfFunds(e.target.value)}
-                      className="mt-1 w-full rounded-md border border-input bg-white px-3 py-2 text-sm focus:border-primary focus:outline-none"
-                    >
-                      <option value="Employment / Salary">Employment / Salary</option>
-                      <option value="Business Revenue">Business Revenue</option>
-                      <option value="Investments / Savings">Investments / Savings</option>
-                      <option value="Inheritance / Family">Inheritance / Family</option>
-                    </select>
-                  </div>
-                </div>
-
-                {/* Consent Checkbox */}
-                <div className="flex items-start gap-2 pt-2">
-                  <input
-                    id="reg-consent"
-                    type="checkbox"
-                    required
-                    checked={appConsent}
-                    onChange={(e) => setAppConsent(e.target.checked)}
-                    className="mt-0.5 h-4 w-4 rounded border-input text-primary"
-                  />
-                  <label htmlFor="reg-consent" className="text-[0.72rem] text-muted-foreground leading-snug">
-                    I verify that all submitted identity details are authentic. I agree to the
-                    standard {country.name} regulatory disclosure and understand that West Side Financial Institution
-                    Bank will never request my password or one-time codes.
-                  </label>
-                </div>
-
-                <Button type="submit" className="w-full bg-accent text-accent-foreground font-bold">
-                  Submit Verified Application
-                </Button>
-              </form>
-            )}
-          </div>
-        </div>
-      )}
+      {/* COMPLETE CUSTOMER BANK ACCOUNT REGISTRATION PROCESS MODAL */}
+      <RegisterModal
+        isOpen={openAccountModalOpen}
+        onClose={() => setOpenAccountModalOpen(false)}
+        country={country}
+        adminUsers={adminUsers}
+        onSwitchToSignIn={() => {
+          setOpenAccountModalOpen(false);
+          setCustomerModalOpen(true);
+        }}
+        onRegistrationSuccess={(customerRecord) => {
+          setCustomerUser(customerRecord.fullName);
+          setCustomerLoginEmail(customerRecord.email);
+          setCheckingBalance(0.0);
+          setSavingsBalance(0.0);
+          
+          // Re-sync controlled users list
+          const controlledUsersRaw = localStorage.getItem("us_finance_bank_controlled_users");
+          if (controlledUsersRaw) {
+            try {
+              setAdminUsers(JSON.parse(controlledUsersRaw));
+            } catch {}
+          }
+          const appsRaw = localStorage.getItem("us_finance_bank_applications");
+          if (appsRaw) {
+            try {
+              setApplications(JSON.parse(appsRaw));
+            } catch {}
+          }
+        }}
+      />
 
       {/* CHECK APPLICATION STATUS MODAL */}
       {checkStatusModalOpen && (
