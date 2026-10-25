@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState, useEffect } from "react";
 import { SoloAdminDashboard } from "@/components/admin/SoloAdminDashboard";
-import { ShieldCheck, Lock, Eye, EyeOff, Building2, SlidersHorizontal, ArrowLeft, AlertCircle, Sparkles } from "lucide-react";
+import { ShieldCheck, Lock, Eye, EyeOff, Building2, SlidersHorizontal, ArrowLeft, AlertCircle, Sparkles, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 export const Route = createFileRoute("/staff")({
@@ -212,8 +212,26 @@ function StaffPortalPage() {
           </Button>
         </form>
 
-        <div className="mt-6 pt-4 border-t border-slate-800 text-center text-[0.7rem] text-slate-400">
-          West Side Financial Institution • Central Administrator Governance
+        <div className="mt-6 pt-4 border-t border-slate-800 flex flex-col items-center gap-2 text-center text-[0.7rem] text-slate-400">
+          <button
+            type="button"
+            onClick={() => {
+              if (confirm("Reset & Delete stored Admin credentials and sessions from this browser?")) {
+                try {
+                  localStorage.removeItem("westside_admin_profile");
+                  localStorage.removeItem("westside_active_solo_admin_session");
+                } catch {}
+                setAdminUsername("admin");
+                setAdminPassword("admin");
+                setAuthError("");
+                alert("Stored Admin credentials, profile, and sessions have been cleared.");
+              }
+            }}
+            className="text-xs font-bold text-rose-400 hover:text-rose-300 hover:underline transition-colors flex items-center gap-1.5"
+          >
+            <Trash2 className="h-3 w-3" /> Delete Stored Admin Profile & Reset
+          </button>
+          <span>West Side Financial Institution • Central Administrator Governance</span>
         </div>
       </main>
 

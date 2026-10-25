@@ -1,4 +1,4 @@
-﻿import { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import {
   Users,
   CreditCard,
@@ -2357,10 +2357,26 @@ export function SoloAdminDashboard({
                   <div className="border-t border-slate-100 mt-1">
                     <button
                       type="button"
-                      onClick={onSignOut}
-                      className="w-full text-left px-4 py-2 text-xs text-red-600 hover:bg-red-50 font-bold"
+                      onClick={() => {
+                        if (confirm("Delete this Admin profile and clear the active session?")) {
+                          try {
+                            localStorage.removeItem("westside_admin_profile");
+                            localStorage.removeItem("westside_active_solo_admin_session");
+                          } catch {}
+                          onSignOut();
+                        }
+                      }}
+                      className="w-full text-left px-4 py-2 text-xs text-rose-600 hover:bg-rose-50 font-bold flex items-center justify-between"
                     >
-                      Sign Out
+                      <span>Delete Admin Profile</span>
+                      <Trash2 className="h-3 w-3" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={onSignOut}
+                      className="w-full text-left px-4 py-2 text-xs text-slate-600 hover:bg-slate-50 font-medium"
+                    >
+                      Sign Out Only
                     </button>
                   </div>
                 </div>
@@ -6996,6 +7012,31 @@ export function SoloAdminDashboard({
                     <button
                       type="button"
                       onClick={() => {
+                        // Completely delete admin profile and active session
+                        if (confirm("Are you sure you want to delete this Admin profile and sign out? All custom credentials, photo, and active admin session will be completely cleared.")) {
+                          try {
+                            localStorage.removeItem("westside_admin_profile");
+                            localStorage.removeItem("westside_active_solo_admin_session");
+                          } catch {}
+                          setAdminDisplayName("Master Bank Administrator");
+                          setAdminEmail("admin@westsidebank.online");
+                          setAdminPhotoUrl("");
+                          appendAuditLog(
+                            "Security",
+                            "Admin Profile Deleted",
+                            "Solo Staff Admin profile and active session were permanently deleted.",
+                            "ADMIN-01"
+                          );
+                          onSignOut();
+                        }
+                      }}
+                      className="rounded-lg border border-red-500/50 bg-red-600 hover:bg-red-700 px-3 py-1.5 text-xs font-bold text-white transition-colors flex items-center gap-1.5 shadow-sm"
+                    >
+                      <Trash2 className="h-3.5 w-3.5" /> Delete Admin Profile & Session
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
                         // Reset/delete current admin profile and re-add fresh
                         localStorage.removeItem("westside_admin_profile");
                         setAdminDisplayName("Master Bank Administrator");
@@ -7007,10 +7048,11 @@ export function SoloAdminDashboard({
                           "Master Staff Admin profile was refreshed and freshly re-initialized.",
                           "ADMIN-01"
                         );
+                        alert("Admin profile cleared and re-added to clean defaults.");
                       }}
-                      className="rounded-lg border border-red-500/40 bg-red-600/20 hover:bg-red-600/30 px-3 py-1.5 text-xs font-bold text-red-300 transition-colors flex items-center gap-1.5"
+                      className="rounded-lg border border-slate-700 bg-slate-800 hover:bg-slate-700 px-3 py-1.5 text-xs font-bold text-slate-300 transition-colors flex items-center gap-1.5"
                     >
-                      <RefreshCw className="h-3.5 w-3.5" /> Reset & Re-Add Admin Profile
+                      <RefreshCw className="h-3.5 w-3.5" /> Reset to Defaults
                     </button>
                   </div>
                 </div>
