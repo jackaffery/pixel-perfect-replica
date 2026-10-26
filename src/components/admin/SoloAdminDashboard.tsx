@@ -301,6 +301,7 @@ export function SoloAdminDashboard({
     name: string;
     phone: string;
     mailingAddress: string;
+    profilePicUrl: string;
     communicationPreferences: {
       emailAlerts: boolean;
       smsNotifications: boolean;
@@ -311,6 +312,7 @@ export function SoloAdminDashboard({
     name: "",
     phone: "",
     mailingAddress: "",
+    profilePicUrl: "",
     communicationPreferences: {
       emailAlerts: true,
       smsNotifications: true,
@@ -652,6 +654,9 @@ export function SoloAdminDashboard({
     if (user.mailingAddress !== userEditForm.mailingAddress) {
       diffs.push(`Address: '${user.mailingAddress}' -> '${userEditForm.mailingAddress}'`);
     }
+    if ((user.profilePicUrl || "") !== (userEditForm.profilePicUrl || "")) {
+      diffs.push(`Profile Picture changed`);
+    }
     if (user.communicationPreferences.emailAlerts !== userEditForm.communicationPreferences.emailAlerts) {
       diffs.push(`Email Alerts: ${user.communicationPreferences.emailAlerts} -> ${userEditForm.communicationPreferences.emailAlerts}`);
     }
@@ -680,20 +685,36 @@ export function SoloAdminDashboard({
       reason: actionReason || "Administrative profile update requested/verified",
     };
 
-    setAdminUsers((prev) =>
-      prev.map((u) =>
-        u.id === userId
-          ? {
-              ...u,
-              name: userEditForm.name,
-              phone: userEditForm.phone,
-              mailingAddress: userEditForm.mailingAddress,
-              communicationPreferences: { ...userEditForm.communicationPreferences },
-              accessChangeHistory: [historyEntry, ...u.accessChangeHistory],
-            }
-          : u
-      )
+    const updatedUsersList = adminUsers.map((u) =>
+      u.id === userId
+        ? {
+            ...u,
+            name: userEditForm.name,
+            phone: userEditForm.phone,
+            mailingAddress: userEditForm.mailingAddress,
+            profilePicUrl: userEditForm.profilePicUrl,
+            communicationPreferences: { ...userEditForm.communicationPreferences },
+            accessChangeHistory: [historyEntry, ...u.accessChangeHistory],
+          }
+        : u
     );
+
+    persistAdminUsers(updatedUsersList);
+
+    // Also update customer session and accounts if matching
+    if (typeof window !== "undefined") {
+      try {
+        const sessRaw = localStorage.getItem("us_finance_bank_customer_session");
+        if (sessRaw) {
+          const sess = JSON.parse(sessRaw);
+          if (sess.customerName === user.name || sess.linkedCustomerId === user.linkedCustomerId) {
+            sess.customerName = userEditForm.name;
+            sess.profilePicUrl = userEditForm.profilePicUrl;
+            localStorage.setItem("us_finance_bank_customer_session", JSON.stringify(sess));
+          }
+        }
+      } catch {}
+    }
 
     appendAuditLog(
       "Users",
@@ -709,11 +730,15 @@ export function SoloAdminDashboard({
             name: userEditForm.name,
             phone: userEditForm.phone,
             mailingAddress: userEditForm.mailingAddress,
+            profilePicUrl: userEditForm.profilePicUrl,
             communicationPreferences: { ...userEditForm.communicationPreferences },
             accessChangeHistory: [historyEntry, ...prev.accessChangeHistory],
           }
         : prev
     );
+
+    setActionNotification(`Changes saved for ${userEditForm.name}.`);
+    setTimeout(() => setActionNotification(""), 4000);
 
     setUserEditModalOpen(false);
     setActionReason("");
@@ -2281,8 +2306,8 @@ export function SoloAdminDashboard({
               <Menu className="h-5 w-5" />
             </button>
             <div className="flex items-center gap-2 min-w-0">
-              <span className="flex h-7 w-7 items-center justify-center rounded bg-red-600 text-white font-black text-xs shadow-xs shrink-0">
-                US
+              <span className="flex h-7 w-7 items-center justify-center rounded bg-red-600 text-white shadow-xs shrink-0">
+                <Landmark className="h-4 w-4" />
               </span>
               <span className="font-display text-base sm:text-lg font-black tracking-tight text-white select-none truncate">
                 West Side Financial Institution
@@ -3426,6 +3451,7 @@ export function SoloAdminDashboard({
                                     name: selectedUser.name,
                                     phone: selectedUser.phone,
                                     mailingAddress: selectedUser.mailingAddress,
+                                    profilePicUrl: selectedUser.profilePicUrl || "",
                                     communicationPreferences: { ...selectedUser.communicationPreferences },
                                   });
                                   setUserEditModalOpen(true);
@@ -3433,7 +3459,7 @@ export function SoloAdminDashboard({
                                 className="w-full text-left px-3.5 py-2 hover:bg-slate-50 flex items-center gap-2 cursor-pointer text-slate-800"
                               >
                                 <Edit3 className="h-3.5 w-3.5 text-blue-500 shrink-0" />
-                                <span>Edit</span>
+                                <span>Edit Profile</span>
                               </button>
 
                               {/* 13. Send Email */}
@@ -3613,6 +3639,7 @@ export function SoloAdminDashboard({
                             name: selectedUser.name,
                             phone: selectedUser.phone,
                             mailingAddress: selectedUser.mailingAddress,
+                            profilePicUrl: selectedUser.profilePicUrl || "",
                             communicationPreferences: { ...selectedUser.communicationPreferences },
                           });
                           setUserEditModalOpen(true);
@@ -4797,6 +4824,52 @@ export function SoloAdminDashboard({
                         </div>
                       </div>
 
+                      {/* Profile Picture Upload & Preview */}
+                      <div>
+                        <label className="block text-xs font-bold text-slate-700 mb-1">Profile Picture (Upload or URL)</label>
+                        <div className="flex items-center gap-3">
+                          {userEditForm.profilePicUrl ? (
+                            <img
+                              src={userEditForm.profilePicUrl}
+                              alt="Customer avatar"
+                              className="h-12 w-12 rounded-xl object-cover border-2 border-red-500 shadow-xs shrink-0"
+                            />
+                          ) : (
+                            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-slate-100 border border-slate-300 text-slate-600 font-bold text-sm shrink-0">
+                              {userEditForm.name ? userEditForm.name.charAt(0).toUpperCase() : "U"}
+                            </div>
+                          )}
+                          <div className="flex-1 space-y-1">
+                            <input
+                              type="text"
+                              value={userEditForm.profilePicUrl}
+                              onChange={(e) => setUserEditForm({ ...userEditForm, profilePicUrl: e.target.value })}
+                              placeholder="Image URL https://..."
+                              className="w-full rounded-xl border border-slate-200 bg-white px-3 py-1.5 text-xs text-slate-800 focus:border-red-500 focus:outline-none"
+                            />
+                            <label className="cursor-pointer inline-flex items-center gap-1.5 text-[0.7rem] font-bold text-red-600 hover:text-red-700">
+                              <Upload className="h-3 w-3" /> Upload picture file
+                              <input
+                                type="file"
+                                accept="image/*"
+                                className="sr-only"
+                                onChange={(e) => {
+                                  const file = e.target.files?.[0];
+                                  if (file) {
+                                    const reader = new FileReader();
+                                    reader.onloadend = () => {
+                                      const res = reader.result as string;
+                                      setUserEditForm((prev) => ({ ...prev, profilePicUrl: res }));
+                                    };
+                                    reader.readAsDataURL(file);
+                                  }
+                                }}
+                              />
+                            </label>
+                          </div>
+                        </div>
+                      </div>
+
                       <div>
                         <label className="block text-xs font-bold text-slate-600 mb-1">
                           Reason for Profile Update (Required for Audit Log):
@@ -4823,9 +4896,9 @@ export function SoloAdminDashboard({
                       <Button
                         type="button"
                         onClick={() => handleSaveUserProfileEdits(selectedUser.id)}
-                        className="bg-red-600 hover:bg-red-700 text-xs font-bold text-white shadow-xs"
+                        className="bg-red-600 hover:bg-red-700 text-xs font-bold text-white shadow-xs px-4 py-2"
                       >
-                        Save & Record in Audit Log
+                        Save Changes
                       </Button>
                     </div>
                   </div>
@@ -5200,9 +5273,9 @@ export function SoloAdminDashboard({
                   <Button
                     type="button"
                     onClick={handleSaveEditUser}
-                    className="bg-red-600 hover:bg-red-700 text-white text-xs font-bold shadow-xs"
+                    className="bg-red-600 hover:bg-red-700 text-white text-xs font-bold shadow-xs px-4 py-2"
                   >
-                    Save & Record in Audit Log
+                    Save Changes
                   </Button>
                 </div>
               </div>
@@ -7690,11 +7763,11 @@ export function SoloAdminDashboard({
             className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 backdrop-blur-xs p-4 overflow-y-auto"
           >
             <div className="relative w-full max-w-5xl rounded-3xl border border-slate-200 bg-[#f8fafc] shadow-2xl max-h-[92vh] overflow-y-auto text-slate-800 flex flex-col">
-              {/* Top Navy Blue & Red Header (US Flag Scheme) */}
+              {/* Top Navy Blue & Red Header */}
               <div className="sticky top-0 z-20 flex items-center justify-between bg-[#0a192f] border-b-4 border-red-600 px-6 py-4 text-white shadow-md">
                 <div className="flex items-center gap-3">
-                  <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-red-600 text-white font-black text-xs shadow-xs">
-                    US
+                  <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-red-600 text-white shadow-xs">
+                    <Landmark className="h-4 w-4" />
                   </div>
                   <div>
                     <div className="flex items-center gap-2">

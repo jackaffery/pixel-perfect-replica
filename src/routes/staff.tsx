@@ -91,7 +91,27 @@ function StaffPortalPage() {
       <SoloAdminDashboard
         onSignOut={handleSignOut}
         adminUsername={soloAdminUser.username}
-        onOpenCustomerDashboard={() => {
+        onOpenCustomerDashboard={(customer) => {
+          if (typeof window !== "undefined") {
+            try {
+              const userSession = {
+                customerName: customer?.name || "Eleanor Vance",
+                checkingBalance: customer?.checkingBalance ?? 0.0,
+                savingsBalance: customer?.savingsBalance ?? 0.0,
+                email: customer?.name
+                  ? `${customer.name.toLowerCase().replace(/\s+/g, ".")}@westsidebank.online`
+                  : "customer@westsidebank.online",
+                isNewUser: false,
+                profilePicUrl: customer?.profilePicUrl,
+                linkedCustomerId: customer?.linkedCustomerId || customer?.id || "CUST-109283",
+                applicationId: customer?.id || "APP-001",
+                kycStatus: "Verified",
+              };
+              localStorage.setItem("us_finance_bank_customer_session", JSON.stringify(userSession));
+            } catch (err) {
+              console.error("Failed to set customer session", err);
+            }
+          }
           window.location.href = "/account";
         }}
       />
