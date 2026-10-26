@@ -125,7 +125,7 @@ export function RegisterModal({
   const [lastName, setLastName] = useState("");
   const [username, setUsername] = useState("");
   const [usernameChecking, setUsernameChecking] = useState(false);
-  const [idType, setIdType] = useState(ID_OPTIONS[0].label);
+  const [idType, setIdType] = useState(ID_OPTIONS[0]?.label ?? "International Passport");
   const [idNumber, setIdNumber] = useState("");
   const [idFileName, setIdFileName] = useState<string | null>(null);
   const [email, setEmail] = useState("");
@@ -256,7 +256,7 @@ export function RegisterModal({
   const generateSecureOtp = () => {
     const array = new Uint32Array(1);
     window.crypto.getRandomValues(array);
-    const code = ((array[0] % 900000) + 100000).toString();
+    const code = (((array[0] ?? 0) % 900000) + 100000).toString();
     return code;
   };
 

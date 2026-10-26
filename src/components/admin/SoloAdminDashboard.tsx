@@ -56,6 +56,7 @@ import {
   Network,
   PauseCircle,
   Trash2,
+  Landmark,
   Upload,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -918,7 +919,12 @@ export function SoloAdminDashboard({
       id: `ACC-${newId.slice(-4)}-1`,
       customerId: linkedCustId,
       customerName: newUserData.name.trim(),
-      accountType: newUserData.accountType || "Advantage Checking",
+      accountType:
+        newUserData.accountType === "High-Yield Savings" ||
+        newUserData.accountType === "Treasury Money Market" ||
+        newUserData.accountType === "Commercial Operations"
+          ? newUserData.accountType
+          : "Advantage Checking",
       accountNumberMasked: `••••••••${Math.floor(1000 + Math.random() * 9000)}`,
       routingNumber: "021000089",
       currency: newUserData.country === "United Kingdom" ? "GBP" : newUserData.country === "Germany" ? "EUR" : "USD",
