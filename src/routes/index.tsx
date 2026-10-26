@@ -4923,8 +4923,6 @@ export function Index({ view = "home" }: { view?: "home" | "account" } = {}) {
           </div>
         </div>
       )}
-        </div>
-      )}
 
       {/* COMPLETE CUSTOMER BANK ACCOUNT REGISTRATION PROCESS MODAL */}
       <RegisterModal
