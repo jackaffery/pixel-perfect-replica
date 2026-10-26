@@ -2590,10 +2590,10 @@ export function Index({ view = "home" }: { view?: "home" | "account" } = {}) {
                     </div>
                     <div>
                       <h2 className="font-display text-lg sm:text-xl font-black text-white tracking-tight">
-                        USA FINANCE BANK
+                        WEST SIDE FINANCIAL INSTITUTION
                       </h2>
-                      <p className="text-xs text-slate-300 font-medium">
-                        Secure digital banking
+                      <p className="text-xs text-blue-200 font-medium">
+                        Customer Account Portal & Online Banking
                       </p>
                     </div>
                   </div>
@@ -3206,7 +3206,7 @@ export function Index({ view = "home" }: { view?: "home" | "account" } = {}) {
                       <div className="rounded-2xl bg-gradient-to-br from-[#0a192f] to-[#1e3a66] p-5 text-white shadow-md relative overflow-hidden">
                         <div className="flex justify-between items-start">
                           <div>
-                            <span className="text-[0.65rem] uppercase font-bold text-slate-300">USA Finance Bank</span>
+                            <span className="text-[0.65rem] uppercase font-bold text-slate-300">West Side Financial Institution</span>
                             <p className="text-sm font-bold mt-0.5">Platinum Debit</p>
                           </div>
                           <span className="text-xs font-bold text-emerald-400 bg-emerald-500/20 px-2 py-0.5 rounded border border-emerald-400/30">
@@ -4709,205 +4709,220 @@ export function Index({ view = "home" }: { view?: "home" | "account" } = {}) {
         <div
           role="dialog"
           aria-modal="true"
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-xs"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-4 backdrop-blur-sm animate-in fade-in duration-200"
         >
-          <div className="relative w-full max-w-md rounded-2xl border border-border bg-white p-7 shadow-2xl">
-            <button
-              type="button"
-              onClick={() => {
-                setCustomerModalOpen(false);
-                setMfaStep(false);
-              }}
-              className="absolute right-4 top-4 rounded-full p-1 text-muted-foreground hover:bg-muted"
-            >
-              <X className="h-5 w-5" />
-            </button>
-
-            <div className="flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary text-white">
-                <Landmark className="h-5 w-5" />
+          <div className="relative w-full max-w-md rounded-2xl border border-white/20 bg-white shadow-2xl overflow-hidden">
+            {/* Bank Signature Navy Blue Header */}
+            <div className="bg-[#0055b8] px-6 py-5 text-white flex items-center justify-between border-b border-blue-700">
+              <div className="flex items-center gap-3">
+                <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-white/10 backdrop-blur border border-white/20 text-white shadow-inner">
+                  <Landmark className="h-6 w-6 text-yellow-300" />
+                </div>
+                <div>
+                  <span className="text-[0.68rem] uppercase tracking-widest font-black text-blue-200">
+                    West Side Financial Institution
+                  </span>
+                  <h3 className="text-lg font-bold text-white tracking-tight leading-tight">
+                    Customer Sign In
+                  </h3>
+                </div>
               </div>
-              <div>
-                <h3 className="text-lg font-bold text-primary">{t.signIn}</h3>
-                <p className="text-xs text-muted-foreground">
-                  West Side Financial Institution • {country.name} Portal
-                </p>
-              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  setCustomerModalOpen(false);
+                  setMfaStep(false);
+                }}
+                className="rounded-full p-1.5 text-blue-200 hover:text-white hover:bg-white/10 transition-colors"
+                aria-label="Close"
+              >
+                <X className="h-5 w-5" />
+              </button>
             </div>
 
-            {customerAuthError && (
-              <div
-                role="alert"
-                className="mt-4 flex items-center gap-2 rounded-lg bg-red-50 p-3 text-xs text-red-700 border border-red-200"
-              >
-                <AlertCircle className="h-4 w-4 shrink-0" />
-                <span>{customerAuthError}</span>
+            <div className="p-6 sm:p-7 space-y-4">
+              <div className="flex items-center justify-between text-xs text-slate-500 border-b border-slate-100 pb-2.5">
+                <span className="font-semibold text-slate-700">Authorized Banking Portal</span>
+                <span className="inline-flex items-center gap-1 font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
+                  <span className="h-1.5 w-1.5 rounded-full bg-emerald-500"></span>
+                  256-bit SSL Secure
+                </span>
               </div>
-            )}
 
-            {!mfaStep ? (
-              <form onSubmit={handleCustomerLoginSubmit} className="mt-5 space-y-4">
-                <div>
-                  <label htmlFor="c-email" className="block text-xs font-bold text-foreground">
-                    Email Address or Username
-                  </label>
-                  <input
-                    id="c-email"
-                    type="text"
-                    required
-                    value={customerLoginEmail}
-                    onChange={(e) => setCustomerLoginEmail(e.target.value)}
-                    placeholder="e.g. member@westsidebank.com"
-                    className="mt-1 w-full rounded-md border border-input px-3.5 py-2 text-sm focus:border-primary focus:outline-none"
-                  />
+              {customerAuthError && (
+                <div
+                  role="alert"
+                  className="flex items-center gap-2 rounded-xl bg-red-50 p-3 text-xs text-red-700 border border-red-200"
+                >
+                  <AlertCircle className="h-4 w-4 shrink-0 text-red-600" />
+                  <span>{customerAuthError}</span>
                 </div>
+              )}
 
-                <div>
-                  <div className="flex items-center justify-between">
-                    <label htmlFor="c-pass" className="block text-xs font-bold text-foreground">
-                      Password
+              {!mfaStep ? (
+                <form onSubmit={handleCustomerLoginSubmit} className="space-y-4">
+                  <div>
+                    <label htmlFor="c-email" className="block text-xs font-bold text-slate-800 mb-1">
+                      Email Address or Username
                     </label>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setCustomerModalOpen(false);
-                        setForgotPasswordOpen(true);
-                      }}
-                      className="text-xs font-semibold text-accent hover:underline"
-                    >
-                      Forgot Password?
-                    </button>
-                  </div>
-                  <div className="relative mt-1">
                     <input
-                      id="c-pass"
-                      type={showCustomerPassword ? "text" : "password"}
+                      id="c-email"
+                      type="text"
                       required
-                      value={customerLoginPassword}
-                      onChange={(e) => setCustomerLoginPassword(e.target.value)}
-                      placeholder="Enter account password"
-                      className="w-full rounded-md border border-input px-3.5 py-2 pr-10 text-sm focus:border-primary focus:outline-none"
+                      value={customerLoginEmail}
+                      onChange={(e) => setCustomerLoginEmail(e.target.value)}
+                      placeholder="e.g. member@westsidebank.online"
+                      className="w-full rounded-xl border border-slate-300 px-3.5 py-2.5 text-sm focus:border-[#0055b8] focus:ring-1 focus:ring-[#0055b8] outline-none"
                     />
+                  </div>
+
+                  <div>
+                    <div className="flex items-center justify-between mb-1">
+                      <label htmlFor="c-pass" className="block text-xs font-bold text-slate-800">
+                        Password
+                      </label>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setCustomerModalOpen(false);
+                          setForgotPasswordOpen(true);
+                        }}
+                        className="text-xs font-bold text-[#0055b8] hover:underline"
+                      >
+                        Forgot Password?
+                      </button>
+                    </div>
+                    <div className="relative">
+                      <input
+                        id="c-pass"
+                        type={showCustomerPassword ? "text" : "password"}
+                        required
+                        value={customerLoginPassword}
+                        onChange={(e) => setCustomerLoginPassword(e.target.value)}
+                        placeholder="Enter account password"
+                        className="w-full rounded-xl border border-slate-300 px-3.5 py-2.5 pr-10 text-sm focus:border-[#0055b8] focus:ring-1 focus:ring-[#0055b8] outline-none"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowCustomerPassword(!showCustomerPassword)}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700"
+                      >
+                        {showCustomerPassword ? (
+                          <EyeOff className="h-4 w-4" />
+                        ) : (
+                          <Eye className="h-4 w-4" />
+                        )}
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    <input
+                      id="c-rem"
+                      type="checkbox"
+                      checked={rememberCustomer}
+                      onChange={(e) => setRememberCustomer(e.target.checked)}
+                      className="h-4 w-4 rounded border-slate-300 text-[#0055b8] focus:ring-[#0055b8]"
+                    />
+                    <label htmlFor="c-rem" className="text-xs text-slate-600">
+                      Remember this device for trusted sign-ins
+                    </label>
+                  </div>
+
+                  <Button
+                    type="submit"
+                    disabled={customerAuthLoading}
+                    className="w-full bg-[#0055b8] hover:bg-blue-700 font-bold text-white py-3 text-sm shadow-md"
+                  >
+                    {customerAuthLoading ? "Verifying Credentials..." : "Continue to Security Check"}
+                  </Button>
+                </form>
+              ) : (
+                /* MULTI-FACTOR AUTHENTICATION (MFA) STEP */
+                <form onSubmit={handleMfaSubmit} className="space-y-4">
+                  <div className="rounded-xl bg-blue-50 border border-blue-200 p-4 text-xs text-blue-900">
+                    <p className="font-bold flex items-center gap-1.5 text-[#0055b8]">
+                      <Mail className="h-4 w-4 text-[#0055b8]" />
+                      Security Verification Code Dispatched
+                    </p>
+                    <p className="mt-1 leading-relaxed text-slate-700">
+                      A secure 6-digit verification code has been dispatched to your registered address (<strong className="text-slate-900 font-mono">{customerLoginEmail}</strong>). Please check your email or SMS messages to retrieve the code.
+                    </p>
+                    <p className="mt-2 text-[0.68rem] text-slate-500 italic">
+                      For your security, OTP codes are sent directly to your authorized device and expire in 10 minutes.
+                    </p>
+                  </div>
+
+                  <div>
+                    <div className="flex justify-between items-center mb-1">
+                      <label htmlFor="mfa-input" className="block text-xs font-bold text-slate-800">
+                        Enter 6-Digit Email Verification Code
+                      </label>
+                      <span className="text-[0.68rem] text-slate-500 font-normal">
+                        Valid for 10 minutes
+                      </span>
+                    </div>
+                    <input
+                      id="mfa-input"
+                      type="text"
+                      required
+                      maxLength={6}
+                      value={mfaCode}
+                      onChange={(e) => setMfaCode(e.target.value.replace(/\D/g, ""))}
+                      placeholder="e.g. 849201"
+                      className="w-full text-center tracking-widest font-mono text-xl rounded-xl border border-slate-300 px-3.5 py-2.5 focus:border-[#0055b8] outline-none font-bold"
+                    />
+                  </div>
+
+                  <div className="flex items-center justify-between text-xs text-slate-600 pt-1">
+                    <span>Didn't receive the email code?</span>
                     <button
                       type="button"
-                      onClick={() => setShowCustomerPassword(!showCustomerPassword)}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                      onClick={handleResendEmailOtp}
+                      disabled={mfaResendCount >= 3}
+                      className="font-bold text-[#0055b8] hover:underline disabled:text-slate-400"
                     >
-                      {showCustomerPassword ? (
-                        <EyeOff className="h-4 w-4" />
-                      ) : (
-                        <Eye className="h-4 w-4" />
-                      )}
+                      Resend Code {mfaResendCount > 0 && `(${3 - mfaResendCount} left)`}
                     </button>
                   </div>
-                </div>
 
-                <div className="flex items-center gap-2">
-                  <input
-                    id="c-rem"
-                    type="checkbox"
-                    checked={rememberCustomer}
-                    onChange={(e) => setRememberCustomer(e.target.checked)}
-                    className="h-4 w-4 rounded border-input text-primary"
-                  />
-                  <label htmlFor="c-rem" className="text-xs text-muted-foreground">
-                    Remember this device for trusted sign-ins
-                  </label>
-                </div>
+                  <Button
+                    type="submit"
+                    disabled={customerAuthLoading}
+                    className="w-full bg-[#0055b8] hover:bg-blue-700 font-bold text-white py-3 text-sm shadow-md"
+                  >
+                    {customerAuthLoading ? "Authorizing Session..." : "Verify & Sign In"}
+                  </Button>
 
-                <Button
-                  type="submit"
-                  disabled={customerAuthLoading}
-                  className="w-full bg-primary font-bold text-primary-foreground hover:bg-primary/90"
-                >
-                  {customerAuthLoading ? "Verifying Credentials..." : "Continue to Security Check"}
-                </Button>
-              </form>
-            ) : (
-              /* MULTI-FACTOR AUTHENTICATION (MFA) STEP */
-              <form onSubmit={handleMfaSubmit} className="mt-5 space-y-4">
-                <div className="rounded-xl bg-blue-50 border border-blue-200 p-4 text-xs text-blue-900">
-                  <p className="font-bold flex items-center gap-1.5 text-primary">
-                    <Mail className="h-4 w-4 text-primary" />
-                    Security Verification Code Dispatched
-                  </p>
-                  <p className="mt-1 leading-relaxed text-slate-700">
-                    A secure 6-digit verification code has been dispatched to your registered address (<strong className="text-slate-900 font-mono">{customerLoginEmail}</strong>). Please open your email inbox or check your SMS messages on your mobile device to retrieve the code and enter it below.
-                  </p>
-                  <p className="mt-2 text-[0.68rem] text-slate-500 italic">
-                    For your security, OTP codes are sent directly to your authorized device and never displayed on-screen.
-                  </p>
-                </div>
-
-                <div>
-                  <div className="flex justify-between items-center">
-                    <label htmlFor="mfa-input" className="block text-xs font-bold text-foreground">
-                      Enter 6-Digit Email Verification Code
-                    </label>
-                    <span className="text-[0.68rem] text-slate-500 font-normal">
-                      Valid for 10 minutes
-                    </span>
+                  <div className="text-center">
+                    <button
+                      type="button"
+                      onClick={() => setMfaStep(false)}
+                      className="text-xs font-semibold text-slate-500 hover:text-slate-800 hover:underline"
+                    >
+                      Back to password login
+                    </button>
                   </div>
-                  <input
-                    id="mfa-input"
-                    type="text"
-                    required
-                    maxLength={6}
-                    value={mfaCode}
-                    onChange={(e) => setMfaCode(e.target.value.replace(/\D/g, ""))}
-                    placeholder="e.g. 849201"
-                    className="mt-1 w-full text-center tracking-widest font-mono text-xl rounded-md border border-input px-3.5 py-2.5 focus:border-primary focus:outline-none"
-                  />
-                </div>
+                </form>
+              )}
 
-                <div className="flex items-center justify-between text-xs text-muted-foreground pt-1">
-                  <span>Didn't receive the email code?</span>
-                  <button
-                    type="button"
-                    onClick={handleResendEmailOtp}
-                    disabled={mfaResendCount >= 3}
-                    className="font-bold text-primary hover:underline disabled:text-slate-400"
-                  >
-                    Resend Code {mfaResendCount > 0 && `(${3 - mfaResendCount} left)`}
-                  </button>
-                </div>
-
-                <Button
-                  type="submit"
-                  disabled={customerAuthLoading}
-                  className="w-full bg-primary font-bold text-primary-foreground hover:bg-primary/90"
-                >
-                  {customerAuthLoading ? "Authorizing Session..." : "Verify & Sign In"}
-                </Button>
-
-                <div className="text-center">
-                  <button
-                    type="button"
-                    onClick={() => setMfaStep(false)}
-                    className="text-xs font-semibold text-muted-foreground hover:underline"
-                  >
-                    Back to password login
-                  </button>
-                </div>
-              </form>
-            )}
-
-            <div className="mt-5 border-t border-border pt-4 flex flex-col gap-2 text-center text-xs text-muted-foreground">
-              <div>
-                New customer in {country.name}?{" "}
+              <div className="border-t border-slate-100 pt-3 text-center text-xs text-slate-600">
+                New customer?{" "}
                 <button
                   type="button"
                   onClick={() => {
                     setCustomerModalOpen(false);
                     setOpenAccountModalOpen(true);
                   }}
-                  className="font-bold text-accent hover:underline"
+                  className="font-bold text-[#0055b8] hover:underline"
                 >
                   Apply for an Account
                 </button>
               </div>
             </div>
           </div>
+        </div>
+      )}
         </div>
       )}
 
@@ -5026,198 +5041,192 @@ export function Index({ view = "home" }: { view?: "home" | "account" } = {}) {
         <div
           role="dialog"
           aria-modal="true"
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-4 backdrop-blur-sm"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-4 backdrop-blur-sm animate-in fade-in duration-200"
         >
-          <div className="relative w-full max-w-lg rounded-2xl border border-slate-700 bg-slate-900 p-6 sm:p-7 text-white shadow-2xl">
-            <button
-              type="button"
-              onClick={() => setAdminModalOpen(false)}
-              className="absolute right-4 top-4 rounded-full p-1 text-white/60 hover:bg-white/10 hover:text-white"
-            >
-              <X className="h-5 w-5" />
-            </button>
-
-            <div className="flex items-center gap-3">
-              <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-red-600 text-white shadow-lg shadow-red-600/30">
-                <SlidersHorizontal className="h-6 w-6" />
-              </div>
-              <div>
-                <div className="flex items-center gap-2">
-                  <h3 className="text-base font-bold text-white sm:text-lg">Staff → Sign In Admin</h3>
-                  <span className="rounded bg-red-600/30 border border-red-500/40 px-2 py-0.5 text-[0.68rem] font-bold text-red-300">
-                    Staff Portal
-                  </span>
+          <div className="relative w-full max-w-lg rounded-2xl border border-white/20 bg-white shadow-2xl overflow-hidden">
+            {/* Header: Home Page Navy Blue & Subtle Red Gold Accents */}
+            <div className="bg-[#0055b8] px-6 py-5 text-white flex items-center justify-between border-b border-blue-700">
+              <div className="flex items-center gap-3">
+                <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-red-600 text-white shadow-lg shadow-red-600/30">
+                  <SlidersHorizontal className="h-6 w-6" />
                 </div>
-                <p className="text-xs text-white/60">Dedicated Administration Access • West Side Financial Institution</p>
-              </div>
-            </div>
-
-            {/* SEPARATE ADMIN WEB LINK BOX (Distinct from public home page) */}
-            <div className="mt-4 rounded-xl border border-red-500/40 bg-red-950/40 p-3.5 text-xs text-white">
-              <div className="flex items-center justify-between mb-1.5">
-                <span className="font-bold text-red-200 flex items-center gap-1.5">
-                  <Globe2 className="h-3.5 w-3.5 text-red-400" />
-                  Separate Admin Web Link
-                </span>
-                <span className="text-[0.65rem] bg-red-500/20 text-red-200 px-2 py-0.5 rounded font-mono">
-                  Distinct from Public Home Page
-                </span>
-              </div>
-              <p className="text-[0.7rem] text-slate-300 mb-2.5">
-                Bookmark or share this direct administrative web link to open the admin terminal directly:
-              </p>
-              <div className="flex items-center gap-2">
-                <div className="flex-1 overflow-hidden rounded-lg border border-slate-700 bg-slate-950 px-3 py-1.5 font-mono text-[0.72rem] text-red-200 select-all truncate">
-                  {adminDedicatedUrl}
+                <div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-[0.68rem] uppercase tracking-widest font-black text-blue-200">
+                      West Side Financial Institution
+                    </span>
+                    <span className="rounded bg-red-600 px-2 py-0.5 text-[0.65rem] font-bold text-white shadow-xs">
+                      Staff Portal
+                    </span>
+                  </div>
+                  <h3 className="text-lg font-bold text-white tracking-tight leading-tight">
+                    Staff Sign In (Solo Admin)
+                  </h3>
                 </div>
-                <button
-                  type="button"
-                  onClick={handleCopyAdminLink}
-                  className="flex items-center gap-1 rounded-lg bg-red-600 hover:bg-red-700 px-3 py-1.5 text-xs font-bold text-white transition-colors shrink-0 shadow-sm"
-                  title="Copy Admin Link"
-                >
-                  {copiedAdminLink ? (
-                    <>
-                      <Check className="h-3.5 w-3.5 text-emerald-300" />
-                      Copied!
-                    </>
-                  ) : (
-                    <>
-                      <ClipboardList className="h-3.5 w-3.5" />
-                      Copy Link
-                    </>
-                  )}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    const adminSession = {
-                      username: "Master Solo Administrator",
-                      role: "Root Solo Authority",
-                      authenticatedAt: "Today, " + new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
-                    };
-                    if (typeof window !== "undefined") {
-                      try {
-                        localStorage.setItem("westside_active_solo_admin_session", JSON.stringify(adminSession));
-                      } catch {}
-                    }
-                    setSoloAdminUser(adminSession);
-                    setAdminModalOpen(false);
-                    setAdminActionNotice("Solo Admin Master session authorized.");
-                  }}
-                  className="flex items-center gap-1 rounded-lg bg-red-600 hover:bg-red-700 px-3 py-1.5 text-xs font-bold text-white transition-colors shrink-0 shadow-sm"
-                  title="Enter Solo Admin Console Directly"
-                >
-                  <ArrowRight className="h-3.5 w-3.5" />
-                  Enter Console
-                </button>
               </div>
-            </div>
-
-            {/* Clearly Labeled Admin Sign-In Option Banner */}
-            <div className="mt-4 rounded-lg bg-white/5 border border-white/10 p-2.5 text-xs text-white/80 leading-relaxed flex items-center justify-between">
-              <div>
-                <span className="font-bold text-white">Admin Sign-In Option:</span>
-                <span className="ml-1 text-white/60">Separate from public customer sign-in.</span>
-              </div>
-            </div>
-
-            {/* Quick Auto-Fill Helper */}
-            <div className="mt-3">
               <button
                 type="button"
-                onClick={() => {
-                  setAdminUsername("admin");
-                  setAdminPassword("admin");
-                }}
-                className="w-full rounded-md border border-red-500/40 bg-red-600/15 px-3 py-1.5 text-xs font-bold text-red-300 hover:bg-red-600/25 transition-colors"
+                onClick={() => setAdminModalOpen(false)}
+                className="rounded-full p-1.5 text-blue-200 hover:text-white hover:bg-white/10 transition-colors"
+                aria-label="Close"
               >
-                ⚡ Quick Auto-Fill Admin Credentials (admin / admin)
+                <X className="h-5 w-5" />
               </button>
             </div>
 
-            {adminAuthError && (
-              <div
-                role="alert"
-                className="mt-3 flex items-center gap-2 rounded-lg bg-rose-500/20 border border-rose-500/30 p-2.5 text-xs text-rose-200"
-              >
-                <AlertCircle className="h-4 w-4 shrink-0" />
-                <span>{adminAuthError}</span>
-              </div>
-            )}
-
-            <form onSubmit={handleSoloAdminSignIn} className="mt-4 space-y-4">
-              <div>
-                <label htmlFor="adm-id" className="block text-xs font-bold text-white/90">
-                  Admin Identifier
-                </label>
-                <input
-                  id="adm-id"
-                  type="text"
-                  required
-                  value={adminUsername}
-                  onChange={(e) => setAdminUsername(e.target.value)}
-                  placeholder="e.g. admin or admin@westsidebank.com"
-                  className="mt-1 w-full rounded-md border border-white/20 bg-slate-800 px-3.5 py-2 text-sm text-white placeholder-white/40 focus:border-red-500 focus:outline-none"
-                />
-              </div>
-
-              <div>
-                <label htmlFor="adm-pass" className="block text-xs font-bold text-white/90">
-                  Admin Master Passphrase
-                </label>
-                <div className="relative mt-1">
-                  <input
-                    id="adm-pass"
-                    type={showAdminPassword ? "text" : "password"}
-                    required
-                    value={adminPassword}
-                    onChange={(e) => setAdminPassword(e.target.value)}
-                    placeholder="Enter admin passphrase"
-                    className="w-full rounded-md border border-white/20 bg-slate-800 px-3.5 py-2 pr-10 text-sm text-white placeholder-white/40 focus:border-red-500 focus:outline-none"
-                  />
+            <div className="p-6 sm:p-7 space-y-4">
+              {/* SEPARATE ADMIN WEB LINK BOX (Distinct from public home page) */}
+              <div className="rounded-xl border border-blue-200 bg-blue-50/70 p-3.5 text-xs text-slate-800">
+                <div className="flex items-center justify-between mb-1.5">
+                  <span className="font-bold text-[#0055b8] flex items-center gap-1.5">
+                    <Globe2 className="h-4 w-4 text-[#0055b8]" />
+                    Separate Admin Web Link
+                  </span>
+                  <span className="text-[0.65rem] bg-blue-100 text-blue-800 px-2 py-0.5 rounded font-mono font-bold">
+                    Distinct Admin Route
+                  </span>
+                </div>
+                <p className="text-[0.7rem] text-slate-600 mb-2.5">
+                  Bookmark or share this direct administrative web link to open the admin terminal directly:
+                </p>
+                <div className="flex items-center gap-2">
+                  <div className="flex-1 overflow-hidden rounded-lg border border-slate-300 bg-white px-3 py-1.5 font-mono text-[0.72rem] text-blue-900 select-all truncate">
+                    {adminDedicatedUrl}
+                  </div>
                   <button
                     type="button"
-                    onClick={() => setShowAdminPassword(!showAdminPassword)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-white/60 hover:text-white"
+                    onClick={handleCopyAdminLink}
+                    className="flex items-center gap-1 rounded-lg bg-[#0055b8] hover:bg-blue-700 px-3 py-1.5 text-xs font-bold text-white transition-colors shrink-0 shadow-sm"
+                    title="Copy Admin Link"
                   >
-                    {showAdminPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    {copiedAdminLink ? (
+                      <>
+                        <Check className="h-3.5 w-3.5 text-emerald-300" />
+                        Copied!
+                      </>
+                    ) : (
+                      <>
+                        <ClipboardList className="h-3.5 w-3.5" />
+                        Copy Link
+                      </>
+                    )}
                   </button>
+                  <a
+                    href="/staff"
+                    className="flex items-center gap-1 rounded-lg bg-red-600 hover:bg-red-700 px-3 py-1.5 text-xs font-bold text-white transition-colors shrink-0 shadow-sm"
+                    title="Enter Solo Admin Console Directly"
+                  >
+                    <ArrowRight className="h-3.5 w-3.5" />
+                    Enter Console
+                  </a>
                 </div>
               </div>
 
-              <div className="space-y-2">
-                <Button
-                  type="submit"
-                  disabled={adminAuthLoading}
-                  className="w-full bg-red-600 hover:bg-red-700 font-bold text-white shadow-md shadow-red-600/20 py-3 text-sm flex items-center justify-center gap-2"
-                >
-                  <ShieldCheck className="h-4 w-4" />
-                  {adminAuthLoading ? "Launching Solo Control Console..." : "Sign In & Enter Solo Admin Console"}
-                </Button>
+              {/* Quick Auto-Fill Helper */}
+              <div>
                 <button
                   type="button"
                   onClick={() => {
-                    const adminSession = {
-                      username: "Master Solo Administrator",
-                      role: "Root Solo Authority",
-                      authenticatedAt: "Today, " + new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
-                    };
-                    if (typeof window !== "undefined") {
-                      try {
-                        localStorage.setItem("westside_active_solo_admin_session", JSON.stringify(adminSession));
-                      } catch {}
-                    }
-                    setSoloAdminUser(adminSession);
-                    setAdminModalOpen(false);
-                    setAdminActionNotice("Solo Admin Master session authorized.");
+                    setAdminUsername("admin");
+                    setAdminPassword("admin");
                   }}
-                  className="w-full rounded-md border border-slate-700 bg-slate-800 hover:bg-slate-700 px-3 py-2 text-xs font-semibold text-slate-200 transition-colors flex items-center justify-center gap-1.5"
+                  className="w-full rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-xs font-bold text-red-700 hover:bg-red-100 transition-colors flex items-center justify-center gap-1.5"
                 >
-                  <Sparkles className="h-3.5 w-3.5 text-accent" /> Direct 1-Click Solo Admin Launch
+                  <Sparkles className="h-3.5 w-3.5 text-red-600" />
+                  Quick Auto-Fill Admin Credentials (admin / admin)
                 </button>
               </div>
-            </form>
+
+              {adminAuthError && (
+                <div
+                  role="alert"
+                  className="flex items-center gap-2 rounded-xl bg-red-50 border border-red-200 p-3 text-xs text-red-700"
+                >
+                  <AlertCircle className="h-4 w-4 shrink-0 text-red-600" />
+                  <span>{adminAuthError}</span>
+                </div>
+              )}
+
+              <form onSubmit={handleSoloAdminSignIn} className="space-y-4">
+                <div>
+                  <label htmlFor="adm-id" className="block text-xs font-bold text-slate-800 mb-1">
+                    Staff Admin Identifier
+                  </label>
+                  <input
+                    id="adm-id"
+                    type="text"
+                    required
+                    value={adminUsername}
+                    onChange={(e) => setAdminUsername(e.target.value)}
+                    placeholder="e.g. admin or admin@westsidebank.online"
+                    className="w-full rounded-xl border border-slate-300 px-3.5 py-2.5 text-sm text-slate-800 focus:border-[#0055b8] focus:ring-1 focus:ring-[#0055b8] outline-none"
+                  />
+                </div>
+
+                <div>
+                  <label htmlFor="adm-pass" className="block text-xs font-bold text-slate-800 mb-1">
+                    Admin Master Passphrase
+                  </label>
+                  <div className="relative">
+                    <input
+                      id="adm-pass"
+                      type={showAdminPassword ? "text" : "password"}
+                      required
+                      value={adminPassword}
+                      onChange={(e) => setAdminPassword(e.target.value)}
+                      placeholder="Enter admin passphrase"
+                      className="w-full rounded-xl border border-slate-300 px-3.5 py-2.5 pr-10 text-sm text-slate-800 focus:border-[#0055b8] focus:ring-1 focus:ring-[#0055b8] outline-none"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowAdminPassword(!showAdminPassword)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700"
+                    >
+                      {showAdminPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    </button>
+                  </div>
+                </div>
+
+                <div className="space-y-2 pt-1">
+                  <Button
+                    type="submit"
+                    disabled={adminAuthLoading}
+                    className="w-full bg-[#0055b8] hover:bg-blue-700 font-bold text-white shadow-md py-3 text-sm flex items-center justify-center gap-2 cursor-pointer"
+                  >
+                    <ShieldCheck className="h-4 w-4" />
+                    {adminAuthLoading ? "Authenticating Solo Control Console..." : "Sign In & Enter Solo Admin Console"}
+                  </Button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const adminSession = {
+                        username: "Master Solo Administrator",
+                        role: "Root Solo Authority",
+                        authenticatedAt: "Today, " + new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+                      };
+                      if (typeof window !== "undefined") {
+                        try {
+                          localStorage.setItem("westside_active_solo_admin_session", JSON.stringify(adminSession));
+                        } catch {}
+                      }
+                      setSoloAdminUser(adminSession);
+                      setAdminModalOpen(false);
+                      setAdminActionNotice("Solo Admin Master session authorized.");
+                    }}
+                    className="w-full rounded-xl border border-slate-300 bg-slate-50 hover:bg-slate-100 px-3 py-2.5 text-xs font-bold text-slate-700 transition-colors flex items-center justify-center gap-1.5"
+                  >
+                    <Sparkles className="h-3.5 w-3.5 text-red-600" /> Direct 1-Click Solo Admin Launch
+                  </button>
+                </div>
+              </form>
+
+              <div className="pt-2 border-t border-slate-100 text-center text-[0.7rem] text-slate-500">
+                Staff credentials and encryption verified under West Side Financial Institution banking protocols.
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
             <div className="mt-4 pt-3 border-t border-white/10 text-center text-[0.7rem] text-white/50">
               Only authorized staff credentials can access this administrative console.

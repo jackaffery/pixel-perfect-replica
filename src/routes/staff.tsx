@@ -113,125 +113,131 @@ function StaffPortalPage() {
       </header>
 
       {/* Main Sign-In Card */}
-      <main className="max-w-md w-full mx-auto my-auto bg-slate-900/95 border border-white/15 rounded-3xl p-6 sm:p-8 shadow-2xl backdrop-blur-xl">
-        <div className="text-center">
-          <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-[#e60028] text-white shadow-lg shadow-red-600/30 mb-4">
+      <main className="max-w-md w-full mx-auto my-auto bg-white rounded-3xl border border-white/20 shadow-2xl overflow-hidden text-slate-800">
+        {/* Navy Blue & Red Bank Brand Header */}
+        <div className="bg-[#0055b8] px-6 py-6 text-white text-center border-b border-blue-700">
+          <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-red-600 text-white shadow-lg shadow-red-600/30 mb-3">
             <SlidersHorizontal className="h-7 w-7" />
           </div>
-          <h1 className="text-2xl font-black text-white">Staff Sign In</h1>
-          <p className="text-xs font-bold uppercase tracking-wider text-blue-300 mt-1">Solo Administrator Console</p>
-          <p className="text-xs text-slate-300 mt-2">
-            Centralized root authority to control all customer users, balances, applications, and security.
+          <span className="text-[0.68rem] uppercase tracking-widest font-black text-blue-200 block mb-1">
+            West Side Financial Institution
+          </span>
+          <h1 className="text-2xl font-black text-white tracking-tight">Staff Sign In</h1>
+          <p className="text-xs font-bold uppercase tracking-wider text-yellow-300 mt-1">Solo Administrator Console</p>
+          <p className="text-xs text-blue-100 mt-2">
+            Centralized root authority to control customer users, balances, applications, and security.
           </p>
         </div>
 
-        {/* 1-Click Fast Launch Option */}
-        <div className="mt-6">
-          <button
-            type="button"
-            onClick={handle1ClickLaunch}
-            className="w-full rounded-xl bg-gradient-to-r from-red-600 to-[#e60028] hover:from-red-500 hover:to-red-600 p-3 text-xs font-black text-white shadow-lg shadow-red-600/30 flex items-center justify-center gap-2 transition-all hover:scale-[1.01]"
-          >
-            <Sparkles className="h-4 w-4 text-amber-300" />
-            <span>✨ 1-Click Instant Solo Admin Launch</span>
-          </button>
-        </div>
-
-        <div className="relative my-5">
-          <div className="absolute inset-0 flex items-center">
-            <div className="w-full border-t border-slate-700" />
-          </div>
-          <div className="relative flex justify-center text-xs">
-            <span className="bg-slate-900 px-3 text-slate-400">or sign in with credentials</span>
-          </div>
-        </div>
-
-        {authError && (
-          <div className="mb-4 flex items-center gap-2 rounded-xl bg-rose-500/20 border border-rose-500/40 p-3 text-xs text-rose-200">
-            <AlertCircle className="h-4 w-4 shrink-0" />
-            <span>{authError}</span>
-          </div>
-        )}
-
-        <form onSubmit={handleSignIn} className="space-y-4">
+        <div className="p-6 sm:p-8">
+          {/* 1-Click Fast Launch Option */}
           <div>
-            <label className="block text-xs font-bold text-slate-200 mb-1">
-              Solo Administrator Identifier
-            </label>
-            <input
-              type="text"
-              required
-              value={adminUsername}
-              onChange={(e) => setAdminUsername(e.target.value)}
-              placeholder="e.g. admin or admin@westsidebank.online"
-              className="w-full rounded-xl border border-slate-700 bg-slate-950 px-3.5 py-2.5 text-sm text-white placeholder-slate-500 focus:border-[#0066d6] focus:outline-none"
-            />
+            <button
+              type="button"
+              onClick={handle1ClickLaunch}
+              className="w-full rounded-xl bg-red-600 hover:bg-red-700 p-3 text-xs font-black text-white shadow-md shadow-red-600/30 flex items-center justify-center gap-2 transition-all hover:scale-[1.01] cursor-pointer"
+            >
+              <Sparkles className="h-4 w-4 text-yellow-300" />
+              <span>✨ 1-Click Instant Solo Admin Launch</span>
+            </button>
           </div>
 
-          <div>
-            <div className="flex items-center justify-between mb-1">
-              <label className="block text-xs font-bold text-slate-200">
-                Master Passphrase
+          <div className="relative my-5">
+            <div className="absolute inset-0 flex items-center">
+              <div className="w-full border-t border-slate-200" />
+            </div>
+            <div className="relative flex justify-center text-xs">
+              <span className="bg-white px-3 text-slate-500 font-medium">or sign in with credentials</span>
+            </div>
+          </div>
+
+          {authError && (
+            <div className="mb-4 flex items-center gap-2 rounded-xl bg-red-50 border border-red-200 p-3 text-xs text-red-700">
+              <AlertCircle className="h-4 w-4 shrink-0 text-red-600" />
+              <span>{authError}</span>
+            </div>
+          )}
+
+          <form onSubmit={handleSignIn} className="space-y-4">
+            <div>
+              <label className="block text-xs font-bold text-slate-800 mb-1">
+                Staff Administrator Identifier
               </label>
-              <button
-                type="button"
-                onClick={() => {
+              <input
+                type="text"
+                required
+                value={adminUsername}
+                onChange={(e) => setAdminUsername(e.target.value)}
+                placeholder="e.g. admin or admin@westsidebank.online"
+                className="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2.5 text-sm text-slate-800 placeholder-slate-400 focus:border-[#0055b8] focus:ring-1 focus:ring-[#0055b8] outline-none"
+              />
+            </div>
+
+            <div>
+              <div className="flex items-center justify-between mb-1">
+                <label className="block text-xs font-bold text-slate-800">
+                  Master Passphrase
+                </label>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setAdminUsername("admin");
+                    setAdminPassword("admin");
+                  }}
+                  className="text-[0.68rem] text-[#0055b8] font-bold hover:underline"
+                >
+                  Auto-fill (admin/admin)
+                </button>
+              </div>
+              <div className="relative">
+                <input
+                  type={showPassword ? "text" : "password"}
+                  required
+                  value={adminPassword}
+                  onChange={(e) => setAdminPassword(e.target.value)}
+                  placeholder="Enter admin passphrase"
+                  className="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2.5 pr-10 text-sm text-slate-800 placeholder-slate-400 focus:border-[#0055b8] focus:ring-1 focus:ring-[#0055b8] outline-none"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700"
+                >
+                  {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                </button>
+              </div>
+            </div>
+
+            <Button
+              type="submit"
+              disabled={authLoading}
+              className="w-full bg-[#0055b8] hover:bg-blue-700 text-white font-extrabold py-3 rounded-xl shadow-md text-sm transition-all cursor-pointer"
+            >
+              {authLoading ? "Authenticating Authority..." : "Sign In to Solo Admin Console"}
+            </Button>
+          </form>
+
+          <div className="mt-6 pt-4 border-t border-slate-100 flex flex-col items-center gap-2 text-center text-[0.7rem] text-slate-500">
+            <button
+              type="button"
+              onClick={() => {
+                if (confirm("Reset & Delete stored Admin credentials and sessions from this browser?")) {
+                  try {
+                    localStorage.removeItem("westside_admin_profile");
+                    localStorage.removeItem("westside_active_solo_admin_session");
+                  } catch {}
                   setAdminUsername("admin");
                   setAdminPassword("admin");
-                }}
-                className="text-[0.68rem] text-blue-400 hover:underline"
-              >
-                Auto-fill (admin/admin)
-              </button>
-            </div>
-            <div className="relative">
-              <input
-                type={showPassword ? "text" : "password"}
-                required
-                value={adminPassword}
-                onChange={(e) => setAdminPassword(e.target.value)}
-                placeholder="Enter admin passphrase"
-                className="w-full rounded-xl border border-slate-700 bg-slate-950 px-3.5 py-2.5 pr-10 text-sm text-white placeholder-slate-500 focus:border-[#0066d6] focus:outline-none"
-              />
-              <button
-                type="button"
-                onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white"
-              >
-                {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-              </button>
-            </div>
+                  setAuthError("");
+                  alert("Stored Admin credentials, profile, and sessions have been cleared.");
+                }
+              }}
+              className="text-xs font-bold text-red-600 hover:text-red-700 hover:underline transition-colors flex items-center gap-1.5"
+            >
+              <Trash2 className="h-3 w-3" /> Delete Stored Admin Profile & Reset
+            </button>
+            <span>West Side Financial Institution • Central Administrator Governance</span>
           </div>
-
-          <Button
-            type="submit"
-            disabled={authLoading}
-            className="w-full bg-[#0066d6] hover:bg-[#0055b8] text-white font-extrabold py-3 rounded-xl shadow-lg shadow-blue-600/30 text-sm transition-all"
-          >
-            {authLoading ? "Authenticating Authority..." : "Sign In to Solo Admin Console"}
-          </Button>
-        </form>
-
-        <div className="mt-6 pt-4 border-t border-slate-800 flex flex-col items-center gap-2 text-center text-[0.7rem] text-slate-400">
-          <button
-            type="button"
-            onClick={() => {
-              if (confirm("Reset & Delete stored Admin credentials and sessions from this browser?")) {
-                try {
-                  localStorage.removeItem("westside_admin_profile");
-                  localStorage.removeItem("westside_active_solo_admin_session");
-                } catch {}
-                setAdminUsername("admin");
-                setAdminPassword("admin");
-                setAuthError("");
-                alert("Stored Admin credentials, profile, and sessions have been cleared.");
-              }
-            }}
-            className="text-xs font-bold text-rose-400 hover:text-rose-300 hover:underline transition-colors flex items-center gap-1.5"
-          >
-            <Trash2 className="h-3 w-3" /> Delete Stored Admin Profile & Reset
-          </button>
-          <span>West Side Financial Institution • Central Administrator Governance</span>
         </div>
       </main>
 
