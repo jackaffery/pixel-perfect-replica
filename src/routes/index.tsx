@@ -5228,12 +5228,6 @@ export function Index({ view = "home" }: { view?: "home" | "account" } = {}) {
         </div>
       )}
 
-            <div className="mt-4 pt-3 border-t border-white/10 text-center text-[0.7rem] text-white/50">
-              Only authorized staff credentials can access this administrative console.
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* ADJUST USER BALANCE MODAL */}
       {adjustBalanceUser && (
