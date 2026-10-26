@@ -325,104 +325,7 @@ export interface AdminControlledUser {
   profilePicUrl?: string;
 }
 
-const INITIAL_USERS: AdminControlledUser[] = [
-  {
-    id: "USB-US-109283",
-    name: "Eleanor Vance",
-    email: "eleanor.vance@example.com",
-    phone: "+1 (555) 234-8901",
-    country: "United States",
-    countryCode: "US",
-    accountType: "Advantage Checking & Savings",
-    checkingBalance: 0.0,
-    savingsBalance: 0.0,
-    status: "active",
-    idType: "Social Security Number (SSN)",
-    idNumber: "•••-••-4892",
-    createdAt: "Oct 12, 2026",
-    profilePicUrl: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=400&q=80",
-  },
-  {
-    id: "USB-GB-401928",
-    name: "Liam Davies",
-    email: "liam.davies@example.co.uk",
-    phone: "+44 20 7946 0912",
-    country: "United Kingdom",
-    countryCode: "GB",
-    accountType: "Advantage Checking",
-    checkingBalance: 0.0,
-    savingsBalance: 0.0,
-    status: "active",
-    idType: "National Insurance (NI) Number",
-    idNumber: "•• •• •• 89 C",
-    createdAt: "Oct 15, 2026",
-    profilePicUrl: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=400&q=80",
-  },
-  {
-    id: "USB-CA-884910",
-    name: "Mathieu Tremblay",
-    email: "mathieu.t@example.ca",
-    phone: "+1 (416) 555-0182",
-    country: "Canada",
-    countryCode: "CA",
-    accountType: "Commercial Treasury",
-    checkingBalance: 0.0,
-    savingsBalance: 0.0,
-    status: "pending_kyc",
-    idType: "Social Insurance Number (SIN)",
-    idNumber: "••• ••• 419",
-    createdAt: "Today, 08:30 AM",
-    profilePicUrl: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=400&q=80",
-  },
-  {
-    id: "USB-MX-301924",
-    name: "Sofia Rodriguez",
-    email: "sofia.rodriguez@example.mx",
-    phone: "+52 55 1234 5678",
-    country: "Mexico",
-    countryCode: "MX",
-    accountType: "Advantage Checking & Savings",
-    checkingBalance: 0.0,
-    savingsBalance: 0.0,
-    status: "active",
-    idType: "CURP / RFC",
-    idNumber: "ROMS850215••••••",
-    createdAt: "Oct 17, 2026",
-    profilePicUrl: "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&w=400&q=80",
-  },
-  {
-    id: "USB-DE-662914",
-    name: "Lukas Weber",
-    email: "lukas.weber@example.de",
-    phone: "+49 30 1234567",
-    country: "Germany",
-    countryCode: "DE",
-    accountType: "High-Yield Savings",
-    checkingBalance: 0.0,
-    savingsBalance: 0.0,
-    status: "frozen",
-    idType: "Personalausweis / Steuer-ID",
-    idNumber: "T2200••••",
-    createdAt: "Oct 10, 2026",
-    profilePicUrl: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?auto=format&fit=crop&w=400&q=80",
-  },
-  {
-    id: "USB-JP-994102",
-    name: "Kenji Takahashi",
-    email: "kenji.takahashi@example.jp",
-    phone: "+81 3 5555 0143",
-    country: "Japan",
-    countryCode: "JP",
-    accountType: "Advantage Checking",
-    checkingBalance: 0.0,
-    savingsBalance: 0.0,
-    status: "suspended",
-    idType: "My Number (Individual Number)",
-    idNumber: "•••• •••• 9201",
-    createdAt: "Oct 05, 2026",
-    profilePicUrl: "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&w=400&q=80",
-  },
-];
+const INITIAL_USERS: AdminControlledUser[] = [];
 
 export interface BankApplication {
   id: string;
@@ -441,68 +344,7 @@ export interface BankApplication {
   updatedAt?: string;
 }
 
-const INITIAL_APPLICATIONS: BankApplication[] = [
-  {
-    id: "USB-CA-884910",
-    fullName: "Mathieu Tremblay",
-    email: "mathieu.t@example.ca",
-    phone: "+1 (416) 555-0182",
-    countryName: "Canada",
-    countryCode: "CA",
-    region: "Ontario",
-    accountType: "Commercial Treasury",
-    idType: "Social Insurance Number (SIN)",
-    idNumber: "••• ••• 419",
-    status: "Pending",
-    reviewNotes: "Initial documentation uploaded. Awaiting regulatory screening.",
-    submittedAt: "Oct 19, 2026, 08:30 AM",
-  },
-  {
-    id: "USB-GB-401928",
-    fullName: "Liam Davies",
-    email: "liam.davies@example.co.uk",
-    phone: "+44 20 7946 0912",
-    countryName: "United Kingdom",
-    countryCode: "GB",
-    region: "England",
-    accountType: "Advantage Checking",
-    idType: "National Insurance (NI) Number",
-    idNumber: "•• •• •• 89 C",
-    status: "Approved",
-    reviewNotes: "KYC and address proof verified. Advantage Checking account active.",
-    submittedAt: "Oct 15, 2026, 11:20 AM",
-  },
-  {
-    id: "USB-US-109283",
-    fullName: "Eleanor Vance",
-    email: "eleanor.vance@example.com",
-    phone: "+1 (555) 234-8901",
-    countryName: "United States",
-    countryCode: "US",
-    region: "California",
-    accountType: "Advantage Checking & Savings",
-    idType: "Social Security Number (SSN)",
-    idNumber: "•••-••-4892",
-    status: "Approved",
-    reviewNotes: "Domestic identification verified. Welcome bonus activated.",
-    submittedAt: "Oct 12, 2026, 02:45 PM",
-  },
-  {
-    id: "USB-VN-552019",
-    fullName: "Nguyen Van Minh",
-    email: "minh.nguyen@example.vn",
-    phone: "+84 24 3825 0123",
-    countryName: "Vietnam",
-    countryCode: "VN",
-    region: "Hanoi",
-    accountType: "Advantage Checking",
-    idType: "Citizen Identity Card (CCCD)",
-    idNumber: "00109•••••••",
-    status: "Under Review",
-    reviewNotes: "Cross-border ID match in progress with regional compliance team.",
-    submittedAt: "Oct 18, 2026, 04:10 PM",
-  },
-];
+const INITIAL_APPLICATIONS: BankApplication[] = [];
 
 export interface CustomerInquiry {
   id: string;
@@ -798,92 +640,15 @@ export function Index({ view = "home" }: { view?: "home" | "account" } = {}) {
     }[];
   } | null>(null);
 
-  const [transactions, setTransactions] = useState([
-    {
-      id: "TX-90214",
-      date: "Today, 10:14 AM",
-      desc: "Direct Deposit — Official Payroll",
-      category: "Income",
-      counterparty: "Global Enterprise Payroll Inc.",
-      amount: "+$3,450.00",
-      positive: true,
-      status: "Completed",
-      transferStatus: "Completed",
-      statusUpdates: [
-        {
-          id: "UPD-90214-1",
-          fromStatus: "Processing",
-          toStatus: "Completed",
-          updatedBy: "Staff Admin",
-          reason: "Verified clearing confirmation from Global Enterprise Payroll Inc.",
-          timestamp: "Today, 10:14 AM",
-        },
-      ],
-    },
-    {
-      id: "TX-90209",
-      date: "Oct 16, 2026",
-      desc: "Utility Provider — Bill Pay Direct",
-      category: "Utilities",
-      counterparty: "Consolidated Edison Utility",
-      amount: "-$184.20",
-      positive: false,
-      status: "Completed",
-      transferStatus: "Completed",
-      statusUpdates: [
-        {
-          id: "UPD-90209-1",
-          fromStatus: "Processing",
-          toStatus: "Completed",
-          updatedBy: "Staff Admin",
-          reason: "Electronic utility bill settlement completed.",
-          timestamp: "Oct 16, 2026, 05:40 PM",
-        },
-      ],
-    },
-    {
-      id: "TX-90212",
-      date: "Oct 17, 2026",
-      desc: "Wire Transfer — International Settlement",
-      category: "Wire Transfer",
-      counterparty: "Offshore Vault Ltd. (CY)",
-      amount: "-$14,200.00",
-      positive: false,
-      status: "On hold",
-      transferStatus: "On hold",
-      statusUpdates: [
-        {
-          id: "UPD-90212-1",
-          fromStatus: "Processing",
-          toStatus: "On hold",
-          updatedBy: "Staff Admin",
-          reason: "Temporary compliance hold pending counterparty verification documentation.",
-          timestamp: "Oct 17, 2026, 02:15 PM",
-        },
-      ],
-    },
-    {
-      id: "TX-90211",
-      date: "Yesterday, 08:35 AM",
-      desc: "Interbank Commercial Transfer",
-      category: "Transfer",
-      counterparty: "Ontario Commercial Services",
-      amount: "-$6,000.00",
-      positive: false,
-      status: "Processing",
-      transferStatus: "Processing",
-      statusUpdates: [
-        {
-          id: "UPD-90211-1",
-          fromStatus: "On hold",
-          toStatus: "Processing",
-          updatedBy: "Staff Admin",
-          reason: "Initial ACH batch scheduled for interbank clearing.",
-          timestamp: "Yesterday, 08:35 AM",
-        },
-      ],
-    },
-  ]);
+  const [transactions, setTransactions] = useState<any[]>(() => {
+    if (typeof window !== "undefined") {
+      try {
+        const saved = localStorage.getItem("us_finance_bank_transactions");
+        if (saved) return JSON.parse(saved);
+      } catch {}
+    }
+    return [];
+  });
 
   // Sync customer transactions with centralized transfer data from localStorage
   useEffect(() => {

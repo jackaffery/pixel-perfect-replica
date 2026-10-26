@@ -128,7 +128,22 @@ export function SoloAdminDashboard({
     return "";
   });
   const [activeSection, setActiveSection] = useState<
-    "overview" | "users" | "applications" | "customers" | "accounts" | "transactions" | "compliance" | "support" | "reports" | "audit" | "settings"
+    | "overview"
+    | "users"
+    | "applications"
+    | "customers"
+    | "accounts"
+    | "transactions"
+    | "compliance"
+    | "support"
+    | "reports"
+    | "audit"
+    | "settings"
+    | "deposits"
+    | "loans"
+    | "cards"
+    | "irs"
+    | "email-services"
   >("overview");
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
@@ -873,10 +888,78 @@ export function SoloAdminDashboard({
 
     const updatedUsers = [newRecord, ...adminUsers];
     persistAdminUsers(updatedUsers);
+
+    // Also provision customer profile and bank accounts so the user can immediately access their dashboard
+    const newCust: AdminCustomer = {
+      id: linkedCustId,
+      name: newUserData.name.trim(),
+      email: newUserData.email.trim(),
+      phone: newUserData.phone.trim() || "+1 (555) 000-0000",
+      country: newUserData.country || "United States",
+      countryCode: newUserData.country === "United Kingdom" ? "GB" : newUserData.country === "Canada" ? "CA" : "US",
+      verificationStatus: "Verified",
+      riskLevel: "Low",
+      status: "Active",
+      idType: "Government Photo ID (Staff Registered)",
+      idNumberMasked: "••••" + Math.floor(1000 + Math.random() * 9000),
+      address: newUserData.mailingAddress.trim() || "100 Financial Way, Suite 400, New York, NY",
+      joinedDate: "Today",
+      adminNotes: "Customer provisioned directly through Staff Solo Admin console.",
+      linkedAccountIds: [`ACC-${newId.slice(-4)}-1`],
+    };
+    const updatedCusts = [newCust, ...customers];
+    setCustomers(updatedCusts);
+    try {
+      localStorage.setItem("us_finance_bank_customers", JSON.stringify(updatedCusts));
+    } catch {}
+
+    const initBal = parseFloat(newUserData.initialBalance || "0") || 0;
+    const newAcc: BankAccountRecord = {
+      id: `ACC-${newId.slice(-4)}-1`,
+      customerId: linkedCustId,
+      customerName: newUserData.name.trim(),
+      accountType: newUserData.accountType || "Advantage Checking",
+      accountNumberMasked: `••••••••${Math.floor(1000 + Math.random() * 9000)}`,
+      routingNumber: "021000089",
+      currency: newUserData.country === "United Kingdom" ? "GBP" : newUserData.country === "Germany" ? "EUR" : "USD",
+      balance: initBal,
+      availableBalance: initBal,
+      status: "Active",
+      openedDate: "Today",
+      lastActivity: "Just now",
+    };
+    const updatedAccs = [newAcc, ...accounts];
+    setAccounts(updatedAccs);
+    try {
+      localStorage.setItem("us_finance_bank_accounts", JSON.stringify(updatedAccs));
+    } catch {}
+
+    // Synchronize to controlled users pool for home page login
+    try {
+      const controlledRaw = localStorage.getItem("us_finance_bank_controlled_users");
+      const list = controlledRaw ? JSON.parse(controlledRaw) : [];
+      const controlledUserObj = {
+        id: newId,
+        name: newUserData.name.trim(),
+        email: newUserData.email.trim().toLowerCase(),
+        phone: newUserData.phone.trim() || "+1 (555) 000-0000",
+        country: newUserData.country || "United States",
+        countryCode: "US",
+        accountType: newUserData.accountType || "Advantage Checking",
+        checkingBalance: initBal,
+        savingsBalance: 0,
+        status: "active",
+        idType: "Government Photo ID",
+        idNumber: "••••••••",
+        createdAt: "Today",
+      };
+      localStorage.setItem("us_finance_bank_controlled_users", JSON.stringify([controlledUserObj, ...list]));
+    } catch {}
+
     appendAuditLog(
       "Users",
       "Created User Record",
-      `Administrator safely provisioned new user record for ${newRecord.name} (${newRecord.email}) with initial status Active.`,
+      `Administrator safely provisioned new user record for ${newRecord.name} (${newRecord.email}) with initial status Active and funded balance $${initBal.toFixed(2)}.`,
       newId
     );
     setCreateUserModalOpen(false);
@@ -1995,6 +2078,11 @@ export function SoloAdminDashboard({
               {[
                 { id: "overview", label: "Dashboard", icon: Home },
                 { id: "users", label: "Manage Users", icon: User },
+                { id: "deposits", label: "Users Deposits", icon: ArrowDownToLine },
+                { id: "loans", label: "Loan Applications", icon: Landmark },
+                { id: "cards", label: "Virtual Cards", icon: CreditCard },
+                { id: "irs", label: "IRS Refunds", icon: Sparkles },
+                { id: "email-services", label: "Email Services", icon: Mail },
                 { id: "compliance", label: "Grant Applications", icon: HandCoins, hasSubmenu: true },
                 { id: "create-user", label: "Create New user", icon: UserPlus },
                 { id: "applications", label: "New User Application(s)", icon: UserCheck },
@@ -2090,6 +2178,11 @@ export function SoloAdminDashboard({
           {[
             { id: "overview", label: "Dashboard", icon: Home },
             { id: "users", label: "Manage Users", icon: User },
+            { id: "deposits", label: "Users Deposits", icon: ArrowDownToLine },
+            { id: "loans", label: "Loan Applications", icon: Landmark },
+            { id: "cards", label: "Virtual Cards", icon: CreditCard },
+            { id: "irs", label: "IRS Refunds", icon: Sparkles },
+            { id: "email-services", label: "Email Services", icon: Mail },
             { id: "compliance", label: "Grant Applications", icon: HandCoins, hasSubmenu: true },
             { id: "create-user", label: "Create New user", icon: UserPlus },
             { id: "applications", label: "New User Application(s)", icon: UserCheck },
@@ -2232,14 +2325,15 @@ export function SoloAdminDashboard({
 
               {/* Notification Center Dropdown */}
               {showNotifications && (
-                <div className="absolute right-0 mt-2 w-80 sm:w-96 rounded-2xl border border-slate-200 bg-white p-4 shadow-2xl z-50 animate-fadeIn text-slate-800">
-                  <div className="flex items-center justify-between border-b border-slate-100 pb-2.5">
+                <div className="fixed sm:absolute inset-x-2 sm:inset-x-auto right-auto sm:right-0 top-16 sm:top-auto sm:mt-2 w-[calc(100vw-16px)] sm:w-[540px] md:w-[620px] rounded-2xl border border-slate-200 bg-white p-4 sm:p-5 shadow-2xl z-50 animate-fadeIn text-slate-800">
+                  <div className="flex items-center justify-between border-b border-slate-100 pb-3">
                     <div>
-                      <h4 className="font-bold text-xs uppercase tracking-wider text-slate-800">
+                      <h4 className="font-extrabold text-xs sm:text-sm uppercase tracking-wider text-slate-800 flex items-center gap-2">
+                        <Bell className="h-4 w-4 text-red-600" />
                         Operational Alerts ({alerts.length})
                       </h4>
-                      <p className="text-[0.65rem] text-slate-500 font-mono">
-                        {unreadAlerts.length > 0 ? `${unreadAlerts.length} Unread Notifications` : "All notifications read"}
+                      <p className="text-[0.7rem] text-slate-500 font-medium">
+                        {unreadAlerts.length > 0 ? `${unreadAlerts.length} Unread Notifications needing review` : "All notifications read"}
                       </p>
                     </div>
                     {unreadAlerts.length > 0 && (
@@ -2249,15 +2343,15 @@ export function SoloAdminDashboard({
                           const marked = alerts.map((a) => ({ ...a, resolved: true }));
                           persistAlerts(marked);
                         }}
-                        className="text-[0.7rem] font-bold text-red-600 hover:text-red-700 bg-red-50 hover:bg-red-100 rounded-md px-2 py-1 transition-colors"
+                        className="text-[0.72rem] font-bold text-red-600 hover:text-red-700 bg-red-50 hover:bg-red-100 rounded-lg px-2.5 py-1.5 transition-colors"
                       >
                         Mark all as read
                       </button>
                     )}
                   </div>
-                  <div className="mt-3 space-y-2 max-h-80 overflow-y-auto">
+                  <div className="mt-3 space-y-2.5 max-h-[70vh] sm:max-h-96 overflow-y-auto pr-1">
                     {alerts.length === 0 ? (
-                      <div className="py-6 text-center text-xs text-slate-400">
+                      <div className="py-10 text-center text-xs text-slate-400">
                         No operational notifications at this time.
                       </div>
                     ) : (
@@ -2279,30 +2373,30 @@ export function SoloAdminDashboard({
                               setShowNotifications(false);
                             }
                           }}
-                          className={`rounded-xl border p-3 text-xs cursor-pointer transition-all ${
+                          className={`rounded-xl border p-3.5 text-xs cursor-pointer transition-all ${
                             !al.resolved
                               ? al.severity === "critical"
-                                ? "border-red-300 bg-red-50 text-red-900 shadow-xs"
+                                ? "border-red-300 bg-red-50/90 text-red-900 shadow-sm"
                                 : al.severity === "warning"
-                                ? "border-amber-300 bg-amber-50 text-amber-900 shadow-xs"
-                                : "border-blue-300 bg-blue-50 text-blue-900 shadow-xs"
+                                ? "border-amber-300 bg-amber-50/90 text-amber-900 shadow-sm"
+                                : "border-blue-300 bg-blue-50/90 text-blue-900 shadow-sm"
                               : "border-slate-200 bg-slate-50 text-slate-600 opacity-80 hover:opacity-100"
                           }`}
                         >
-                          <div className="flex items-start justify-between gap-2">
-                            <div className="flex items-center gap-1.5 min-w-0">
+                          <div className="flex items-start justify-between gap-3">
+                            <div className="flex items-center gap-2 min-w-0">
                               {!al.resolved && (
                                 <span className="h-2 w-2 rounded-full bg-red-600 shrink-0" />
                               )}
-                              <span className="font-bold truncate">{al.title}</span>
+                              <span className="font-bold text-xs sm:text-sm text-slate-900 truncate">{al.title}</span>
                             </div>
-                            <span className="text-[0.65rem] text-slate-500 shrink-0">{al.timestamp}</span>
+                            <span className="text-[0.68rem] text-slate-500 shrink-0 whitespace-nowrap">{al.timestamp}</span>
                           </div>
-                          <p className="mt-1 text-[0.72rem] text-slate-600">{al.description}</p>
+                          <p className="mt-1.5 text-xs text-slate-700 leading-relaxed">{al.description}</p>
                           {al.actionRequired && (
-                            <div className="mt-2 text-[0.68rem] font-bold text-red-600 flex items-center justify-between">
+                            <div className="mt-2.5 text-xs font-bold text-red-600 flex items-center justify-between pt-1 border-t border-slate-200/60">
                               <span>→ {al.actionRequired}</span>
-                              <span className="text-[0.65rem] text-slate-500 underline font-normal">Tap to inspect</span>
+                              <span className="text-[0.68rem] text-slate-500 underline font-normal">Tap to inspect</span>
                             </div>
                           )}
                         </div>
@@ -6714,6 +6808,217 @@ export function SoloAdminDashboard({
                   </div>
                 </div>
               )}
+            </div>
+          )}
+
+          {/* ======================================================== */}
+          {/* VIEW: USERS DEPOSITS */}
+          {/* ======================================================== */}
+          {activeSection === "deposits" && (
+            <div className="space-y-6 max-w-7xl mx-auto">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div>
+                  <div className="flex items-center gap-2">
+                    <h2 className="font-display text-2xl font-black text-slate-800">Users Deposits</h2>
+                    <span className="rounded-full bg-emerald-100 px-2.5 py-0.5 text-xs font-bold text-emerald-800 border border-emerald-200">
+                      Live Queue
+                    </span>
+                  </div>
+                  <p className="text-xs text-slate-500 mt-1">
+                    Manage, review, and clear pending customer direct check deposits, domestic ACH credits, and incoming wire settlements.
+                  </p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-xs text-slate-500 font-bold">Total Inflow Today:</span>
+                  <span className="text-sm font-black text-emerald-600 bg-emerald-50 px-3 py-1 rounded-xl border border-emerald-200">
+                    $0.00 USD
+                  </span>
+                </div>
+              </div>
+
+              <div className="rounded-2xl border border-slate-200 bg-white p-8 text-center shadow-xs">
+                <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-600 border border-emerald-100 mb-3">
+                  <ArrowDownToLine className="h-7 w-7" />
+                </div>
+                <h3 className="font-bold text-slate-800 text-base">Deposit Ledger & Settlement Portal</h3>
+                <p className="text-xs text-slate-500 max-w-md mx-auto mt-1 leading-relaxed">
+                  There are currently 0 active deposits awaiting administrative settlement. New customer checks and inbound ACH credits will populate here automatically.
+                </p>
+              </div>
+            </div>
+          )}
+
+          {/* ======================================================== */}
+          {/* VIEW: LOAN APPLICATIONS */}
+          {/* ======================================================== */}
+          {activeSection === "loans" && (
+            <div className="space-y-6 max-w-7xl mx-auto">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div>
+                  <div className="flex items-center gap-2">
+                    <h2 className="font-display text-2xl font-black text-slate-800">Loan Applications</h2>
+                    <span className="rounded-full bg-blue-100 px-2.5 py-0.5 text-xs font-bold text-blue-800 border border-blue-200">
+                      Credit Underwriting
+                    </span>
+                  </div>
+                  <p className="text-xs text-slate-500 mt-1">
+                    Review and underwrite personal mortgages, commercial revolving credit lines, and SME enterprise financing requests.
+                  </p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-xs text-slate-500 font-bold">Active Applications:</span>
+                  <span className="text-sm font-black text-blue-600 bg-blue-50 px-3 py-1 rounded-xl border border-blue-200">
+                    0 Applications
+                  </span>
+                </div>
+              </div>
+
+              <div className="rounded-2xl border border-slate-200 bg-white p-8 text-center shadow-xs">
+                <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-blue-50 text-[#0055b8] border border-blue-100 mb-3">
+                  <Landmark className="h-7 w-7" />
+                </div>
+                <h3 className="font-bold text-slate-800 text-base">Underwriting & Credit Facility Queue</h3>
+                <p className="text-xs text-slate-500 max-w-md mx-auto mt-1 leading-relaxed">
+                  No pending loan or credit facility submissions logged in the system. Credit scores, tax forms, and applicant debt ratios will appear here upon submission.
+                </p>
+              </div>
+            </div>
+          )}
+
+          {/* ======================================================== */}
+          {/* VIEW: VIRTUAL CARDS */}
+          {/* ======================================================== */}
+          {activeSection === "cards" && (
+            <div className="space-y-6 max-w-7xl mx-auto">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div>
+                  <div className="flex items-center gap-2">
+                    <h2 className="font-display text-2xl font-black text-slate-800">Virtual Cards</h2>
+                    <span className="rounded-full bg-purple-100 px-2.5 py-0.5 text-xs font-bold text-purple-800 border border-purple-200">
+                      Visa / Mastercard
+                    </span>
+                  </div>
+                  <p className="text-xs text-slate-500 mt-1">
+                    Issue, freeze, reissue, and set spending limits on customer virtual debit and corporate expense cards.
+                  </p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-xs text-slate-500 font-bold">Issued Cards:</span>
+                  <span className="text-sm font-black text-purple-600 bg-purple-50 px-3 py-1 rounded-xl border border-purple-200">
+                    0 Active Cards
+                  </span>
+                </div>
+              </div>
+
+              <div className="rounded-2xl border border-slate-200 bg-white p-8 text-center shadow-xs">
+                <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-purple-50 text-purple-600 border border-purple-100 mb-3">
+                  <CreditCard className="h-7 w-7" />
+                </div>
+                <h3 className="font-bold text-slate-800 text-base">Virtual Card Issuance Terminal</h3>
+                <p className="text-xs text-slate-500 max-w-md mx-auto mt-1 leading-relaxed">
+                  Zero virtual debit cards are currently active. Customers can generate virtual cards for merchant payments directly from their account portal.
+                </p>
+              </div>
+            </div>
+          )}
+
+          {/* ======================================================== */}
+          {/* VIEW: IRS REFUNDS */}
+          {/* ======================================================== */}
+          {activeSection === "irs" && (
+            <div className="space-y-6 max-w-7xl mx-auto">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div>
+                  <div className="flex items-center gap-2">
+                    <h2 className="font-display text-2xl font-black text-slate-800">IRS Refunds</h2>
+                    <span className="rounded-full bg-amber-100 px-2.5 py-0.5 text-xs font-bold text-amber-800 border border-amber-200">
+                      Treasury Direct Routing
+                    </span>
+                  </div>
+                  <p className="text-xs text-slate-500 mt-1">
+                    Monitor and release United States Internal Revenue Service (IRS) tax refunds and federal treasury settlements.
+                  </p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-xs text-slate-500 font-bold">Pending Treasury Holds:</span>
+                  <span className="text-sm font-black text-amber-600 bg-amber-50 px-3 py-1 rounded-xl border border-amber-200">
+                    0 Pending
+                  </span>
+                </div>
+              </div>
+
+              <div className="rounded-2xl border border-slate-200 bg-white p-8 text-center shadow-xs">
+                <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-amber-50 text-amber-600 border border-amber-100 mb-3">
+                  <Sparkles className="h-7 w-7" />
+                </div>
+                <h3 className="font-bold text-slate-800 text-base">IRS & Government Direct Deposit Hub</h3>
+                <p className="text-xs text-slate-500 max-w-md mx-auto mt-1 leading-relaxed">
+                  No federal tax refunds or government treasury credits queued at this moment. IRS ACH files match automatically against customer SSN and routing identifiers.
+                </p>
+              </div>
+            </div>
+          )}
+
+          {/* ======================================================== */}
+          {/* VIEW: EMAIL SERVICES */}
+          {/* ======================================================== */}
+          {activeSection === "email-services" && (
+            <div className="space-y-6 max-w-7xl mx-auto">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div>
+                  <div className="flex items-center gap-2">
+                    <h2 className="font-display text-2xl font-black text-slate-800">Email Services</h2>
+                    <span className="rounded-full bg-blue-100 px-2.5 py-0.5 text-xs font-bold text-blue-800 border border-blue-200">
+                      Dispatch Engine
+                    </span>
+                  </div>
+                  <p className="text-xs text-slate-500 mt-1">
+                    Manage transaction notifications, customer welcome emails, verification OTP dispatches, and secure correspondence.
+                  </p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-xs text-slate-500 font-bold">Mail Gateway Status:</span>
+                  <span className="text-xs font-bold text-emerald-700 bg-emerald-50 px-3 py-1 rounded-xl border border-emerald-200 flex items-center gap-1.5">
+                    <span className="h-2 w-2 rounded-full bg-emerald-500"></span>
+                    SMTP Active (DKIM/SPF Validated)
+                  </span>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-xs">
+                  <h4 className="font-bold text-sm text-slate-800 mb-1 flex items-center gap-2">
+                    <Mail className="h-4 w-4 text-[#0055b8]" />
+                    Welcome Dispatches
+                  </h4>
+                  <p className="text-xs text-slate-500">
+                    Automated welcome briefings dispatched immediately upon new customer onboarding with personalized banking credentials.
+                  </p>
+                  <div className="mt-3 text-xs font-bold text-slate-700">Status: Automated Trigger Active</div>
+                </div>
+
+                <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-xs">
+                  <h4 className="font-bold text-sm text-slate-800 mb-1 flex items-center gap-2">
+                    <ShieldCheck className="h-4 w-4 text-emerald-600" />
+                    Security OTP Delivery
+                  </h4>
+                  <p className="text-xs text-slate-500">
+                    One-time authentication codes generated with cryptographically secure PRNG and delivered with 5-minute expiry windows.
+                  </p>
+                  <div className="mt-3 text-xs font-bold text-slate-700">Status: Real-time Dispatch Active</div>
+                </div>
+
+                <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-xs">
+                  <h4 className="font-bold text-sm text-slate-800 mb-1 flex items-center gap-2">
+                    <FileText className="h-4 w-4 text-amber-600" />
+                    KYC & Review Notices
+                  </h4>
+                  <p className="text-xs text-slate-500">
+                    Official correspondence notifying customers regarding identity document approval, conditional hold, or request for supplementary information.
+                  </p>
+                  <div className="mt-3 text-xs font-bold text-slate-700">Status: Admin Initiated</div>
+                </div>
+              </div>
             </div>
           )}
 
