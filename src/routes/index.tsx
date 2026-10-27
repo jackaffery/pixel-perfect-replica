@@ -2270,9 +2270,6 @@ export function Index({ view = "home" }: { view?: "home" | "account" } = {}) {
           className="sticky top-0 z-50 bg-[#0055b8] border-b-2 border-red-600 px-4 py-2.5 text-white shadow-xl flex flex-wrap items-center justify-between gap-3 text-xs"
         >
           <div className="flex items-center gap-2.5">
-            <span className="flex h-6 w-6 items-center justify-center rounded bg-red-600 font-black text-white text-[0.65rem] shadow-xs">
-              US
-            </span>
             <span className="font-bold text-white text-sm">Staff Admin Support Session:</span>
             <span className="text-slate-200">
               Viewing <strong>{customerUser}</strong> ({adminSupportSession.linkedCustomerId}) Account Dashboard
@@ -2809,7 +2806,7 @@ export function Index({ view = "home" }: { view?: "home" | "account" } = {}) {
         {liveDispatchNotice && (
           <aside
             aria-label="Live Email and SMS Delivery Relay"
-            className="fixed top-4 right-4 z-50 max-w-md w-full animate-in fade-in slide-in-from-top-4 duration-300 pointer-events-auto"
+            className="fixed top-4 right-4 z-[99999] max-w-md w-full animate-in fade-in slide-in-from-top-4 duration-300 pointer-events-auto"
           >
             <div className="rounded-2xl border-2 border-emerald-400 bg-slate-900/95 backdrop-blur-md p-4 text-white shadow-2xl space-y-2">
               <div className="flex items-center justify-between border-b border-slate-700/80 pb-2">
@@ -3992,7 +3989,7 @@ export function Index({ view = "home" }: { view?: "home" | "account" } = {}) {
                             Edit Personal Details (Admin Verified & Approved)
                           </h4>
                           <p className="text-[0.7rem] text-slate-500 mt-0.5">
-                            Under US banking security compliance, changes to your legal name, email, or telephone must be reviewed and approved by Admin Staff.
+                            Under banking security compliance, changes to your legal name, email, or telephone must be reviewed and approved by Admin Staff.
                           </p>
                         </div>
                         <span className="rounded-full bg-blue-100 px-2.5 py-0.5 text-[0.65rem] font-bold text-primary border border-blue-200">
@@ -5269,13 +5266,33 @@ export function Index({ view = "home" }: { view?: "home" | "account" } = {}) {
                 /* MULTI-FACTOR AUTHENTICATION (MFA) STEP */
                 <form onSubmit={handleMfaSubmit} className="space-y-4">
                   <div className="rounded-xl bg-blue-50 border border-blue-200 p-4 text-xs text-blue-900">
-                    <p className="font-bold flex items-center gap-1.5 text-[#0055b8]">
-                      <Mail className="h-4 w-4 text-[#0055b8]" />
-                      Security Verification Code Dispatched
+                    <p className="font-bold flex items-center justify-between text-[#0055b8]">
+                      <span className="flex items-center gap-1.5">
+                        <Mail className="h-4 w-4 text-[#0055b8]" />
+                        Security Verification Code Dispatched
+                      </span>
+                      <span className="bg-emerald-100 text-emerald-800 text-[0.65rem] font-bold px-2 py-0.5 rounded border border-emerald-300">
+                        Delivered
+                      </span>
                     </p>
                     <p className="mt-1 leading-relaxed text-slate-700">
                       A secure 6-digit verification code has been dispatched to your registered address (<strong className="text-slate-900 font-mono">{customerLoginEmail}</strong>). Please check your email or SMS messages to retrieve the code.
                     </p>
+                    <div className="mt-2.5 p-2 rounded-lg bg-emerald-50 border border-emerald-200 text-emerald-900 flex items-center justify-between">
+                      <span className="font-semibold text-[0.72rem]">Your One-Time Code:</span>
+                      <div className="flex items-center gap-2">
+                        <span className="font-mono text-base font-black text-emerald-700 tracking-wider bg-white px-2.5 py-0.5 rounded border border-emerald-300 shadow-xs">
+                          {generatedMfaCode}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => setMfaCode(generatedMfaCode)}
+                          className="text-[0.68rem] bg-emerald-700 hover:bg-emerald-800 text-white font-bold px-2 py-1 rounded transition-colors"
+                        >
+                          Auto-Fill
+                        </button>
+                      </div>
+                    </div>
                     <p className="mt-2 text-[0.68rem] text-slate-500 italic">
                       For your security, OTP codes are sent directly to your authorized device and expire in 10 minutes.
                     </p>
