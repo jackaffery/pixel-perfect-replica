@@ -1019,18 +1019,45 @@ export function SoloAdminDashboard({
       user.id
     );
 
+    const userAccounts = accounts.filter((a) => a.customerId === user.linkedCustomerId);
+    const checkingAcc = userAccounts.find((a) => a.accountType.toLowerCase().includes("checking"));
+    const savingsAcc = userAccounts.find((a) => a.accountType.toLowerCase().includes("savings"));
+
+    if (typeof window !== "undefined") {
+      try {
+        const userSession = {
+          customerName: user.name,
+          checkingBalance: checkingAcc?.balance ?? user.checkingBalance ?? 0.0,
+          savingsBalance: savingsAcc?.balance ?? user.savingsBalance ?? 0.0,
+          email: user.email || `${user.name.toLowerCase().replace(/\s+/g, ".")}@westsidebank.online`,
+          isNewUser: false,
+          profilePicUrl: user.profilePicUrl,
+          linkedCustomerId: user.linkedCustomerId || user.id,
+          applicationId: user.id || "APP-001",
+          kycStatus: "Verified",
+        };
+        localStorage.setItem("us_finance_bank_customer_session", JSON.stringify(userSession));
+        localStorage.setItem("us_finance_bank_active_customer", JSON.stringify(userSession));
+      } catch (err) {
+        console.error("Failed to set customer session", err);
+      }
+    }
+
     if (onOpenCustomerDashboard) {
-      const userAccounts = accounts.filter((a) => a.customerId === user.linkedCustomerId);
-      const checkingAcc = userAccounts.find((a) => a.accountType.toLowerCase().includes("checking"));
-      const savingsAcc = userAccounts.find((a) => a.accountType.toLowerCase().includes("savings"));
       onOpenCustomerDashboard({
         name: user.name,
         id: user.id,
         linkedCustomerId: user.linkedCustomerId,
-        checkingBalance: checkingAcc?.balance,
-        savingsBalance: savingsAcc?.balance,
+        checkingBalance: checkingAcc?.balance ?? user.checkingBalance,
+        savingsBalance: savingsAcc?.balance ?? user.savingsBalance,
         profilePicUrl: user.profilePicUrl,
       });
+      return;
+    }
+
+    // Direct navigation fallback ensures clicking "Login as [customer]" immediately opens customer portal
+    if (typeof window !== "undefined") {
+      window.location.href = "/account";
       return;
     }
 
