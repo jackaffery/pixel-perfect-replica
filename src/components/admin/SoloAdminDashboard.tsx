@@ -3866,7 +3866,7 @@ export function SoloAdminDashboard({
                                     <div className="text-right">
                                       <span
                                         className={`font-mono font-bold ${
-                                          tx.direction === "credit" ? "text-emerald-600" : "text-slate-900"
+                                          tx.direction === "credit" ? "text-emerald-600" : "text-red-600 font-extrabold"
                                         }`}
                                       >
                                         {tx.direction === "credit" ? "+" : "-"}
@@ -6477,14 +6477,14 @@ export function SoloAdminDashboard({
                           <td className="px-5 py-3.5 text-right font-sans">
                             <div
                               className={`font-mono font-bold text-xs ${
-                                tx.direction === "credit" ? "text-emerald-600" : "text-slate-800"
+                                tx.direction === "credit" ? "text-emerald-600" : "text-red-600 font-extrabold"
                               }`}
                             >
                               {tx.direction === "credit" ? "+" : "-"}{tx.currency}
                             </div>
                             <div
                               className={`font-mono font-black text-sm ${
-                                tx.direction === "credit" ? "text-emerald-600" : "text-slate-900"
+                                tx.direction === "credit" ? "text-emerald-600" : "text-red-600"
                               }`}
                             >
                               {tx.amount.toLocaleString(undefined, { minimumFractionDigits: 2 })}
@@ -6566,7 +6566,7 @@ export function SoloAdminDashboard({
                       <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
                         <span className="text-[0.68rem] uppercase font-bold text-slate-500 tracking-wider">Total Amount</span>
                         <div className="mt-1 flex items-baseline gap-1">
-                          <span className={`text-xl font-black font-mono ${selectedTransaction.direction === "credit" ? "text-emerald-600" : "text-slate-900"}`}>
+                          <span className={`text-xl font-black font-mono ${selectedTransaction.direction === "credit" ? "text-emerald-600" : "text-red-600 font-extrabold"}`}>
                             {selectedTransaction.direction === "credit" ? "+" : "-"}{selectedTransaction.currency} {selectedTransaction.amount.toLocaleString(undefined, { minimumFractionDigits: 2 })}
                           </span>
                           <span className="text-[0.7rem] text-slate-500 font-semibold">({selectedTransaction.direction.toUpperCase()})</span>
@@ -8123,7 +8123,7 @@ export function SoloAdminDashboard({
                             <div className="flex items-center gap-3">
                               <span
                                 className={`font-mono font-bold text-sm ${
-                                  tx.direction === "credit" ? "text-emerald-600" : "text-slate-900"
+                                  tx.direction === "credit" ? "text-emerald-600" : "text-red-600 font-extrabold"
                                 }`}
                               >
                                 {tx.direction === "credit" ? "+" : "-"}

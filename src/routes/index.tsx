@@ -1264,50 +1264,90 @@ export function Index({ view = "home" }: { view?: "home" | "account" } = {}) {
     setCustomerEditSubmitting(true);
     setTimeout(() => {
       setCustomerEditSubmitting(false);
-      const requestId = `REQ-PRF-${Math.floor(100000 + Math.random() * 900000)}`;
-      const newRequest = {
-        id: requestId,
-        customerName: customerUser || customerEditName,
-        currentEmail: customerLoginEmail || customerEditEmail,
-        requestedName: customerEditName.trim(),
-        requestedEmail: customerEditEmail.trim(),
-        requestedPhone: customerEditPhone.trim(),
-        requestedAddress: customerEditAddress.trim(),
-        submittedAt: "Today, " + new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
-        status: "Pending Admin Approval",
-      };
+      const newName = customerEditName.trim();
+      const newEmail = customerEditEmail.trim();
+      const newPhone = customerEditPhone.trim();
+      const newAddr = customerEditAddress.trim();
+
+      // Immediately save the changes to the user's active session and local state
+      setCustomerUser(newName);
+      setCustomerLoginEmail(newEmail);
 
       try {
-        const existingRaw = localStorage.getItem("us_finance_bank_pending_profile_edits");
-        const existing = existingRaw ? JSON.parse(existingRaw) : [];
-        const updated = [newRequest, ...existing.filter((r: any) => r.customerName !== (customerUser || customerEditName))];
-        localStorage.setItem("us_finance_bank_pending_profile_edits", JSON.stringify(updated));
-        setCustomerPendingEdits(updated);
+        const sessRaw = localStorage.getItem("us_finance_bank_customer_session");
+        if (sessRaw) {
+          const sess = JSON.parse(sessRaw);
+          sess.customerName = newName;
+          sess.email = newEmail;
+          localStorage.setItem("us_finance_bank_customer_session", JSON.stringify(sess));
+        }
 
-        // Also trigger staff admin notification alert
-        const newAlert = {
-          id: `ALT-PRF-${Date.now().toString().slice(-4)}`,
-          severity: "warning",
-          title: `Profile Edit Request: ${customerEditName}`,
-          description: `Customer submitted personal details update (Phone: ${customerEditPhone}, Email: ${customerEditEmail}). Pending administrative approval.`,
-          timestamp: "Just now",
-          category: "User Management",
-          resolved: false,
-          actionRequired: "Review and approve/reject profile edits in User Management",
-        };
-        const existingAlertsRaw = localStorage.getItem("us_finance_bank_alerts");
-        const existingAlerts = existingAlertsRaw ? JSON.parse(existingAlertsRaw) : [];
-        localStorage.setItem("us_finance_bank_alerts", JSON.stringify([newAlert, ...existingAlerts]));
+        // Update controlled users registry
+        const ctrlRaw = localStorage.getItem("us_finance_bank_controlled_users");
+        if (ctrlRaw) {
+          const ctrlList = JSON.parse(ctrlRaw);
+          if (Array.isArray(ctrlList)) {
+            const updatedCtrl = ctrlList.map((u: any) => {
+              if (
+                u.name?.toLowerCase() === (customerUser || "").toLowerCase() ||
+                u.email?.toLowerCase() === (customerLoginEmail || "").toLowerCase()
+              ) {
+                return {
+                  ...u,
+                  name: newName,
+                  email: newEmail,
+                  phone: newPhone,
+                  country: newAddr,
+                };
+              }
+              return u;
+            });
+            localStorage.setItem("us_finance_bank_controlled_users", JSON.stringify(updatedCtrl));
+            setAdminUsers(updatedCtrl);
+          }
+        }
+
+        // Update adminUsers list
+        const adminUsersRaw = localStorage.getItem("us_finance_bank_users");
+        if (adminUsersRaw) {
+          const uList = JSON.parse(adminUsersRaw);
+          if (Array.isArray(uList)) {
+            const updatedUList = uList.map((u: any) => {
+              if (
+                u.name?.toLowerCase() === (customerUser || "").toLowerCase() ||
+                u.email?.toLowerCase() === (customerLoginEmail || "").toLowerCase()
+              ) {
+                return {
+                  ...u,
+                  name: newName,
+                  email: newEmail,
+                  phone: newPhone,
+                  mailingAddress: newAddr,
+                };
+              }
+              return u;
+            });
+            localStorage.setItem("us_finance_bank_users", JSON.stringify(updatedUList));
+          }
+        }
+
+        // Trigger notification banner
+        triggerLiveEmailAndSmsAlert({
+          type: "login",
+          emailTo: newEmail,
+          phoneTo: newPhone,
+          subject: "Profile Updated: Changes Successfully Saved",
+          smsBody: `WSB Notice: Your profile details (Name: ${newName}, Phone: ${newPhone}) have been successfully updated and saved.`,
+        });
 
         window.dispatchEvent(new Event("storage"));
       } catch (err) {
-        console.error("Failed to submit profile edit request", err);
+        console.error("Failed to save profile edits", err);
       }
 
-      setCustomerEditSuccess(
-        `Profile change request #${requestId} submitted to Admin Staff. Your details will update upon administrative review & approval.`
-      );
-    }, 600);
+      setCustomerEditSuccess("Profile changes have been successfully saved!");
+      setTimeout(() => setCustomerEditSuccess(""), 4000);
+    }, 500);
   };
 
   const handleCustomerGoBack = () => {
@@ -4010,14 +4050,14 @@ export function Index({ view = "home" }: { view?: "home" | "account" } = {}) {
 
                         <div className="pt-2 flex items-center justify-between">
                           <p className="text-[0.68rem] text-slate-500">
-                            Submissions are instantly routed to the Admin Staff verification queue for authorization.
+                            Updates are saved directly to your profile and security credentials.
                           </p>
                           <Button
                             type="submit"
                             disabled={customerEditSubmitting}
-                            className="bg-primary hover:bg-primary/90 text-white font-bold text-xs h-9 px-4 shrink-0 shadow-xs"
+                            className="bg-red-600 hover:bg-red-700 text-white font-bold text-xs h-9 px-5 shrink-0 shadow-xs"
                           >
-                            {customerEditSubmitting ? "Transmitting Request..." : "Submit Details to Admin for Approval"}
+                            {customerEditSubmitting ? "Saving Changes..." : "Save Changes"}
                           </Button>
                         </div>
                       </form>
@@ -4096,7 +4136,7 @@ export function Index({ view = "home" }: { view?: "home" | "account" } = {}) {
                           </p>
                         </div>
                         <div className="text-right">
-                          <span className={`font-mono font-bold text-xs ${tx.positive ? "text-emerald-600" : "text-slate-900"}`}>
+                          <span className={`font-mono font-bold text-xs ${tx.positive ? "text-emerald-600" : "text-red-600 font-extrabold"}`}>
                             {tx.amount}
                           </span>
                         </div>
@@ -4152,7 +4192,7 @@ export function Index({ view = "home" }: { view?: "home" | "account" } = {}) {
               <div className="mt-4 space-y-2.5 text-xs">
                 <div className="flex items-center justify-between rounded-xl bg-secondary/30 p-3">
                   <span className="text-muted-foreground">Total Settlement Amount:</span>
-                  <span className={`font-mono font-bold text-base ${selectedCustomerTx.positive ? "text-emerald-600" : "text-primary"}`}>
+                  <span className={`font-mono font-bold text-base ${selectedCustomerTx.positive ? "text-emerald-600" : "text-red-600 font-extrabold"}`}>
                     {selectedCustomerTx.amount}
                   </span>
                 </div>
