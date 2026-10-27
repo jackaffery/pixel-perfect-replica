@@ -1,5 +1,4 @@
 import { useState, useEffect } from "react";
-export { DemoAdminWorkspace as SoloAdminDashboard } from "./DemoAdminWorkspace";
 import {
   Users,
   CreditCard,
@@ -96,7 +95,7 @@ export interface SoloAdminDashboardProps {
   }) => void;
 }
 
-export function LegacySoloAdminDashboard({
+export function SoloAdminDashboard({
   onSignOut,
   adminUsername = "Solo Master Administrator",
   onOpenCustomerDashboard,
@@ -1028,8 +1027,8 @@ export function LegacySoloAdminDashboard({
       try {
         const userSession = {
           customerName: user.name,
-          checkingBalance: checkingAcc?.balance ?? 0.0,
-          savingsBalance: savingsAcc?.balance ?? 0.0,
+          checkingBalance: checkingAcc?.balance ?? user.checkingBalance ?? 0.0,
+          savingsBalance: savingsAcc?.balance ?? user.savingsBalance ?? 0.0,
           email: user.email || `${user.name.toLowerCase().replace(/\s+/g, ".")}@westsidebank.online`,
           isNewUser: false,
           profilePicUrl: user.profilePicUrl,
@@ -1049,8 +1048,8 @@ export function LegacySoloAdminDashboard({
         name: user.name,
         id: user.id,
         linkedCustomerId: user.linkedCustomerId,
-        checkingBalance: checkingAcc?.balance ?? 0,
-        savingsBalance: savingsAcc?.balance ?? 0,
+        checkingBalance: checkingAcc?.balance ?? user.checkingBalance,
+        savingsBalance: savingsAcc?.balance ?? user.savingsBalance,
         profilePicUrl: user.profilePicUrl,
       });
       return;
