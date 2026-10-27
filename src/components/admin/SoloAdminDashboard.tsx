@@ -248,8 +248,28 @@ export function SoloAdminDashboard({
       }
     }
   };
-  const [customers, setCustomers] = useState<AdminCustomer[]>(MOCK_CUSTOMERS);
-  const [accounts, setAccounts] = useState<BankAccountRecord[]>(MOCK_ACCOUNTS);
+  const [customers, setCustomers] = useState<AdminCustomer[]>(() => {
+    if (typeof window !== "undefined") {
+      const saved = localStorage.getItem("us_finance_bank_customers");
+      if (saved) {
+        try {
+          return JSON.parse(saved);
+        } catch {}
+      }
+    }
+    return MOCK_CUSTOMERS;
+  });
+  const [accounts, setAccounts] = useState<BankAccountRecord[]>(() => {
+    if (typeof window !== "undefined") {
+      const saved = localStorage.getItem("us_finance_bank_accounts");
+      if (saved) {
+        try {
+          return JSON.parse(saved);
+        } catch {}
+      }
+    }
+    return MOCK_ACCOUNTS;
+  });
   const [transactions, setTransactions] = useState<BankTransactionRecord[]>(() => {
     if (typeof window !== "undefined") {
       const saved = localStorage.getItem("us_finance_bank_transactions");
@@ -1350,42 +1370,87 @@ export function SoloAdminDashboard({
     let targetAcc = accounts.find(
       (a) => a.customerId === user.linkedCustomerId && a.accountType.toLowerCase().includes(creditDebitAccountType)
     );
-    if (!targetAcc) {
-      targetAcc = accounts.find((a) => a.customerId === user.linkedCustomerId) || accounts[0];
-    }
 
     let finalNewBal = 0;
+    let nextAccounts = [...accounts];
+
     if (targetAcc) {
       finalNewBal = isCredit ? targetAcc.balance + amt : Math.max(0, targetAcc.balance - amt);
-      const updatedAccounts = accounts.map((a) =>
+      nextAccounts = accounts.map((a) =>
         a.id === targetAcc!.id
           ? { ...a, balance: finalNewBal, availableBalance: finalNewBal, lastActivity: "Today, Just now" }
           : a
       );
-      setAccounts(updatedAccounts);
-      try {
-        localStorage.setItem("us_finance_bank_accounts", JSON.stringify(updatedAccounts));
-      } catch {}
+    } else {
+      // If customer has no account of this type yet, create it automatically
+      finalNewBal = isCredit ? amt : 0;
+      targetAcc = {
+        id: `ACC-${Date.now().toString().slice(-6)}`,
+        customerId: user.linkedCustomerId,
+        customerName: user.name,
+        accountType: creditDebitAccountType === "checking" ? "Advantage Checking" : "High-Yield Savings",
+        accountNumberMasked: creditDebitAccountType === "checking" ? "•••• 4892" : "•••• 7810",
+        routingNumber: "021000089",
+        currency: "USD",
+        balance: finalNewBal,
+        availableBalance: finalNewBal,
+        status: "Active",
+        openedDate: "Today",
+        lastActivity: "Just now",
+      };
+      nextAccounts.push(targetAcc);
     }
+
+    setAccounts(nextAccounts);
+    try {
+      localStorage.setItem("us_finance_bank_accounts", JSON.stringify(nextAccounts));
+    } catch {}
+
+    // Update adminUsers state and persistent storage
+    const updatedAdminUsersList = adminUsers.map((u) => {
+      if (u.id === user.id || u.linkedCustomerId === user.linkedCustomerId) {
+        return {
+          ...u,
+          checkingBalance: creditDebitAccountType === "checking" ? finalNewBal : u.checkingBalance ?? 0,
+          savingsBalance: creditDebitAccountType === "savings" ? finalNewBal : u.savingsBalance ?? 0,
+        };
+      }
+      return u;
+    });
+    persistAdminUsers(updatedAdminUsersList);
 
     // Sync active customer session and controlled users so balance immediately updates everywhere
     if (typeof window !== "undefined") {
       try {
-        // Update customer session if this user is signed into customer portal
+        // Update customer session if this user is signed into customer portal or exists
         const sessRaw = localStorage.getItem("us_finance_bank_customer_session");
-        if (sessRaw) {
-          const sess = JSON.parse(sessRaw);
-          if (
-            sess.customerName?.toLowerCase() === user.name.toLowerCase() ||
-            sess.linkedCustomerId === user.linkedCustomerId
-          ) {
+        let sess = sessRaw ? JSON.parse(sessRaw) : null;
+        if (
+          !sess ||
+          sess.customerName?.toLowerCase() === user.name.toLowerCase() ||
+          sess.linkedCustomerId === user.linkedCustomerId
+        ) {
+          if (!sess) {
+            sess = {
+              customerName: user.name,
+              checkingBalance: creditDebitAccountType === "checking" ? finalNewBal : 0,
+              savingsBalance: creditDebitAccountType === "savings" ? finalNewBal : 0,
+              email: user.email || `${user.name.toLowerCase().replace(/\s+/g, ".")}@westsidebank.online`,
+              isNewUser: false,
+              profilePicUrl: user.profilePicUrl,
+              linkedCustomerId: user.linkedCustomerId,
+              applicationId: user.id,
+              kycStatus: "Verified",
+            };
+          } else {
             if (creditDebitAccountType === "checking") {
               sess.checkingBalance = finalNewBal;
             } else {
               sess.savingsBalance = finalNewBal;
             }
-            localStorage.setItem("us_finance_bank_customer_session", JSON.stringify(sess));
           }
+          localStorage.setItem("us_finance_bank_customer_session", JSON.stringify(sess));
+          localStorage.setItem("us_finance_bank_active_customer", JSON.stringify(sess));
         }
 
         // Update controlled users registry
@@ -1558,7 +1623,7 @@ export function SoloAdminDashboard({
     }
     const user = editBalanceModal;
 
-    const updatedAccounts = accounts.map((a) => {
+    let updatedAccounts = accounts.map((a) => {
       if (a.customerId === user.linkedCustomerId) {
         if (a.accountType.toLowerCase().includes("checking")) {
           return { ...a, balance: checkAmt, availableBalance: checkAmt };
@@ -1570,10 +1635,63 @@ export function SoloAdminDashboard({
       return a;
     });
 
+    const hasChecking = updatedAccounts.some(
+      (a) => a.customerId === user.linkedCustomerId && a.accountType.toLowerCase().includes("checking")
+    );
+    const hasSavings = updatedAccounts.some(
+      (a) => a.customerId === user.linkedCustomerId && a.accountType.toLowerCase().includes("savings")
+    );
+
+    if (!hasChecking) {
+      updatedAccounts.push({
+        id: `ACC-${Date.now().toString().slice(-6)}-CHK`,
+        customerId: user.linkedCustomerId,
+        customerName: user.name,
+        accountType: "Advantage Checking",
+        accountNumberMasked: "•••• 4892",
+        routingNumber: "021000089",
+        currency: "USD",
+        balance: checkAmt,
+        availableBalance: checkAmt,
+        status: "Active",
+        openedDate: "Today",
+        lastActivity: "Just now",
+      });
+    }
+
+    if (!hasSavings) {
+      updatedAccounts.push({
+        id: `ACC-${Date.now().toString().slice(-6)}-SAV`,
+        customerId: user.linkedCustomerId,
+        customerName: user.name,
+        accountType: "High-Yield Savings",
+        accountNumberMasked: "•••• 7810",
+        routingNumber: "021000089",
+        currency: "USD",
+        balance: savAmt,
+        availableBalance: savAmt,
+        status: "Active",
+        openedDate: "Today",
+        lastActivity: "Just now",
+      });
+    }
+
     setAccounts(updatedAccounts);
     try {
       localStorage.setItem("us_finance_bank_accounts", JSON.stringify(updatedAccounts));
     } catch {}
+
+    const updatedAdminUsersList = adminUsers.map((u) => {
+      if (u.id === user.id || u.linkedCustomerId === user.linkedCustomerId) {
+        return {
+          ...u,
+          checkingBalance: checkAmt,
+          savingsBalance: savAmt,
+        };
+      }
+      return u;
+    });
+    persistAdminUsers(updatedAdminUsersList);
 
     // Sync active customer session and controlled users so customer sees updated balance immediately
     if (typeof window !== "undefined") {

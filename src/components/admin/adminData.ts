@@ -26,6 +26,8 @@ export interface AdminUserRecord {
     passwordResetRequired: boolean;
   };
   profilePicUrl?: string;
+  checkingBalance?: number;
+  savingsBalance?: number;
   isDormant?: boolean;
   btcBalance?: number;
   dailyTransferLimit?: number;
