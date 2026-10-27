@@ -941,6 +941,25 @@ export function Index({ view = "home" }: { view?: "home" | "account" } = {}) {
         u.name.toLowerCase() === identifier.toLowerCase()
     );
 
+    // Check if user has an application in the system that was approved
+    let isApprovedInApplications = false;
+    try {
+      const appsRaw = localStorage.getItem("us_finance_bank_applications");
+      if (appsRaw) {
+        const appsList = JSON.parse(appsRaw);
+        if (Array.isArray(appsList)) {
+          const matchingApp = appsList.find(
+            (a: any) =>
+              a.email?.toLowerCase() === identifier.toLowerCase() ||
+              a.fullName?.toLowerCase() === identifier.toLowerCase()
+          );
+          if (matchingApp && matchingApp.status === "Approved") {
+            isApprovedInApplications = true;
+          }
+        }
+      }
+    } catch {}
+
     if (matchingUser) {
       if (matchingUser.status === "frozen") {
         setCustomerAuthError(
@@ -954,7 +973,7 @@ export function Index({ view = "home" }: { view?: "home" | "account" } = {}) {
         );
         return;
       }
-      if (matchingUser.status === "pending_kyc") {
+      if (matchingUser.status === "pending_kyc" && !isApprovedInApplications) {
         setCustomerAuthError(
           "KYC REVIEW PENDING: Your account registration is awaiting verification and approval from the Solo Bank Administrator."
         );
@@ -965,13 +984,25 @@ export function Index({ view = "home" }: { view?: "home" | "account" } = {}) {
     setCustomerAuthLoading(true);
     setTimeout(() => {
       setCustomerAuthLoading(false);
-      // Trigger Email-delivered Verification Code (10-minute expiry)
+      // Trigger Email and SMS delivered Verification Code (10-minute expiry)
       const randomCode = Math.floor(100000 + Math.random() * 900000).toString();
       setGeneratedMfaCode(randomCode);
       setMfaExpiresAt(Date.now() + 10 * 60 * 1000); // 10 minutes
       setMfaResendCount(0);
       setMfaResendCooldown(60);
       setMfaStep(true);
+
+      const targetEmail = identifier.includes("@") ? identifier : `${identifier}@westsidebank.online`;
+      const targetPhone = matchingUser?.phone || "+1 (555) 019-2834";
+
+      // Live Email and SMS Dispatch
+      triggerLiveEmailAndSmsAlert({
+        type: "login",
+        emailTo: targetEmail,
+        phoneTo: targetPhone,
+        subject: `Your West Side Bank Verification Code: ${randomCode}`,
+        smsBody: `WSB Security: Your one-time login verification code is ${randomCode}. Valid for 10 minutes. Do not share this code.`,
+      });
     }, 600);
   };
 
@@ -985,6 +1016,23 @@ export function Index({ view = "home" }: { view?: "home" | "account" } = {}) {
     setMfaExpiresAt(Date.now() + 10 * 60 * 1000);
     setMfaResendCount((prev) => prev + 1);
     setCustomerAuthError("");
+
+    const identifier = customerLoginEmail.trim();
+    const matchingUser = adminUsers.find(
+      (u) =>
+        u.email.toLowerCase() === identifier.toLowerCase() ||
+        u.name.toLowerCase() === identifier.toLowerCase()
+    );
+    const targetEmail = identifier.includes("@") ? identifier : `${identifier}@westsidebank.online`;
+    const targetPhone = matchingUser?.phone || "+1 (555) 019-2834";
+
+    triggerLiveEmailAndSmsAlert({
+      type: "login",
+      emailTo: targetEmail,
+      phoneTo: targetPhone,
+      subject: `Your West Side Bank Verification Code: ${newCode}`,
+      smsBody: `WSB Security: Your new one-time login verification code is ${newCode}. Valid for 10 minutes.`,
+    });
   };
 
   const handleMfaSubmit = (e: React.FormEvent) => {
@@ -2773,6 +2821,9 @@ export function Index({ view = "home" }: { view?: "home" | "account" } = {}) {
                       <Landmark className="h-6 w-6 text-red-600" />
                     </div>
                     <div>
+                      <span className="text-[0.68rem] uppercase tracking-wider font-extrabold text-amber-300 block">
+                        Waiting Approval for Admin to Approve
+                      </span>
                       <h2 className="font-display text-lg sm:text-xl font-black text-white tracking-tight">
                         WEST SIDE FINANCIAL INSTITUTION
                       </h2>
@@ -3052,9 +3103,9 @@ export function Index({ view = "home" }: { view?: "home" | "account" } = {}) {
                   </button>
                 </div>
 
-                {/* Bottom Red Pill Badge matching screenshot */}
+                {/* Bottom Red Pill Badge */}
                 <div className="mt-4 rounded-xl bg-red-600 py-3 px-4 text-center text-white font-extrabold text-xs sm:text-sm tracking-widest shadow-md uppercase select-none">
-                  SECURE BANKING • RED • WHITE • BLUE
+                  SECURE BANKING
                 </div>
 
                 {/* ======================================================== */}
@@ -5036,8 +5087,8 @@ export function Index({ view = "home" }: { view?: "home" | "account" } = {}) {
                   <Landmark className="h-6 w-6 text-yellow-300" />
                 </div>
                 <div>
-                  <span className="text-[0.68rem] uppercase tracking-widest font-black text-blue-200">
-                    West Side Financial Institution
+                  <span className="text-[0.68rem] uppercase tracking-widest font-black text-amber-300">
+                    Waiting Approval for Admin to Approve
                   </span>
                   <h3 className="text-lg font-bold text-white tracking-tight leading-tight">
                     Customer Sign In

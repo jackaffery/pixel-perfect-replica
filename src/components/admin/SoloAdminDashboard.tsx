@@ -1830,7 +1830,7 @@ export function SoloAdminDashboard({
     persistApplications(updatedApps);
 
     // If Approved and autoProvisionUser is checked, add user to adminUsers if not already there
-    if (decision === "Approved" && autoProvisionUser) {
+    if (decision === "Approved") {
       const exists = adminUsers.some((u) => u.email.toLowerCase() === app.email.toLowerCase() || u.id === app.id);
       if (!exists) {
         const newUser: AdminUserRecord = {
@@ -1855,7 +1855,7 @@ export function SoloAdminDashboard({
             activeSessionsCount: 0,
             lastSignIn: "Never",
             lastSignInIp: "N/A",
-            passwordResetRequired: true,
+            passwordResetRequired: false,
           },
           adminNotes: [
             `[${new Date().toLocaleDateString([], { month: "short", day: "numeric", year: "numeric" })} - Staff Admin]: Auto-provisioned upon approving application ${app.id}. Reason: ${appDecisionReason.trim()}`,
@@ -1874,6 +1874,56 @@ export function SoloAdminDashboard({
         };
         const updatedUsers = [newUser, ...adminUsers];
         persistAdminUsers(updatedUsers);
+      } else {
+        // Update user's verificationStatus to Verified and onlineAccessStatus to Active
+        const updatedUsers = adminUsers.map((u) => {
+          if (u.email.toLowerCase() === app.email.toLowerCase() || u.id === app.id) {
+            return {
+              ...u,
+              verificationStatus: "Verified" as const,
+              onlineAccessStatus: "Active" as const,
+            };
+          }
+          return u;
+        });
+        persistAdminUsers(updatedUsers);
+      }
+
+      // Also ensure us_finance_bank_controlled_users has this user marked as status "active"
+      if (typeof window !== "undefined") {
+        try {
+          const ctrlRaw = localStorage.getItem("us_finance_bank_controlled_users");
+          const ctrlList = ctrlRaw ? JSON.parse(ctrlRaw) : [];
+          if (Array.isArray(ctrlList)) {
+            let found = false;
+            const updatedCtrl = ctrlList.map((u: any) => {
+              if (u.email?.toLowerCase() === app.email.toLowerCase() || u.name?.toLowerCase() === app.fullName.toLowerCase()) {
+                found = true;
+                return { ...u, status: "active" };
+              }
+              return u;
+            });
+            if (!found) {
+              updatedCtrl.unshift({
+                id: app.id,
+                name: app.fullName,
+                email: app.email,
+                phone: app.phone,
+                country: app.countryName,
+                countryCode: app.countryCode || "US",
+                accountType: app.accountType || "Advantage Checking",
+                checkingBalance: 0.0,
+                savingsBalance: 0.0,
+                status: "active",
+                idType: app.idType || "SSN",
+                idNumber: app.idNumber || "••••",
+                createdAt: new Date().toLocaleDateString(),
+              });
+            }
+            localStorage.setItem("us_finance_bank_controlled_users", JSON.stringify(updatedCtrl));
+            window.dispatchEvent(new Event("storage"));
+          }
+        } catch {}
       }
     }
 
