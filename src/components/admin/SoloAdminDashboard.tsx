@@ -888,14 +888,30 @@ export function SoloAdminDashboard({
   // Safe User Provisioning with Audit Trail
   const handleCreateUser = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newUserData.name.trim() || !newUserData.email.trim()) return;
+    const cleanName = newUserData.name.trim();
+    const cleanEmail = newUserData.email.trim().toLowerCase();
+    if (!cleanName || !cleanEmail) {
+      alert("Please provide both legal full name and a valid email address.");
+      return;
+    }
+
+    // Prevent duplicate user registrations by email
+    const duplicate = adminUsers.find(
+      (u) => u.email.trim().toLowerCase() === cleanEmail
+    );
+    if (duplicate) {
+      alert(`An account with email '${cleanEmail}' already exists for ${duplicate.name} (${duplicate.id}). Please use a unique email or edit the existing profile.`);
+      return;
+    }
 
     const newId = `USB-USR-${Math.floor(100000 + Math.random() * 900000)}`;
     const linkedCustId = `CUST-${Math.floor(1000 + Math.random() * 9000)}`;
+    const initBal = parseFloat(newUserData.initialBalance || "0") || 0;
+
     const newRecord: AdminUserRecord = {
       id: newId,
-      name: newUserData.name.trim(),
-      email: newUserData.email.trim(),
+      name: cleanName,
+      email: cleanEmail,
       phone: newUserData.phone.trim() || "+1 (555) 000-0000",
       mailingAddress: newUserData.mailingAddress.trim() || "100 Financial Way, Suite 400, New York, NY 10005",
       linkedCustomerId: linkedCustId,
@@ -903,6 +919,8 @@ export function SoloAdminDashboard({
       verificationStatus: "Verified",
       dateJoined: new Date().toISOString().slice(0, 10),
       displayDateJoined: "Today, " + new Date().toLocaleDateString([], { month: "short", day: "numeric", year: "numeric" }),
+      checkingBalance: initBal,
+      savingsBalance: 0,
       security: {
         twoFactorEnabled: false,
         activeSessionsCount: 1,
@@ -938,8 +956,8 @@ export function SoloAdminDashboard({
     // Also provision customer profile and bank accounts so the user can immediately access their dashboard
     const newCust: AdminCustomer = {
       id: linkedCustId,
-      name: newUserData.name.trim(),
-      email: newUserData.email.trim(),
+      name: cleanName,
+      email: cleanEmail,
       phone: newUserData.phone.trim() || "+1 (555) 000-0000",
       country: newUserData.country || "United States",
       countryCode: newUserData.country === "United Kingdom" ? "GB" : newUserData.country === "Canada" ? "CA" : "US",
@@ -959,11 +977,10 @@ export function SoloAdminDashboard({
       localStorage.setItem("us_finance_bank_customers", JSON.stringify(updatedCusts));
     } catch {}
 
-    const initBal = parseFloat(newUserData.initialBalance || "0") || 0;
     const newAcc: BankAccountRecord = {
       id: `ACC-${newId.slice(-4)}-1`,
       customerId: linkedCustId,
-      customerName: newUserData.name.trim(),
+      customerName: cleanName,
       accountType:
         newUserData.accountType === "High-Yield Savings" ||
         newUserData.accountType === "Treasury Money Market" ||
@@ -991,8 +1008,8 @@ export function SoloAdminDashboard({
       const list = controlledRaw ? JSON.parse(controlledRaw) : [];
       const controlledUserObj = {
         id: newId,
-        name: newUserData.name.trim(),
-        email: newUserData.email.trim().toLowerCase(),
+        name: cleanName,
+        email: cleanEmail,
         phone: newUserData.phone.trim() || "+1 (555) 000-0000",
         country: newUserData.country || "United States",
         countryCode: "US",
@@ -1005,6 +1022,22 @@ export function SoloAdminDashboard({
         createdAt: "Today",
       };
       localStorage.setItem("us_finance_bank_controlled_users", JSON.stringify([controlledUserObj, ...list]));
+    } catch {}
+
+    // Prepare immediate active session for auto-login
+    try {
+      const userSession = {
+        customerName: cleanName,
+        checkingBalance: initBal,
+        savingsBalance: 0.0,
+        email: cleanEmail,
+        isNewUser: false,
+        profilePicUrl: undefined,
+        linkedCustomerId: linkedCustId,
+        applicationId: newId,
+        kycStatus: "Verified",
+      };
+      localStorage.setItem("us_finance_bank_active_customer", JSON.stringify(userSession));
     } catch {}
 
     appendAuditLog(
@@ -2065,11 +2098,22 @@ export function SoloAdminDashboard({
                 createdAt: new Date().toLocaleDateString(),
               });
             }
-            localStorage.setItem("us_finance_bank_controlled_users", JSON.stringify(updatedCtrl));
-            window.dispatchEvent(new Event("storage"));
-          }
-        } catch {}
-      }
+        // Also synchronize customer session if customer is currently logged in or stored
+        const sessRaw = localStorage.getItem("us_finance_bank_customer_session");
+        if (sessRaw) {
+          try {
+            const sess = JSON.parse(sessRaw);
+            if (
+              sess.customerName?.toLowerCase() === app.fullName.toLowerCase() ||
+              sess.email?.toLowerCase() === app.email.toLowerCase() ||
+              sess.applicationId === app.id
+            ) {
+              sess.kycStatus = "Verified";
+              sess.status = "Approved";
+              localStorage.setItem("us_finance_bank_customer_session", JSON.stringify(sess));
+            }
+          } catch {}
+        }
     }
 
     appendAuditLog(

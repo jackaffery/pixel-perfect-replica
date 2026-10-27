@@ -2878,9 +2878,6 @@ export function Index({ view = "home" }: { view?: "home" | "account" } = {}) {
                       <Landmark className="h-6 w-6 text-red-600" />
                     </div>
                     <div>
-                      <span className="text-[0.68rem] uppercase tracking-wider font-extrabold text-amber-300 block">
-                        Waiting Approval for Admin to Approve
-                      </span>
                       <h2 className="font-display text-lg sm:text-xl font-black text-white tracking-tight">
                         WEST SIDE FINANCIAL INSTITUTION
                       </h2>
