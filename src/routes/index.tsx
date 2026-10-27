@@ -479,7 +479,15 @@ export function Index({ view = "home" }: { view?: "home" | "account" } = {}) {
     customerName: string;
     customerId: string;
     linkedCustomerId: string;
-  } | null>(null);
+  } | null>(() => {
+    if (typeof window !== "undefined") {
+      try {
+        const saved = sessionStorage.getItem("wsb_admin_support_session");
+        if (saved) return JSON.parse(saved);
+      } catch {}
+    }
+    return null;
+  });
 
   // Customer Password Reset State (One-time expiring link via SMS or Email)
   const [customerResetMethod, setCustomerResetMethod] = useState<"Email" | "SMS">("Email");
@@ -2226,13 +2234,19 @@ export function Index({ view = "home" }: { view?: "home" | "account" } = {}) {
           if (customer.checkingBalance !== undefined) setCheckingBalance(customer.checkingBalance);
           if (customer.savingsBalance !== undefined) setSavingsBalance(customer.savingsBalance);
           if (customer.profilePicUrl !== undefined) setCustomerProfilePic(customer.profilePicUrl);
-          setAdminSupportSession({
+          const supportSession = {
             active: true,
             customerName: customer.name,
             customerId: customer.id,
             linkedCustomerId: customer.linkedCustomerId,
-          });
-          window.scrollTo({ top: 0, behavior: "smooth" });
+          };
+          setAdminSupportSession(supportSession);
+          if (typeof window !== "undefined") {
+            try {
+              sessionStorage.setItem("wsb_admin_support_session", JSON.stringify(supportSession));
+            } catch {}
+          }
+          navigate({ to: "/account" });
         }}
       />
       </AdminDashboardErrorBoundary>
@@ -2273,6 +2287,12 @@ export function Index({ view = "home" }: { view?: "home" | "account" } = {}) {
               onClick={() => {
                 setCustomerUser(null);
                 setAdminSupportSession(null);
+                if (typeof window !== "undefined") {
+                  try {
+                    sessionStorage.removeItem("wsb_admin_support_session");
+                  } catch {}
+                }
+                navigate({ to: "/staff" });
               }}
               className="bg-red-600 hover:bg-red-700 text-white font-bold text-xs px-3.5 py-1.5 shadow-xs transition-colors"
             >
