@@ -563,6 +563,7 @@ export function Index({ view = "home" }: { view?: "home" | "account" } = {}) {
   // Customer Dashboard State (Default zero balance for new accounts)
   const [customerActiveTab, setCustomerActiveTab] = useState<"overview" | "transfers" | "cards" | "crypto" | "statements" | "profile">("overview");
   const [customerNavHistory, setCustomerNavHistory] = useState<("overview" | "transfers" | "cards" | "crypto" | "statements" | "profile")[]>(["overview"]);
+  const [activeAccountView, setActiveAccountView] = useState<"checking" | "savings" | "all">("all");
   const [checkingBalance, setCheckingBalance] = useState<number>(() => {
     if (typeof window !== "undefined") {
       try {
@@ -699,41 +700,58 @@ export function Index({ view = "home" }: { view?: "home" | "account" } = {}) {
     return [];
   });
 
-  // Sync customer transactions with centralized transfer data from localStorage
+  // Sync customer transactions and balances with centralized transfer data and customer session from localStorage
   useEffect(() => {
-    if (typeof window !== "undefined") {
-      const saved = localStorage.getItem("us_finance_bank_transactions");
-      if (saved) {
+    const handleSyncFromStorage = () => {
+      if (typeof window !== "undefined") {
         try {
-          const list = JSON.parse(saved);
-          if (Array.isArray(list) && list.length > 0) {
-            setTransactions((prev) =>
-              prev.map((t) => {
-                const match = list.find((item: any) => item.id === t.id);
-                if (match) {
-                  return {
-                    ...t,
-                    status: match.transferStatus || match.status,
-                    transferStatus: match.transferStatus || match.status,
-                    statusUpdates: match.statusUpdates || t.statusUpdates,
-                  };
-                }
-                return t;
-              })
-            );
+          const sessRaw = localStorage.getItem("us_finance_bank_customer_session");
+          if (sessRaw) {
+            const sess = JSON.parse(sessRaw);
+            if (typeof sess.checkingBalance === "number") {
+              setCheckingBalance(sess.checkingBalance);
+            }
+            if (typeof sess.savingsBalance === "number") {
+              setSavingsBalance(sess.savingsBalance);
+            }
           }
-        } catch {
-          // ignore
-        }
+
+          const saved = localStorage.getItem("us_finance_bank_transactions");
+          if (saved) {
+            const list = JSON.parse(saved);
+            if (Array.isArray(list)) {
+              // Convert any admin transaction records to customer transaction view format if necessary
+              const formattedList = list.map((item: any) => {
+                if (item.desc) return item;
+                const isCredit = item.direction === "credit";
+                return {
+                  id: item.id,
+                  date: item.timestamp || "Today",
+                  timestamp: item.timestamp || "Today",
+                  desc: item.counterparty ? `${item.type}: ${item.counterparty}` : item.type,
+                  type: item.type,
+                  category: item.type.includes("Deposit") ? "Deposit" : "Transfer",
+                  amount: `${isCredit ? "+" : "-"}$${Number(item.amount || 0).toFixed(2)}`,
+                  numericAmount: Number(item.amount || 0),
+                  currency: item.currency || "USD",
+                  counterparty: item.counterparty || "West Side Bank",
+                  accountMasked: item.accountMasked || "••••4892",
+                  positive: isCredit,
+                  status: item.status || "Completed",
+                  transferStatus: item.transferStatus || item.status || "Completed",
+                  statusUpdates: item.statusUpdates || [],
+                };
+              });
+              setTransactions(formattedList);
+            }
+          }
+        } catch {}
       }
-    }
-  }, [customerUser]);
-  // New customers start with an empty transaction history
-  useEffect(() => {
-    try {
-      const saved = localStorage.getItem("us_finance_bank_customer_session");
-      if (saved && JSON.parse(saved).isNewUser) setTransactions([]);
-    } catch {}
+    };
+
+    handleSyncFromStorage();
+    window.addEventListener("storage", handleSyncFromStorage);
+    return () => window.removeEventListener("storage", handleSyncFromStorage);
   }, [customerUser]);
 
   // The private account page needs a signed-in customer
@@ -742,6 +760,7 @@ export function Index({ view = "home" }: { view?: "home" | "account" } = {}) {
   }, [view, customerUser, navigate]);
   const [transferAmount, setTransferAmount] = useState("");
   const [transferRecipient, setTransferRecipient] = useState("");
+  const [transferSourceAccount, setTransferSourceAccount] = useState<"checking" | "savings">("checking");
   const [transferSuccess, setTransferSuccess] = useState("");
   const [transferError, setTransferError] = useState("");
   const [transferType, setTransferType] = useState<"domestic" | "wire">("domestic");
@@ -1268,8 +1287,10 @@ export function Index({ view = "home" }: { view?: "home" | "account" } = {}) {
       return;
     }
     const totalDeduction = amt + wireTransferFee;
-    if (totalDeduction > checkingBalance) {
-      setTransferError(`Insufficient funds. Your checking balance is ${country.currency.symbol}${checkingBalance.toFixed(2)}, but total with fee is ${country.currency.symbol}${totalDeduction.toFixed(2)}.`);
+    const sourceBal = transferSourceAccount === "checking" ? checkingBalance : savingsBalance;
+    const sourceName = transferSourceAccount === "checking" ? "Advantage Checking" : "High-Yield Savings";
+    if (totalDeduction > sourceBal) {
+      setTransferError(`Insufficient funds. Your ${sourceName} balance is ${country.currency.symbol}${sourceBal.toFixed(2)}, but total with fee is ${country.currency.symbol}${totalDeduction.toFixed(2)}.`);
       return;
     }
     if (amt > transferDailyLimit) {
@@ -1358,7 +1379,29 @@ export function Index({ view = "home" }: { view?: "home" | "account" } = {}) {
       setTransferLoading(false);
       const amt = parseFloat(transferAmount);
       const totalDeduction = amt + wireTransferFee;
-      setCheckingBalance((prev) => Math.max(0, prev - totalDeduction));
+
+      let newCheckingBal = checkingBalance;
+      let newSavingsBal = savingsBalance;
+      if (transferSourceAccount === "checking") {
+        newCheckingBal = Math.max(0, checkingBalance - totalDeduction);
+        setCheckingBalance(newCheckingBal);
+      } else {
+        newSavingsBal = Math.max(0, savingsBalance - totalDeduction);
+        setSavingsBalance(newSavingsBal);
+      }
+
+      // Persist new balances to customer session
+      if (typeof window !== "undefined") {
+        try {
+          const sessRaw = localStorage.getItem("us_finance_bank_customer_session");
+          if (sessRaw) {
+            const sess = JSON.parse(sessRaw);
+            sess.checkingBalance = newCheckingBal;
+            sess.savingsBalance = newSavingsBal;
+            localStorage.setItem("us_finance_bank_customer_session", JSON.stringify(sess));
+          }
+        } catch {}
+      }
 
       const newTxId = `TX-${Math.floor(10000 + Math.random() * 90000)}`;
       const nowTime = "Today, " + new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
@@ -1438,12 +1481,16 @@ export function Index({ view = "home" }: { view?: "home" | "account" } = {}) {
       const customerEmail = activeCustomer?.email || (customerUser ? `${customerUser.toLowerCase().replace(/\s+/g, ".")}@westsidebank.online` : "customer@westsidebank.online");
       const customerPhone = activeCustomer?.phone || "+1 (555) 019-2834";
 
+      const transferSourceLabel = transferSourceAccount === "checking" ? "Advantage Checking" : "High-Yield Savings";
+      const newBalanceRemaining = transferSourceAccount === "checking" ? newCheckingBal : newSavingsBal;
+      const verificationRefCode = Math.floor(100000 + Math.random() * 900000).toString();
+
       triggerLiveEmailAndSmsAlert({
         type: "transfer",
         emailTo: customerEmail,
         phoneTo: customerPhone,
-        subject: `Debit Alert: ${country.currency.symbol}${totalDeduction.toFixed(2)} Transferred to ${transferRecipient}`,
-        smsBody: `WSB Debit Alert: ${country.currency.symbol}${totalDeduction.toFixed(2)} has been debited from your checking account for transfer to ${transferRecipient}. Tx: ${newTxId}.`,
+        subject: `Debit Alert: ${country.currency.symbol}${totalDeduction.toFixed(2)} Transferred from ${transferSourceLabel} to ${transferRecipient}`,
+        smsBody: `WSB Debit Alert: ${country.currency.symbol}${totalDeduction.toFixed(2)} has been debited from your ${transferSourceLabel}. New Balance: ${country.currency.symbol}${newBalanceRemaining.toFixed(2)}. Auth Ref Code: ${verificationRefCode}. Tx: ${newTxId}.`,
       });
     }, 700);
   };
@@ -2787,27 +2834,74 @@ export function Index({ view = "home" }: { view?: "home" | "account" } = {}) {
                   )}
                 </div>
 
-                {/* Main Available Balance Card matching screenshot */}
+                {/* Main Available Balance Card with Account Switcher (Checking vs Savings) */}
                 <div className="mt-5 rounded-2xl bg-white p-5 sm:p-6 text-slate-900 shadow-md">
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs sm:text-sm font-semibold text-slate-500">
-                      Available balance
-                    </span>
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs sm:text-sm font-semibold text-slate-500">
+                        Available balance:
+                      </span>
+                      {/* Account Switcher Pills */}
+                      <div className="inline-flex items-center rounded-lg bg-slate-100 p-0.5 border border-slate-200 text-xs font-bold">
+                        <button
+                          type="button"
+                          onClick={() => setActiveAccountView("all")}
+                          className={`px-2.5 py-1 rounded-md transition-colors ${
+                            activeAccountView === "all"
+                              ? "bg-white text-slate-900 shadow-xs"
+                              : "text-slate-600 hover:text-slate-900"
+                          }`}
+                        >
+                          All Accounts
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setActiveAccountView("checking")}
+                          className={`px-2.5 py-1 rounded-md transition-colors ${
+                            activeAccountView === "checking"
+                              ? "bg-red-600 text-white shadow-xs"
+                              : "text-slate-600 hover:text-slate-900"
+                          }`}
+                        >
+                          Checking
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setActiveAccountView("savings")}
+                          className={`px-2.5 py-1 rounded-md transition-colors ${
+                            activeAccountView === "savings"
+                              ? "bg-[#0055b8] text-white shadow-xs"
+                              : "text-slate-600 hover:text-slate-900"
+                          }`}
+                        >
+                          Savings
+                        </button>
+                      </div>
+                    </div>
+
                     <button
                       type="button"
                       onClick={() => setShowAccountBalance(!showAccountBalance)}
-                      className="text-xs font-bold text-red-600 hover:text-red-700 transition-colors"
+                      className="text-xs font-bold text-red-600 hover:text-red-700 transition-colors self-start sm:self-auto"
                     >
                       {showAccountBalance ? "Hide Balance" : "Show Balance"}
                     </button>
                   </div>
 
-                  <div className="mt-2.5">
+                  <div className="mt-3">
                     {showAccountBalance ? (
                       <div className="font-display text-2xl sm:text-3xl font-black text-slate-900 flex items-baseline gap-1.5">
                         <span>{country.currency.symbol}</span>
-                        <span>{(checkingBalance + savingsBalance).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
-                        <span className="text-xs font-bold text-slate-500 uppercase">{country.currency.code}</span>
+                        <span>
+                          {activeAccountView === "checking"
+                            ? checkingBalance.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+                            : activeAccountView === "savings"
+                            ? savingsBalance.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+                            : (checkingBalance + savingsBalance).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                        </span>
+                        <span className="text-xs font-bold text-slate-500 uppercase">
+                          {country.currency.code} ({activeAccountView === "checking" ? "Advantage Checking" : activeAccountView === "savings" ? "High-Yield Savings" : "Combined Total"})
+                        </span>
                       </div>
                     ) : (
                       <div className="flex items-center gap-2 py-1 text-slate-800 tracking-widest text-xl sm:text-2xl font-black select-none">
@@ -2816,11 +2910,48 @@ export function Index({ view = "home" }: { view?: "home" | "account" } = {}) {
                     )}
                   </div>
 
-                  <p className="mt-2 text-xs text-slate-500 font-medium">
-                    {showAccountBalance
-                      ? `Checking: ${country.currency.symbol}${checkingBalance.toLocaleString("en-US", { minimumFractionDigits: 2 })} • High-Yield Savings: ${country.currency.symbol}${savingsBalance.toLocaleString("en-US", { minimumFractionDigits: 2 })}`
-                      : "Connect a verified account to display your actual balance."}
-                  </p>
+                  {/* Individual Account Balance Detail Cards */}
+                  <div className="mt-3 pt-3 border-t border-slate-100 grid grid-cols-1 sm:grid-cols-2 gap-2.5 text-xs">
+                    <div
+                      onClick={() => setActiveAccountView("checking")}
+                      className={`p-2.5 rounded-xl border transition-all cursor-pointer ${
+                        activeAccountView === "checking"
+                          ? "border-red-500 bg-red-50/60 ring-2 ring-red-400"
+                          : "border-slate-200 bg-slate-50 hover:bg-slate-100/70"
+                      }`}
+                    >
+                      <div className="flex items-center justify-between">
+                        <span className="font-bold text-slate-700">Advantage Checking</span>
+                        <span className="text-[0.65rem] font-bold uppercase tracking-wider text-red-600 bg-red-100/70 px-1.5 py-0.5 rounded">
+                          Primary
+                        </span>
+                      </div>
+                      <p className="font-mono font-black text-sm text-slate-900 mt-1">
+                        {showAccountBalance ? `${country.currency.symbol}${checkingBalance.toLocaleString("en-US", { minimumFractionDigits: 2 })}` : "••••••"}
+                      </p>
+                      <span className="text-[0.68rem] text-slate-500">Acct #••••4892 • RTN #021000021</span>
+                    </div>
+
+                    <div
+                      onClick={() => setActiveAccountView("savings")}
+                      className={`p-2.5 rounded-xl border transition-all cursor-pointer ${
+                        activeAccountView === "savings"
+                          ? "border-blue-500 bg-blue-50/60 ring-2 ring-blue-400"
+                          : "border-slate-200 bg-slate-50 hover:bg-slate-100/70"
+                      }`}
+                    >
+                      <div className="flex items-center justify-between">
+                        <span className="font-bold text-slate-700">High-Yield Savings (4.75% APY)</span>
+                        <span className="text-[0.65rem] font-bold uppercase tracking-wider text-emerald-700 bg-emerald-100/70 px-1.5 py-0.5 rounded">
+                          Interest
+                        </span>
+                      </div>
+                      <p className="font-mono font-black text-sm text-slate-900 mt-1">
+                        {showAccountBalance ? `${country.currency.symbol}${savingsBalance.toLocaleString("en-US", { minimumFractionDigits: 2 })}` : "••••••"}
+                      </p>
+                      <span className="text-[0.68rem] text-slate-500">Acct #••••7810 • FDIC Insured</span>
+                    </div>
+                  </div>
                 </div>
 
                 {/* 5 Primary Navigation Cards: Transfers, Cards, Digital Assets, Statements, Profile */}
@@ -3098,6 +3229,46 @@ export function Index({ view = "home" }: { view?: "home" | "account" } = {}) {
                             </div>
                           )}
 
+                          {/* Source Account Switcher (Checking vs Savings) */}
+                          <div>
+                            <label className="block text-xs font-bold text-slate-800 mb-1">
+                              Pay From Account (Debit Source)
+                            </label>
+                            <div className="grid grid-cols-2 gap-2">
+                              <button
+                                type="button"
+                                onClick={() => setTransferSourceAccount("checking")}
+                                className={`p-2.5 rounded-xl border text-left transition-all ${
+                                  transferSourceAccount === "checking"
+                                    ? "border-red-600 bg-red-50/80 ring-2 ring-red-400"
+                                    : "border-slate-200 bg-white hover:bg-slate-50"
+                                }`}
+                              >
+                                <span className="font-bold text-xs text-slate-900 block">Advantage Checking</span>
+                                <span className="font-mono font-bold text-xs text-red-600 block mt-0.5">
+                                  {country.currency.symbol}{checkingBalance.toLocaleString("en-US", { minimumFractionDigits: 2 })}
+                                </span>
+                                <span className="text-[0.65rem] text-slate-500 block">Acct #••••4892</span>
+                              </button>
+
+                              <button
+                                type="button"
+                                onClick={() => setTransferSourceAccount("savings")}
+                                className={`p-2.5 rounded-xl border text-left transition-all ${
+                                  transferSourceAccount === "savings"
+                                    ? "border-[#0055b8] bg-blue-50/80 ring-2 ring-blue-400"
+                                    : "border-slate-200 bg-white hover:bg-slate-50"
+                                }`}
+                              >
+                                <span className="font-bold text-xs text-slate-900 block">High-Yield Savings</span>
+                                <span className="font-mono font-bold text-xs text-[#0055b8] block mt-0.5">
+                                  {country.currency.symbol}{savingsBalance.toLocaleString("en-US", { minimumFractionDigits: 2 })}
+                                </span>
+                                <span className="text-[0.65rem] text-slate-500 block">Acct #••••7810</span>
+                              </button>
+                            </div>
+                          </div>
+
                           {/* Transfer Amount */}
                           <div>
                             <label className="block text-xs font-bold text-slate-800 mb-1">
@@ -3119,7 +3290,11 @@ export function Index({ view = "home" }: { view?: "home" | "account" } = {}) {
                               />
                             </div>
                             <p className="text-[0.68rem] text-slate-500 mt-1">
-                              Available checking balance: <strong className="text-slate-700">{country.currency.symbol}{checkingBalance.toFixed(2)}</strong>
+                              Available {transferSourceAccount === "checking" ? "checking" : "savings"} balance:{" "}
+                              <strong className="text-slate-700">
+                                {country.currency.symbol}
+                                {(transferSourceAccount === "checking" ? checkingBalance : savingsBalance).toFixed(2)}
+                              </strong>
                             </p>
                           </div>
 
@@ -3178,8 +3353,13 @@ export function Index({ view = "home" }: { view?: "home" | "account" } = {}) {
                               {wireTransferFee === 0 ? "Free ($0.00)" : `${wireTransferFee.toFixed(2)}`}
                             </span>
 
+                            <span className="text-slate-500">Debit Source Account:</span>
+                            <span className="font-bold text-slate-900">
+                              {transferSourceAccount === "checking" ? "Advantage Checking (••••4892)" : "High-Yield Savings (••••7810)"}
+                            </span>
+
                             <div className="col-span-2 border-t border-slate-200 pt-2 flex justify-between items-center text-sm font-extrabold text-slate-900">
-                              <span>Total Debit from Checking:</span>
+                              <span>Total Debit from {transferSourceAccount === "checking" ? "Checking" : "Savings"}:</span>
                               <span className="text-red-600">
                                 {country.currency.symbol}{(parseFloat(transferAmount || "0") + wireTransferFee).toFixed(2)}
                               </span>

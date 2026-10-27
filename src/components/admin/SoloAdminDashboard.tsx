@@ -1327,17 +1327,79 @@ export function SoloAdminDashboard({
       targetAcc = accounts.find((a) => a.customerId === user.linkedCustomerId) || accounts[0];
     }
 
+    let finalNewBal = 0;
     if (targetAcc) {
-      const newBal = isCredit ? targetAcc.balance + amt : Math.max(0, targetAcc.balance - amt);
+      finalNewBal = isCredit ? targetAcc.balance + amt : Math.max(0, targetAcc.balance - amt);
       const updatedAccounts = accounts.map((a) =>
         a.id === targetAcc!.id
-          ? { ...a, balance: newBal, availableBalance: newBal, lastActivity: "Today, Just now" }
+          ? { ...a, balance: finalNewBal, availableBalance: finalNewBal, lastActivity: "Today, Just now" }
           : a
       );
       setAccounts(updatedAccounts);
       try {
         localStorage.setItem("us_finance_bank_accounts", JSON.stringify(updatedAccounts));
       } catch {}
+    }
+
+    // Sync active customer session and controlled users so balance immediately updates everywhere
+    if (typeof window !== "undefined") {
+      try {
+        // Update customer session if this user is signed into customer portal
+        const sessRaw = localStorage.getItem("us_finance_bank_customer_session");
+        if (sessRaw) {
+          const sess = JSON.parse(sessRaw);
+          if (
+            sess.customerName?.toLowerCase() === user.name.toLowerCase() ||
+            sess.linkedCustomerId === user.linkedCustomerId
+          ) {
+            if (creditDebitAccountType === "checking") {
+              sess.checkingBalance = finalNewBal;
+            } else {
+              sess.savingsBalance = finalNewBal;
+            }
+            localStorage.setItem("us_finance_bank_customer_session", JSON.stringify(sess));
+          }
+        }
+
+        // Update controlled users registry
+        const ctrlRaw = localStorage.getItem("us_finance_bank_controlled_users");
+        if (ctrlRaw) {
+          const ctrlList = JSON.parse(ctrlRaw);
+          if (Array.isArray(ctrlList)) {
+            const updatedCtrl = ctrlList.map((c: any) => {
+              if (c.name?.toLowerCase() === user.name.toLowerCase() || c.id === user.id) {
+                return {
+                  ...c,
+                  checkingBalance: creditDebitAccountType === "checking" ? finalNewBal : c.checkingBalance,
+                  savingsBalance: creditDebitAccountType === "savings" ? finalNewBal : c.savingsBalance,
+                };
+              }
+              return c;
+            });
+            localStorage.setItem("us_finance_bank_controlled_users", JSON.stringify(updatedCtrl));
+          }
+        }
+
+        // Send Email and SMS notification to customer with verification code / alert
+        const alertCode = Math.floor(100000 + Math.random() * 900000).toString();
+        const existingDispatches = localStorage.getItem("westside_email_dispatch_log");
+        const dispatchesList = existingDispatches ? JSON.parse(existingDispatches) : [];
+        const timeNow = "Today, " + new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" });
+        dispatchesList.unshift({
+          id: `DISP-${Date.now()}`,
+          to: user.email || `${user.name.toLowerCase().replace(/\s+/g, ".")}@westsidebank.online`,
+          phone: user.phone || "+1 (555) 019-2834",
+          subject: `${isCredit ? "Credit Alert" : "Debit Alert"}: $${amt.toFixed(2)} ${isCredit ? "Credited to" : "Debited from"} ${accTypeLabel}`,
+          sms: `WSB ${isCredit ? "Credit" : "Debit"} Notice: $${amt.toFixed(2)} was ${isCredit ? "credited to" : "debited from"} your ${accTypeLabel}. New Balance: $${finalNewBal.toFixed(2)}. Auth Ref Code: ${alertCode}.`,
+          timestamp: timeNow,
+          status: "Delivered (Live Relay)",
+        });
+        localStorage.setItem("westside_email_dispatch_log", JSON.stringify(dispatchesList.slice(0, 50)));
+
+        window.dispatchEvent(new Event("storage"));
+      } catch (err) {
+        console.error("Error syncing customer session on credit/debit", err);
+      }
     }
 
     // Create realistic transaction ledger record
@@ -1405,15 +1467,37 @@ export function SoloAdminDashboard({
     };
 
     // If completed and credit/debit, adjust account
+    let finalGenBal = 0;
     if (userAcc && genTxStatus === "Completed") {
-      const newBal = genTxDirection === "credit" ? userAcc.balance + amt : Math.max(0, userAcc.balance - amt);
+      finalGenBal = genTxDirection === "credit" ? userAcc.balance + amt : Math.max(0, userAcc.balance - amt);
       const updatedAccounts = accounts.map((a) =>
-        a.id === userAcc.id ? { ...a, balance: newBal, availableBalance: newBal } : a
+        a.id === userAcc.id ? { ...a, balance: finalGenBal, availableBalance: finalGenBal } : a
       );
       setAccounts(updatedAccounts);
       try {
         localStorage.setItem("us_finance_bank_accounts", JSON.stringify(updatedAccounts));
       } catch {}
+
+      if (typeof window !== "undefined") {
+        try {
+          const sessRaw = localStorage.getItem("us_finance_bank_customer_session");
+          if (sessRaw) {
+            const sess = JSON.parse(sessRaw);
+            if (
+              sess.customerName?.toLowerCase() === user.name.toLowerCase() ||
+              sess.linkedCustomerId === user.linkedCustomerId
+            ) {
+              if (userAcc.accountType.toLowerCase().includes("savings")) {
+                sess.savingsBalance = finalGenBal;
+              } else {
+                sess.checkingBalance = finalGenBal;
+              }
+              localStorage.setItem("us_finance_bank_customer_session", JSON.stringify(sess));
+            }
+          }
+          window.dispatchEvent(new Event("storage"));
+        } catch {}
+      }
     }
 
     const nextTxs = [newTx, ...transactions];
@@ -1463,6 +1547,42 @@ export function SoloAdminDashboard({
     try {
       localStorage.setItem("us_finance_bank_accounts", JSON.stringify(updatedAccounts));
     } catch {}
+
+    // Sync active customer session and controlled users so customer sees updated balance immediately
+    if (typeof window !== "undefined") {
+      try {
+        const sessRaw = localStorage.getItem("us_finance_bank_customer_session");
+        if (sessRaw) {
+          const sess = JSON.parse(sessRaw);
+          if (
+            sess.customerName?.toLowerCase() === user.name.toLowerCase() ||
+            sess.linkedCustomerId === user.linkedCustomerId
+          ) {
+            sess.checkingBalance = checkAmt;
+            sess.savingsBalance = savAmt;
+            localStorage.setItem("us_finance_bank_customer_session", JSON.stringify(sess));
+          }
+        }
+
+        const ctrlRaw = localStorage.getItem("us_finance_bank_controlled_users");
+        if (ctrlRaw) {
+          const ctrlList = JSON.parse(ctrlRaw);
+          if (Array.isArray(ctrlList)) {
+            const updatedCtrl = ctrlList.map((c: any) => {
+              if (c.name?.toLowerCase() === user.name.toLowerCase() || c.id === user.id) {
+                return { ...c, checkingBalance: checkAmt, savingsBalance: savAmt };
+              }
+              return c;
+            });
+            localStorage.setItem("us_finance_bank_controlled_users", JSON.stringify(updatedCtrl));
+          }
+        }
+
+        window.dispatchEvent(new Event("storage"));
+      } catch (err) {
+        console.error("Error syncing customer session on balance edit", err);
+      }
+    }
 
     appendAuditLog(
       "Accounts",
@@ -1595,6 +1715,42 @@ export function SoloAdminDashboard({
     try {
       localStorage.setItem("us_finance_bank_accounts", JSON.stringify(updatedAccounts));
     } catch {}
+
+    // Sync active customer session and controlled users so customer sees updated balance immediately
+    if (typeof window !== "undefined") {
+      try {
+        const sessRaw = localStorage.getItem("us_finance_bank_customer_session");
+        if (sessRaw) {
+          const sess = JSON.parse(sessRaw);
+          if (
+            sess.customerName?.toLowerCase() === user.name.toLowerCase() ||
+            sess.linkedCustomerId === user.linkedCustomerId
+          ) {
+            sess.checkingBalance = 0;
+            sess.savingsBalance = 0;
+            localStorage.setItem("us_finance_bank_customer_session", JSON.stringify(sess));
+          }
+        }
+
+        const ctrlRaw = localStorage.getItem("us_finance_bank_controlled_users");
+        if (ctrlRaw) {
+          const ctrlList = JSON.parse(ctrlRaw);
+          if (Array.isArray(ctrlList)) {
+            const updatedCtrl = ctrlList.map((c: any) => {
+              if (c.name?.toLowerCase() === user.name.toLowerCase() || c.id === user.id) {
+                return { ...c, checkingBalance: 0, savingsBalance: 0 };
+              }
+              return c;
+            });
+            localStorage.setItem("us_finance_bank_controlled_users", JSON.stringify(updatedCtrl));
+          }
+        }
+
+        window.dispatchEvent(new Event("storage"));
+      } catch (err) {
+        console.error("Error syncing customer session on balance clear", err);
+      }
+    }
 
     appendAuditLog(
       "Accounts",
