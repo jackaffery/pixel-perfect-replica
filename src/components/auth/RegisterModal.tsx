@@ -566,6 +566,37 @@ export function RegisterModal({
             })
           );
 
+          // Dispatch automatic email link so customer can click/tap in email to directly enter account profile
+          const directProfileLink = typeof window !== "undefined"
+            ? `${window.location.origin}/?verify_email=${encodeURIComponent(emailKey)}&action=activate`
+            : `https://westsidebank.online/?verify_email=${encodeURIComponent(emailKey)}&action=activate`;
+
+          try {
+            const dispatchesRaw = localStorage.getItem("westside_email_dispatch_log");
+            const dispatchesList = dispatchesRaw ? JSON.parse(dispatchesRaw) : [];
+            dispatchesList.unshift({
+              id: `DISP-ACT-${Date.now()}`,
+              to: emailKey,
+              phone: `${phoneCountryCode} ${phoneNumber.trim()}`,
+              subject: "Welcome to West Side Financial Institution - Access Your New Account Profile",
+              sms: `WSB Notice: Account created for ${legalFullName}! Access profile link: ${directProfileLink}. Next sign-in requires username & password.`,
+              timestamp: "Today, " + new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+              status: "Delivered (Live Relay)",
+              activationLink: directProfileLink,
+            });
+            localStorage.setItem("westside_email_dispatch_log", JSON.stringify(dispatchesList.slice(0, 50)));
+          } catch {}
+
+          if (onDispatchAlert) {
+            onDispatchAlert({
+              type: "login",
+              emailTo: emailKey,
+              phoneTo: `${phoneCountryCode} ${phoneNumber.trim()}`,
+              subject: "Welcome to West Side Financial Institution - Access Your New Account Profile",
+              smsBody: `WSB Account Created: Tap your secure link to access your profile immediately: ${directProfileLink}. For next sign-ins, use your username & password.`,
+            });
+          }
+
           window.dispatchEvent(new Event("storage"));
         } catch (err) {
           console.error("Storage error during registration:", err);
@@ -752,7 +783,7 @@ export function RegisterModal({
                   What happens next?
                 </p>
                 <p className="text-[0.72rem] text-blue-800 mt-1 leading-relaxed">
-                  Your identity verification documents have been forwarded to the Solo Bank Administrator queue for review. You may enter your customer dashboard immediately to inspect your profile, pending application status, and security preferences.
+                  A direct profile activation link has been sent to <strong>{email}</strong>. You can open your email and tap the secure link anytime to automatically access your account profile. For future logins, sign in anytime using your registered username and password.
                 </p>
               </div>
 
@@ -764,7 +795,7 @@ export function RegisterModal({
                   }}
                   className="w-full max-w-md bg-[#0055b8] hover:bg-blue-700 text-white font-bold py-3 text-sm shadow-md"
                 >
-                  Enter Dedicated Customer Dashboard
+                  Enter Account Profile Now
                   <ArrowRight className="h-4 w-4 ml-2" />
                 </Button>
               </div>

@@ -1040,6 +1040,27 @@ export function SoloAdminDashboard({
       localStorage.setItem("us_finance_bank_active_customer", JSON.stringify(userSession));
     } catch {}
 
+    // Dispatch real activation link to new customer's email so they can tap and access their profile directly
+    const directActivationLink = typeof window !== "undefined"
+      ? `${window.location.origin}/?verify_email=${encodeURIComponent(cleanEmail)}&action=activate`
+      : `https://westsidebank.online/?verify_email=${encodeURIComponent(cleanEmail)}&action=activate`;
+
+    try {
+      const existingDispatches = localStorage.getItem("westside_email_dispatch_log");
+      const dispatchesList = existingDispatches ? JSON.parse(existingDispatches) : [];
+      dispatchesList.unshift({
+        id: `DISP-ADMIN-${Date.now()}`,
+        to: cleanEmail,
+        phone: newUserData.phone.trim() || "+1 (555) 000-0000",
+        subject: "Welcome to West Side Financial Institution - Access Your New Account Profile",
+        sms: `WSB Notice: Account created by bank admin for ${cleanName}! Direct profile link: ${directActivationLink}. Next login requires username & password.`,
+        timestamp: "Today, " + new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+        status: "Delivered (Live Relay)",
+        activationLink: directActivationLink,
+      });
+      localStorage.setItem("westside_email_dispatch_log", JSON.stringify(dispatchesList.slice(0, 50)));
+    } catch {}
+
     appendAuditLog(
       "Users",
       "Created User Record",

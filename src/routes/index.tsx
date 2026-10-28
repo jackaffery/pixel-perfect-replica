@@ -506,7 +506,7 @@ export function Index({ view = "home" }: { view?: "home" | "account" } = {}) {
     ? `${window.location.origin}/?portal=admin`
     : "https://westsidebank.online/?portal=admin";
 
-  // Check URL on mount: Automatically open Staff Admin Sign-In if visiting dedicated admin link
+  // Check URL on mount: Automatically open Staff Admin Sign-In or process Magic Email Login Link
   useEffect(() => {
     if (typeof window !== "undefined") {
       const params = new URLSearchParams(window.location.search);
@@ -520,6 +520,53 @@ export function Index({ view = "home" }: { view?: "home" | "account" } = {}) {
         hash.includes("admin")
       ) {
         setAdminModalOpen(true);
+      }
+
+      // Check for magic account creation email link (auto take customer to profile / dashboard)
+      const verifyEmailParam = params.get("verify_email") || params.get("email");
+      const authActionParam = params.get("action") || params.get("auth");
+      const autoLoginParam = params.get("autologin");
+      if ((authActionParam === "activate" || authActionParam === "verify" || autoLoginParam === "true") && verifyEmailParam) {
+        try {
+          const cleanEmail = decodeURIComponent(verifyEmailParam).toLowerCase().trim();
+          // Find matching user or application
+          const rawControlled = localStorage.getItem("us_finance_bank_controlled_users");
+          const usersList = rawControlled ? JSON.parse(rawControlled) : [];
+          const foundUser = usersList.find((u: any) => (u.email || "").toLowerCase().trim() === cleanEmail);
+          
+          let customerName = foundUser?.name;
+          if (!customerName) {
+            const rawAuth = localStorage.getItem(`wsb_customer_auth_${cleanEmail}`);
+            if (rawAuth) {
+              const parsedAuth = JSON.parse(rawAuth);
+              customerName = parsedAuth.fullName || parsedAuth.username;
+            }
+          }
+          if (!customerName) {
+            customerName = cleanEmail.split("@")[0] || "Valued Customer";
+          }
+
+          const customerSession = {
+            customerName: customerName,
+            checkingBalance: foundUser?.checkingBalance ?? 0.0,
+            savingsBalance: foundUser?.savingsBalance ?? 0.0,
+            email: cleanEmail,
+            isNewUser: false,
+            profilePicUrl: foundUser?.profilePicUrl,
+            applicationId: foundUser?.id || `WSB-${Date.now().toString().slice(-6)}`,
+            kycStatus: "Verified",
+          };
+
+          localStorage.setItem("us_finance_bank_customer_session", JSON.stringify(customerSession));
+          localStorage.setItem("us_finance_bank_active_customer", JSON.stringify(customerSession));
+          setCustomerUser(customerName);
+          setCustomerLoginEmail(cleanEmail);
+          setCustomerActiveTab("profile"); // Take directly to their account profile!
+          window.dispatchEvent(new Event("storage"));
+          navigate({ to: "/account" });
+        } catch (e) {
+          console.error("Magic email link login error:", e);
+        }
       }
     }
   }, []);
@@ -704,8 +751,30 @@ export function Index({ view = "home" }: { view?: "home" | "account" } = {}) {
   const [transactions, setTransactions] = useState<any[]>(() => {
     if (typeof window !== "undefined") {
       try {
+        const sessRaw = localStorage.getItem("us_finance_bank_customer_session");
+        const activeCustomerEmail = sessRaw ? (JSON.parse(sessRaw).email || "").toLowerCase().trim() : "";
+        const activeCustomerName = sessRaw ? (JSON.parse(sessRaw).customerName || "").toLowerCase().trim() : "";
+        const isNewUser = sessRaw ? Boolean(JSON.parse(sessRaw).isNewUser) : false;
+
+        if (isNewUser) {
+          return [];
+        }
+
         const saved = localStorage.getItem("us_finance_bank_transactions");
-        if (saved) return JSON.parse(saved);
+        if (saved) {
+          const list = JSON.parse(saved);
+          if (Array.isArray(list)) {
+            // Only load transactions belonging to this customer
+            return list.filter((tx: any) => {
+              const txCust = (tx.customerName || "").toLowerCase().trim();
+              const txEmail = (tx.email || "").toLowerCase().trim();
+              return (
+                (activeCustomerName && txCust === activeCustomerName) ||
+                (activeCustomerEmail && txEmail === activeCustomerEmail)
+              );
+            });
+          }
+        }
       } catch {}
     }
     return [];
@@ -767,7 +836,21 @@ export function Index({ view = "home" }: { view?: "home" | "account" } = {}) {
                   statusUpdates: item.statusUpdates || [],
                 };
               });
-              setTransactions(formattedList);
+              const currentCustomerName = (customerUser || "").toLowerCase().trim();
+              const activeSessRaw = localStorage.getItem("us_finance_bank_customer_session");
+              const activeSessEmail = activeSessRaw ? (JSON.parse(activeSessRaw).email || "").toLowerCase().trim() : "";
+              const activeIsNew = activeSessRaw ? Boolean(JSON.parse(activeSessRaw).isNewUser) : false;
+
+              // Filter transactions strictly for the active customer so new accounts have zero transaction history until they transfer
+              const userFilteredList = formattedList.filter((item: any) => {
+                const itemCustomer = (item.customerName || "").toLowerCase().trim();
+                const itemEmail = (item.email || "").toLowerCase().trim();
+                if (currentCustomerName && itemCustomer === currentCustomerName) return true;
+                if (activeSessEmail && itemEmail === activeSessEmail) return true;
+                return false;
+              });
+
+              setTransactions(userFilteredList);
             }
           }
         } catch {}
@@ -1502,6 +1585,8 @@ export function Index({ view = "home" }: { view?: "home" | "account" } = {}) {
         ? `International wire transfer clearing via ${selectedWireCountryObj.name} network.`
         : "Transfer submitted to interbank clearing queue.";
 
+      const activeCustomer = adminUsers.find((u) => u.name.toLowerCase() === (customerUser || "").toLowerCase());
+
       const newTx = {
         id: newTxId,
         date: nowTime,
@@ -1519,8 +1604,9 @@ export function Index({ view = "home" }: { view?: "home" | "account" } = {}) {
         recipientBank: transferType === "wire" ? `${selectedWireCountryObj.name} Clearing Bank (${selectedWireCountryObj.routingScheme})` : "West Side Clearing / ACH Interbank",
         routingOrSwift: transferType === "wire" ? wireSwiftCode : (wireRoutingOrIban ? wireRoutingOrIban : "021000021"),
         accountMasked: wireRoutingOrIban ? `••••${wireRoutingOrIban.slice(-4)}` : "••••4819",
-        customerId: "CUST-109283",
-        customerName: customerUser || "Eleanor Vance",
+        customerId: activeCustomer?.id || "CUST-109283",
+        customerName: customerUser || "Valued Customer",
+        email: customerLoginEmail || activeCustomer?.email || "",
         positive: false,
         status: initialStatus,
         transferStatus: initialStatus,
@@ -1546,8 +1632,9 @@ export function Index({ view = "home" }: { view?: "home" | "account" } = {}) {
             id: newTxId,
             accountId: "ACC-US-001",
             accountMasked: wireRoutingOrIban ? `••••${wireRoutingOrIban.slice(-4)}` : "••••4819",
-            customerId: "CUST-109283",
-            customerName: customerUser || "Eleanor Vance",
+            customerId: activeCustomer?.id || "CUST-109283",
+            customerName: customerUser || "Valued Customer",
+            email: customerLoginEmail || activeCustomer?.email || "",
             type: transferType === "wire" ? ("Wire Transfer" as const) : ("Domestic Transfer" as const),
             transferType: newTx.transferType,
             recipientName: transferRecipient,
@@ -1577,7 +1664,6 @@ export function Index({ view = "home" }: { view?: "home" | "account" } = {}) {
       setTransferPinInput("");
 
       // Trigger live Email and SMS alerts for transfer
-      const activeCustomer = adminUsers.find((u) => u.name.toLowerCase() === (customerUser || "").toLowerCase());
       const customerEmail = activeCustomer?.email || (customerUser ? `${customerUser.toLowerCase().replace(/\s+/g, ".")}@westsidebank.online` : "customer@westsidebank.online");
       const customerPhone = activeCustomer?.phone || "+1 (555) 019-2834";
 
@@ -4128,7 +4214,18 @@ export function Index({ view = "home" }: { view?: "home" | "account" } = {}) {
                   </div>
 
                   <div className="mt-2 divide-y divide-slate-100">
-                    {transactions.slice(0, 5).map((tx) => (
+                    {transactions.length === 0 ? (
+                      <div className="py-8 text-center">
+                        <div className="mx-auto flex h-10 w-10 items-center justify-center rounded-full bg-slate-100 text-slate-400 mb-2">
+                          <History className="h-5 w-5" />
+                        </div>
+                        <p className="text-xs font-bold text-slate-700">No Transaction History Yet</p>
+                        <p className="text-[0.7rem] text-slate-400 mt-0.5 max-w-xs mx-auto">
+                          New account ledger initialized. Once you make transfers or receive funds, your transaction history will appear here.
+                        </p>
+                      </div>
+                    ) : (
+                      transactions.slice(0, 5).map((tx) => (
                       <div
                         key={tx.id}
                         onClick={() => setSelectedCustomerTx(tx)}
@@ -4159,7 +4256,7 @@ export function Index({ view = "home" }: { view?: "home" | "account" } = {}) {
                           </span>
                         </div>
                       </div>
-                    ))}
+                    )))}
                   </div>
                 </div>
               </div>
