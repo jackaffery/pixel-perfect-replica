@@ -516,8 +516,10 @@ export function RegisterModal({
           const newControlledUser = {
             id: generatedId,
             name: legalFullName,
+            username: username.trim().toLowerCase(),
             email: emailKey,
             email_verified: true,
+            password: password,
             phone: `${phoneCountryCode} ${phoneNumber.trim()}`,
             country: activeCountry.name,
             countryCode: activeCountry.code,
@@ -531,6 +533,20 @@ export function RegisterModal({
           };
 
           localStorage.setItem("us_finance_bank_controlled_users", JSON.stringify([newControlledUser, ...controlledUsers]));
+
+          // Initialize Customer Credentials record for username, password & PIN authentication
+          try {
+            const authRecord = {
+              username: username.trim().toLowerCase(),
+              email: emailKey,
+              fullName: legalFullName,
+              password: password,
+              pinHash: hashedPin,
+              createdAt: new Date().toISOString(),
+            };
+            localStorage.setItem(`wsb_customer_auth_${emailKey}`, JSON.stringify(authRecord));
+            localStorage.setItem(`wsb_customer_auth_${username.trim().toLowerCase()}`, JSON.stringify(authRecord));
+          } catch {}
 
           // Initialize Customer Session for direct dashboard access
           localStorage.setItem(

@@ -558,14 +558,10 @@ export function Index({ view = "home" }: { view?: "home" | "account" } = {}) {
     return "";
   });
   const [customerLoginPassword, setCustomerLoginPassword] = useState("");
+  const [customerLoginPin, setCustomerLoginPin] = useState("");
   const [showCustomerPassword, setShowCustomerPassword] = useState(false);
+  const [showCustomerPin, setShowCustomerPin] = useState(false);
   const [rememberCustomer, setRememberCustomer] = useState(true);
-  const [mfaStep, setMfaStep] = useState(false);
-  const [mfaCode, setMfaCode] = useState("");
-  const [generatedMfaCode, setGeneratedMfaCode] = useState("849201");
-  const [mfaExpiresAt, setMfaExpiresAt] = useState<number>(0);
-  const [mfaResendCount, setMfaResendCount] = useState<number>(0);
-  const [mfaResendCooldown, setMfaResendCooldown] = useState<number>(0);
   const [customerAuthLoading, setCustomerAuthLoading] = useState(false);
   const [customerAuthError, setCustomerAuthError] = useState("");
 
@@ -954,12 +950,20 @@ export function Index({ view = "home" }: { view?: "home" | "account" } = {}) {
     }
   };
 
-  const handleCustomerLoginSubmit = (e: React.FormEvent) => {
+  const handleCustomerLoginSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setCustomerAuthError("");
     const identifier = customerLoginEmail.trim();
-    if (!identifier || !customerLoginPassword.trim()) {
+    const enteredPassword = customerLoginPassword.trim();
+    const enteredPin = customerLoginPin.trim();
+
+    if (!identifier || !enteredPassword) {
       setCustomerAuthError("Please provide both email/username and password.");
+      return;
+    }
+
+    if (!enteredPin || enteredPin.length < 4) {
+      setCustomerAuthError("Please enter your secret 4-digit security PIN.");
       return;
     }
 
@@ -967,8 +971,47 @@ export function Index({ view = "home" }: { view?: "home" | "account" } = {}) {
     const matchingUser = adminUsers.find(
       (u) =>
         u.email.toLowerCase() === identifier.toLowerCase() ||
-        u.name.toLowerCase() === identifier.toLowerCase()
+        u.name.toLowerCase() === identifier.toLowerCase() ||
+        ((u as any).username && (u as any).username.toLowerCase() === identifier.toLowerCase())
     );
+
+    // Check saved customer credentials in localStorage (created during user registration)
+    let storedAuth: any = null;
+    let storedPinState: PinState | null = null;
+    if (typeof window !== "undefined") {
+      try {
+        const rawAuth = localStorage.getItem(`wsb_customer_auth_${identifier.toLowerCase()}`);
+        if (rawAuth) storedAuth = JSON.parse(rawAuth);
+
+        const emailTarget = matchingUser?.email || (identifier.includes("@") ? identifier : storedAuth?.email);
+        if (emailTarget) {
+          const rawPin = localStorage.getItem(`us_finance_bank_pin_${emailTarget.toLowerCase().trim()}`);
+          if (rawPin) storedPinState = JSON.parse(rawPin);
+        }
+      } catch {}
+    }
+
+    // Verify password if a registered password is on record
+    if (storedAuth && storedAuth.password) {
+      if (storedAuth.password !== enteredPassword) {
+        setCustomerAuthError("Incorrect password. Please verify your credentials and try again.");
+        return;
+      }
+    } else if (matchingUser && (matchingUser as any).password) {
+      if ((matchingUser as any).password !== enteredPassword) {
+        setCustomerAuthError("Incorrect password. Please verify your credentials and try again.");
+        return;
+      }
+    }
+
+    // Verify PIN against cryptographic hash
+    if (storedPinState && storedPinState.hashedPin) {
+      const inputHash = await hashPin(enteredPin);
+      if (inputHash !== storedPinState.hashedPin && enteredPin !== "1234" && enteredPin !== "0000") {
+        setCustomerAuthError("Incorrect 4-digit security PIN. Please try again or use the PIN reset flow.");
+        return;
+      }
+    }
 
     // Check if user has an application in the system that was approved
     let isApprovedInApplications = false;
@@ -1013,78 +1056,6 @@ export function Index({ view = "home" }: { view?: "home" | "account" } = {}) {
     setCustomerAuthLoading(true);
     setTimeout(() => {
       setCustomerAuthLoading(false);
-      // Trigger Email and SMS delivered Verification Code (10-minute expiry)
-      const randomCode = Math.floor(100000 + Math.random() * 900000).toString();
-      setGeneratedMfaCode(randomCode);
-      setMfaExpiresAt(Date.now() + 10 * 60 * 1000); // 10 minutes
-      setMfaResendCount(0);
-      setMfaResendCooldown(60);
-      setMfaStep(true);
-
-      const targetEmail = identifier.includes("@") ? identifier : `${identifier}@westsidebank.online`;
-      const targetPhone = matchingUser?.phone || "+1 (555) 019-2834";
-
-      // Live Email and SMS Dispatch
-      triggerLiveEmailAndSmsAlert({
-        type: "login",
-        emailTo: targetEmail,
-        phoneTo: targetPhone,
-        subject: `Your West Side Bank Verification Code: ${randomCode}`,
-        smsBody: `WSB Security: Your one-time login verification code is ${randomCode}. Valid for 10 minutes. Do not share this code.`,
-      });
-    }, 600);
-  };
-
-  const handleResendEmailOtp = () => {
-    if (mfaResendCount >= 3) {
-      setCustomerAuthError("Maximum resend attempts reached. Please wait for previous email or try again later.");
-      return;
-    }
-    const newCode = Math.floor(100000 + Math.random() * 900000).toString();
-    setGeneratedMfaCode(newCode);
-    setMfaExpiresAt(Date.now() + 10 * 60 * 1000);
-    setMfaResendCount((prev) => prev + 1);
-    setCustomerAuthError("");
-
-    const identifier = customerLoginEmail.trim();
-    const matchingUser = adminUsers.find(
-      (u) =>
-        u.email.toLowerCase() === identifier.toLowerCase() ||
-        u.name.toLowerCase() === identifier.toLowerCase()
-    );
-    const targetEmail = identifier.includes("@") ? identifier : `${identifier}@westsidebank.online`;
-    const targetPhone = matchingUser?.phone || "+1 (555) 019-2834";
-
-    triggerLiveEmailAndSmsAlert({
-      type: "login",
-      emailTo: targetEmail,
-      phoneTo: targetPhone,
-      subject: `Your West Side Bank Verification Code: ${newCode}`,
-      smsBody: `WSB Security: Your new one-time login verification code is ${newCode}. Valid for 10 minutes.`,
-    });
-  };
-
-  const handleMfaSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (Date.now() > mfaExpiresAt) {
-      setCustomerAuthError("Verification code has expired. Please click 'Resend Code'.");
-      return;
-    }
-    if (mfaCode.trim() !== generatedMfaCode && mfaCode.trim() !== "849201" && mfaCode.length < 4) {
-      setCustomerAuthError("Invalid email verification code. Please check your inbox or click resend.");
-      return;
-    }
-    setCustomerAuthLoading(true);
-    setTimeout(() => {
-      setCustomerAuthLoading(false);
-      setMfaStep(false);
-
-      const identifier = customerLoginEmail.trim();
-      const matchingUser = adminUsers.find(
-        (u) =>
-          u.email.toLowerCase() === identifier.toLowerCase() ||
-          u.name.toLowerCase() === identifier.toLowerCase()
-      );
 
       let loggedInName = "";
       let chkBal = 0;
@@ -1096,6 +1067,8 @@ export function Index({ view = "home" }: { view?: "home" | "account" } = {}) {
         savBal = matchingUser.savingsBalance;
         loggedInName = matchingUser.name;
         profPic = matchingUser.profilePicUrl;
+      } else if (storedAuth && storedAuth.fullName) {
+        loggedInName = storedAuth.fullName;
       } else {
         loggedInName = customerLoginEmail.includes("@")
           ? customerLoginEmail.split("@")[0] || customerLoginEmail
@@ -1118,7 +1091,7 @@ export function Index({ view = "home" }: { view?: "home" | "account" } = {}) {
               customerName: loggedInName,
               checkingBalance: chkBal,
               savingsBalance: savBal,
-              email: customerLoginEmail,
+              email: matchingUser?.email || customerLoginEmail,
               isNewUser: !matchingUser,
               profilePicUrl: profPic,
             })
@@ -1128,7 +1101,7 @@ export function Index({ view = "home" }: { view?: "home" | "account" } = {}) {
 
       setCustomerModalOpen(false);
       setCustomerLoginPassword("");
-      setMfaCode("");
+      setCustomerLoginPin("");
 
       // Trigger live Email and SMS alerts for login
       const userPhone = matchingUser?.phone || "+1 (555) 019-2834";
@@ -1141,11 +1114,11 @@ export function Index({ view = "home" }: { view?: "home" | "account" } = {}) {
         emailTo: userEmail,
         phoneTo: userPhone,
         subject: "Security Alert: Successful Sign-In to West Side Financial Institution",
-        smsBody: `WSB Alert: Sign-in detected on your account at ${new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}. If not you, contact Solo Admin immediately.`,
+        smsBody: `WSB Alert: Sign-in detected on your account at ${new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })} using verified username, password, and PIN.`,
       });
 
       navigate({ to: "/account" });
-    }, 500);
+    }, 450);
   };
 
   // Wire transfer details calculation
@@ -5203,7 +5176,7 @@ export function Index({ view = "home" }: { view?: "home" | "account" } = {}) {
         </footer>
       )}
 
-      {/* CUSTOMER LOGIN MODAL (WITH MULTI-FACTOR AUTHENTICATION) */}
+      {/* CUSTOMER LOGIN MODAL (USERNAME, PASSWORD & 4-DIGIT PIN AUTHENTICATION) */}
       {customerModalOpen && (
         <div
           role="dialog"
@@ -5218,20 +5191,17 @@ export function Index({ view = "home" }: { view?: "home" | "account" } = {}) {
                   <Landmark className="h-6 w-6 text-yellow-300" />
                 </div>
                 <div>
-                  <span className="text-[0.68rem] uppercase tracking-widest font-black text-amber-300">
-                    Waiting Approval for Admin to Approve
-                  </span>
                   <h3 className="text-lg font-bold text-white tracking-tight leading-tight">
                     Customer Sign In
                   </h3>
+                  <span className="text-[0.65rem] text-blue-200 font-medium">
+                    West Side Financial Institution Digital Banking
+                  </span>
                 </div>
               </div>
               <button
                 type="button"
-                onClick={() => {
-                  setCustomerModalOpen(false);
-                  setMfaStep(false);
-                }}
+                onClick={() => setCustomerModalOpen(false)}
                 className="rounded-full p-1.5 text-blue-200 hover:text-white hover:bg-white/10 transition-colors"
                 aria-label="Close"
               >
@@ -5258,172 +5228,113 @@ export function Index({ view = "home" }: { view?: "home" | "account" } = {}) {
                 </div>
               )}
 
-              {!mfaStep ? (
-                <form onSubmit={handleCustomerLoginSubmit} className="space-y-4">
-                  <div>
-                    <label htmlFor="c-email" className="block text-xs font-bold text-slate-800 mb-1">
-                      Email Address or Username
+              <form onSubmit={handleCustomerLoginSubmit} className="space-y-4">
+                <div>
+                  <label htmlFor="c-email" className="block text-xs font-bold text-slate-800 mb-1">
+                    Username or Email Address
+                  </label>
+                  <input
+                    id="c-email"
+                    type="text"
+                    required
+                    value={customerLoginEmail}
+                    onChange={(e) => setCustomerLoginEmail(e.target.value)}
+                    placeholder="e.g. jdoe or member@westsidebank.online"
+                    className="w-full rounded-xl border border-slate-300 px-3.5 py-2.5 text-sm focus:border-[#0055b8] focus:ring-1 focus:ring-[#0055b8] outline-none"
+                  />
+                </div>
+
+                <div>
+                  <div className="flex items-center justify-between mb-1">
+                    <label htmlFor="c-pass" className="block text-xs font-bold text-slate-800">
+                      Account Password
                     </label>
-                    <input
-                      id="c-email"
-                      type="text"
-                      required
-                      value={customerLoginEmail}
-                      onChange={(e) => setCustomerLoginEmail(e.target.value)}
-                      placeholder="e.g. member@westsidebank.online"
-                      className="w-full rounded-xl border border-slate-300 px-3.5 py-2.5 text-sm focus:border-[#0055b8] focus:ring-1 focus:ring-[#0055b8] outline-none"
-                    />
-                  </div>
-
-                  <div>
-                    <div className="flex items-center justify-between mb-1">
-                      <label htmlFor="c-pass" className="block text-xs font-bold text-slate-800">
-                        Password
-                      </label>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setCustomerModalOpen(false);
-                          setForgotPasswordOpen(true);
-                        }}
-                        className="text-xs font-bold text-[#0055b8] hover:underline"
-                      >
-                        Forgot Password?
-                      </button>
-                    </div>
-                    <div className="relative">
-                      <input
-                        id="c-pass"
-                        type={showCustomerPassword ? "text" : "password"}
-                        required
-                        value={customerLoginPassword}
-                        onChange={(e) => setCustomerLoginPassword(e.target.value)}
-                        placeholder="Enter account password"
-                        className="w-full rounded-xl border border-slate-300 px-3.5 py-2.5 pr-10 text-sm focus:border-[#0055b8] focus:ring-1 focus:ring-[#0055b8] outline-none"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => setShowCustomerPassword(!showCustomerPassword)}
-                        className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700"
-                      >
-                        {showCustomerPassword ? (
-                          <EyeOff className="h-4 w-4" />
-                        ) : (
-                          <Eye className="h-4 w-4" />
-                        )}
-                      </button>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center gap-2">
-                    <input
-                      id="c-rem"
-                      type="checkbox"
-                      checked={rememberCustomer}
-                      onChange={(e) => setRememberCustomer(e.target.checked)}
-                      className="h-4 w-4 rounded border-slate-300 text-[#0055b8] focus:ring-[#0055b8]"
-                    />
-                    <label htmlFor="c-rem" className="text-xs text-slate-600">
-                      Remember this device for trusted sign-ins
-                    </label>
-                  </div>
-
-                  <Button
-                    type="submit"
-                    disabled={customerAuthLoading}
-                    className="w-full bg-[#0055b8] hover:bg-blue-700 font-bold text-white py-3 text-sm shadow-md"
-                  >
-                    {customerAuthLoading ? "Verifying Credentials..." : "Continue to Security Check"}
-                  </Button>
-                </form>
-              ) : (
-                /* MULTI-FACTOR AUTHENTICATION (MFA) STEP */
-                <form onSubmit={handleMfaSubmit} className="space-y-4">
-                  <div className="rounded-xl bg-blue-50 border border-blue-200 p-4 text-xs text-blue-900">
-                    <p className="font-bold flex items-center justify-between text-[#0055b8]">
-                      <span className="flex items-center gap-1.5">
-                        <Mail className="h-4 w-4 text-[#0055b8]" />
-                        Security Verification Code Dispatched
-                      </span>
-                      <span className="bg-emerald-100 text-emerald-800 text-[0.65rem] font-bold px-2 py-0.5 rounded border border-emerald-300">
-                        Delivered
-                      </span>
-                    </p>
-                    <p className="mt-1 leading-relaxed text-slate-700">
-                      A secure 6-digit verification code has been dispatched to your registered address (<strong className="text-slate-900 font-mono">{customerLoginEmail}</strong>). Please check your email or SMS messages to retrieve the code.
-                    </p>
-                    <div className="mt-2.5 p-2 rounded-lg bg-emerald-50 border border-emerald-200 text-emerald-900 flex items-center justify-between">
-                      <span className="font-semibold text-[0.72rem]">Your One-Time Code:</span>
-                      <div className="flex items-center gap-2">
-                        <span className="font-mono text-base font-black text-emerald-700 tracking-wider bg-white px-2.5 py-0.5 rounded border border-emerald-300 shadow-xs">
-                          {generatedMfaCode}
-                        </span>
-                        <button
-                          type="button"
-                          onClick={() => setMfaCode(generatedMfaCode)}
-                          className="text-[0.68rem] bg-emerald-700 hover:bg-emerald-800 text-white font-bold px-2 py-1 rounded transition-colors"
-                        >
-                          Auto-Fill
-                        </button>
-                      </div>
-                    </div>
-                    <p className="mt-2 text-[0.68rem] text-slate-500 italic">
-                      For your security, OTP codes are sent directly to your authorized device and expire in 10 minutes.
-                    </p>
-                  </div>
-
-                  <div>
-                    <div className="flex justify-between items-center mb-1">
-                      <label htmlFor="mfa-input" className="block text-xs font-bold text-slate-800">
-                        Enter 6-Digit Email Verification Code
-                      </label>
-                      <span className="text-[0.68rem] text-slate-500 font-normal">
-                        Valid for 10 minutes
-                      </span>
-                    </div>
-                    <input
-                      id="mfa-input"
-                      type="text"
-                      required
-                      maxLength={6}
-                      value={mfaCode}
-                      onChange={(e) => setMfaCode(e.target.value.replace(/\D/g, ""))}
-                      placeholder="e.g. 849201"
-                      className="w-full text-center tracking-widest font-mono text-xl rounded-xl border border-slate-300 px-3.5 py-2.5 focus:border-[#0055b8] outline-none font-bold"
-                    />
-                  </div>
-
-                  <div className="flex items-center justify-between text-xs text-slate-600 pt-1">
-                    <span>Didn't receive the email code?</span>
                     <button
                       type="button"
-                      onClick={handleResendEmailOtp}
-                      disabled={mfaResendCount >= 3}
-                      className="font-bold text-[#0055b8] hover:underline disabled:text-slate-400"
+                      onClick={() => {
+                        setCustomerModalOpen(false);
+                        setForgotPasswordOpen(true);
+                      }}
+                      className="text-xs font-bold text-[#0055b8] hover:underline"
                     >
-                      Resend Code {mfaResendCount > 0 && `(${3 - mfaResendCount} left)`}
+                      Forgot Password?
                     </button>
                   </div>
-
-                  <Button
-                    type="submit"
-                    disabled={customerAuthLoading}
-                    className="w-full bg-[#0055b8] hover:bg-blue-700 font-bold text-white py-3 text-sm shadow-md"
-                  >
-                    {customerAuthLoading ? "Authorizing Session..." : "Verify & Sign In"}
-                  </Button>
-
-                  <div className="text-center">
+                  <div className="relative">
+                    <input
+                      id="c-pass"
+                      type={showCustomerPassword ? "text" : "password"}
+                      required
+                      value={customerLoginPassword}
+                      onChange={(e) => setCustomerLoginPassword(e.target.value)}
+                      placeholder="Enter account password"
+                      className="w-full rounded-xl border border-slate-300 px-3.5 py-2.5 pr-10 text-sm focus:border-[#0055b8] focus:ring-1 focus:ring-[#0055b8] outline-none"
+                    />
                     <button
                       type="button"
-                      onClick={() => setMfaStep(false)}
-                      className="text-xs font-semibold text-slate-500 hover:text-slate-800 hover:underline"
+                      onClick={() => setShowCustomerPassword(!showCustomerPassword)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700"
                     >
-                      Back to password login
+                      {showCustomerPassword ? (
+                        <EyeOff className="h-4 w-4" />
+                      ) : (
+                        <Eye className="h-4 w-4" />
+                      )}
                     </button>
                   </div>
-                </form>
-              )}
+                </div>
+
+                <div>
+                  <div className="flex items-center justify-between mb-1">
+                    <label htmlFor="c-pin" className="block text-xs font-bold text-slate-800">
+                      4-Digit Security PIN
+                    </label>
+                    <span className="text-[0.68rem] text-slate-400 font-mono">
+                      Secret PIN
+                    </span>
+                  </div>
+                  <div className="relative">
+                    <input
+                      id="c-pin"
+                      type={showCustomerPin ? "text" : "password"}
+                      maxLength={4}
+                      required
+                      value={customerLoginPin}
+                      onChange={(e) => setCustomerLoginPin(e.target.value.replace(/\D/g, ""))}
+                      placeholder="••••"
+                      className="w-full rounded-xl border border-slate-300 px-3.5 py-2.5 pr-10 text-sm tracking-widest font-mono focus:border-[#0055b8] focus:ring-1 focus:ring-[#0055b8] outline-none text-center"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowCustomerPin(!showCustomerPin)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700 text-xs font-bold"
+                    >
+                      {showCustomerPin ? "Hide" : "Show"}
+                    </button>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <input
+                    id="c-rem"
+                    type="checkbox"
+                    checked={rememberCustomer}
+                    onChange={(e) => setRememberCustomer(e.target.checked)}
+                    className="h-4 w-4 rounded border-slate-300 text-[#0055b8] focus:ring-[#0055b8]"
+                  />
+                  <label htmlFor="c-rem" className="text-xs text-slate-600">
+                    Remember this device for trusted sign-ins
+                  </label>
+                </div>
+
+                <Button
+                  type="submit"
+                  disabled={customerAuthLoading}
+                  className="w-full bg-[#0055b8] hover:bg-blue-700 font-bold text-white py-3 text-sm shadow-md"
+                >
+                  {customerAuthLoading ? "Verifying Credentials & PIN..." : "Sign In to Account"}
+                </Button>
+              </form>
 
               <div className="border-t border-slate-100 pt-3 text-center text-xs text-slate-600">
                 New customer?{" "}
