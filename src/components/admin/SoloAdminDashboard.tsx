@@ -5754,7 +5754,18 @@ export function SoloAdminDashboard({
                               </td>
                               <td className="px-5 py-4">
                                 <div className="font-bold text-slate-900 text-sm">{app.fullName}</div>
-                                <div className="text-slate-500 text-[0.72rem]">{app.email}</div>
+                                <div className="text-slate-500 text-[0.72rem] flex items-center gap-1.5">
+                                  <span>{app.email}</span>
+                                  {(app as any).email_verified ? (
+                                    <span className="text-[0.62rem] font-bold text-emerald-700 bg-emerald-50 px-1.5 py-0.2 rounded border border-emerald-200">
+                                      Email Verified ✓
+                                    </span>
+                                  ) : (
+                                    <span className="text-[0.62rem] font-bold text-amber-700 bg-amber-50 px-1.5 py-0.2 rounded border border-amber-200">
+                                      Email Verified
+                                    </span>
+                                  )}
+                                </div>
                                 <div className="text-slate-400 font-mono text-[0.68rem]">{app.phone}</div>
                               </td>
                               <td className="px-5 py-4">

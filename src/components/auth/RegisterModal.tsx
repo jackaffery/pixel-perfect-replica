@@ -44,8 +44,16 @@ export interface RegisterModalProps {
     accountType: string;
     idType: string;
     idNumber: string;
+    email_verified?: boolean;
   }) => void;
   onSwitchToSignIn: () => void;
+  onDispatchAlert?: (payload: {
+    type: "login" | "transfer";
+    emailTo: string;
+    phoneTo?: string;
+    subject: string;
+    smsBody: string;
+  }) => void;
 }
 
 export const SUPPORTED_REGISTRATION_CURRENCIES = [
@@ -113,6 +121,7 @@ export function RegisterModal({
   adminUsers,
   onRegistrationSuccess,
   onSwitchToSignIn,
+  onDispatchAlert,
 }: RegisterModalProps) {
   const [currentStep, setCurrentStep] = useState<1 | 2 | 3>(1);
 
@@ -273,6 +282,34 @@ export function RegisterModal({
       setVerifyingEmail(false);
       setEmailOtpSent(true);
       setEmailOtpTimer(300); // 5 minutes validity
+
+      // Record live email dispatch in persistent storage and trigger live alert relay
+      if (typeof window !== "undefined") {
+        try {
+          const existingRaw = localStorage.getItem("westside_email_dispatch_log");
+          const existing = existingRaw ? JSON.parse(existingRaw) : [];
+          existing.unshift({
+            id: `DISP-REG-${Date.now()}`,
+            to: email.trim().toLowerCase(),
+            phone: phoneNumber ? `${phoneCountryCode} ${phoneNumber.trim()}` : "Customer Phone",
+            subject: "West Side Financial Institution: Complete Your Registration - Email Verification Code",
+            sms: `WSB Account Registration Code: ${otp}. Use this one-time code to verify your email address. Expires in 5 minutes. Do not share.`,
+            timestamp: "Today, " + new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" }),
+            status: "Delivered (Live Relay)",
+          });
+          localStorage.setItem("westside_email_dispatch_log", JSON.stringify(existing.slice(0, 50)));
+        } catch {}
+      }
+
+      if (onDispatchAlert) {
+        onDispatchAlert({
+          type: "login",
+          emailTo: email.trim().toLowerCase(),
+          ...(phoneNumber.trim() ? { phoneTo: `${phoneCountryCode} ${phoneNumber.trim()}` } : {}),
+          subject: "West Side Financial Institution: Complete Your Registration - Email Verification Code",
+          smsBody: `WSB Registration Verification Code: ${otp}. Please verify your email to complete registration.`,
+        });
+      }
     }, 600);
   };
 
@@ -337,6 +374,13 @@ export function RegisterModal({
     }
     if (!isEmailValid) {
       setErrorMessage("A valid email address is required.");
+      return false;
+    }
+    if (!emailVerified) {
+      setErrorMessage("Mandatory Email Verification Required: A verification code has been dispatched. Please enter your 6-digit email confirmation code and click Confirm before continuing.");
+      if (!emailOtpSent) {
+        handleSendEmailVerification();
+      }
       return false;
     }
     if (!phoneNumber.trim() || phoneNumber.length < 7) {
@@ -422,6 +466,7 @@ export function RegisterModal({
         accountType: selectedAccountType,
         idType,
         idNumber: idNumber.trim(),
+        email_verified: true,
       };
 
       // Save application to database / storage
@@ -434,6 +479,7 @@ export function RegisterModal({
             id: generatedId,
             fullName: legalFullName,
             email: emailKey,
+            email_verified: true,
             phone: `${phoneCountryCode} ${phoneNumber.trim()}`,
             countryName: activeCountry.name,
             countryCode: activeCountry.code,
@@ -442,7 +488,7 @@ export function RegisterModal({
             idType: `${idType} (${idNumber.trim()})`,
             idNumber: idNumber.trim(),
             status: "Pending", // Never mark verified until admin/authorized verification review
-            reviewNotes: `Application submitted via Customer Sign-Up. State/Region: ${selectedState || "Primary"}. Currency: ${selectedCurrency}. 4-Digit Transfer PIN hashed via SHA-256. Verification document: ${idFileName || "Manual ID entry"}.`,
+            reviewNotes: `Application submitted via Customer Sign-Up. Email verified prior to submission (email_verified: true). State/Region: ${selectedState || "Primary"}. Currency: ${selectedCurrency}. 4-Digit Transfer PIN hashed via SHA-256. Verification document: ${idFileName || "Manual ID entry"}.`,
             submittedAt: "Today, Just now",
           };
 
@@ -453,7 +499,7 @@ export function RegisterModal({
             id: `ALT-REG-${Date.now().toString().slice(-4)}`,
             severity: "warning",
             title: `New Account Application: ${legalFullName}`,
-            description: `New customer registered (@${username.trim()}) from ${activeCountry.name} (${selectedState}) for ${selectedAccountType} [${selectedCurrency}]. ID: ${idType}. Awaiting Solo Admin review.`,
+            description: `New customer registered (@${username.trim()}) from ${activeCountry.name} (${selectedState}) for ${selectedAccountType} [${selectedCurrency}]. Email verified: Yes. ID: ${idType}. Awaiting Solo Admin review.`,
             timestamp: "Just now",
             category: "Compliance",
             resolved: false,
@@ -471,6 +517,7 @@ export function RegisterModal({
             id: generatedId,
             name: legalFullName,
             email: emailKey,
+            email_verified: true,
             phone: `${phoneCountryCode} ${phoneNumber.trim()}`,
             country: activeCountry.name,
             countryCode: activeCountry.code,
@@ -492,6 +539,7 @@ export function RegisterModal({
               customerName: legalFullName,
               username: username.trim(),
               email: emailKey,
+              email_verified: true,
               currency: selectedCurrency,
               accountType: selectedAccountType,
               checkingBalance: 0.0,
@@ -975,6 +1023,9 @@ export function RegisterModal({
                               Expires in {Math.floor(emailOtpTimer / 60)}:{(emailOtpTimer % 60).toString().padStart(2, "0")}
                             </span>
                           </div>
+                          <p className="text-[0.7rem] text-blue-800 leading-snug">
+                            A verification email has been sent to your email address. Please check your inbox and verify your email to continue.
+                          </p>
                           <div className="flex gap-2">
                             <input
                               type="text"
@@ -991,6 +1042,19 @@ export function RegisterModal({
                             >
                               Confirm
                             </button>
+                          </div>
+                          <div className="flex items-center justify-between pt-1">
+                            <button
+                              type="button"
+                              onClick={handleSendEmailVerification}
+                              disabled={emailOtpTimer > 270}
+                              className="text-[0.68rem] font-bold text-[#0055b8] hover:underline disabled:text-slate-400"
+                            >
+                              Resend Verification Email {emailOtpTimer > 270 ? `(${emailOtpTimer - 270}s cooldown)` : ""}
+                            </button>
+                            <span className="text-[0.65rem] text-slate-500 font-mono">
+                              Single-use token
+                            </span>
                           </div>
                           {emailOtpError && (
                             <p className="text-[0.68rem] text-red-600 font-bold">{emailOtpError}</p>

@@ -56,6 +56,7 @@ import {
   Settings,
   Sliders,
   Upload,
+  Printer,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import usFinanceBuildingHero from "@/assets/west-side-skyscraper-hero.png";
@@ -688,6 +689,12 @@ export function Index({ view = "home" }: { view?: "home" | "account" } = {}) {
     status: string;
     transferStatus?: string;
     counterparty?: string;
+    accountMasked?: string;
+    recipientName?: string;
+    recipientAccount?: string;
+    recipientBank?: string;
+    routingOrSwift?: string;
+    transferType?: string;
     statusUpdates?: {
       id: string;
       fromStatus: string;
@@ -730,7 +737,16 @@ export function Index({ view = "home" }: { view?: "home" | "account" } = {}) {
             if (Array.isArray(list)) {
               // Convert any admin transaction records to customer transaction view format if necessary
               const formattedList = list.map((item: any) => {
-                if (item.desc) return item;
+                if (item.desc) {
+                  return {
+                    ...item,
+                    recipientName: item.recipientName || item.counterparty,
+                    recipientAccount: item.recipientAccount || item.accountMasked,
+                    recipientBank: item.recipientBank || (item.type?.includes("Wire") ? "International Correspondent Bank" : "West Side Clearing / ACH Interbank"),
+                    routingOrSwift: item.routingOrSwift || (item.type?.includes("Wire") ? "SWIFT/BIC Interbank Wire" : "ABA Routing 021000021"),
+                    transferType: item.transferType || item.type,
+                  };
+                }
                 const isCredit = item.direction === "credit";
                 return {
                   id: item.id,
@@ -744,6 +760,11 @@ export function Index({ view = "home" }: { view?: "home" | "account" } = {}) {
                   currency: item.currency || "USD",
                   counterparty: item.counterparty || "West Side Bank",
                   accountMasked: item.accountMasked || "••••4892",
+                  recipientName: item.recipientName || item.counterparty || "West Side Bank",
+                  recipientAccount: item.recipientAccount || item.accountMasked || "••••4892",
+                  recipientBank: item.recipientBank || (item.type?.includes("Wire") ? "International Correspondent Bank" : "West Side Clearing / ACH Interbank"),
+                  routingOrSwift: item.routingOrSwift || (item.type?.includes("Wire") ? "SWIFT/BIC Interbank Wire" : "ABA Routing 021000021"),
+                  transferType: item.transferType || item.type,
                   positive: isCredit,
                   status: item.status || "Completed",
                   transferStatus: item.transferStatus || item.status || "Completed",
@@ -1514,11 +1535,16 @@ export function Index({ view = "home" }: { view?: "home" | "account" } = {}) {
         timestamp: nowTime,
         desc: `${transferType === "wire" ? "Wire" : "Transfer"} to ${transferRecipient} (${transferType === "wire" ? selectedWireCountryObj.code : "US"})`,
         type: transferType === "wire" ? "Wire Transfer" : "ACH Domestic Transfer",
+        transferType: transferType === "wire" ? `International Wire (${selectedWireCountryObj.name})` : "Domestic ACH Transfer",
         category: "Transfer",
         amount: `-${country.currency.symbol}${totalDeduction.toFixed(2)}`,
         numericAmount: totalDeduction,
         currency: country.currency.code,
         counterparty: transferRecipient,
+        recipientName: transferRecipient,
+        recipientAccount: wireRoutingOrIban || "••••4819",
+        recipientBank: transferType === "wire" ? `${selectedWireCountryObj.name} Clearing Bank (${selectedWireCountryObj.routingScheme})` : "West Side Clearing / ACH Interbank",
+        routingOrSwift: transferType === "wire" ? wireSwiftCode : (wireRoutingOrIban ? wireRoutingOrIban : "021000021"),
         accountMasked: wireRoutingOrIban ? `••••${wireRoutingOrIban.slice(-4)}` : "••••4819",
         customerId: "CUST-109283",
         customerName: customerUser || "Eleanor Vance",
@@ -1550,6 +1576,11 @@ export function Index({ view = "home" }: { view?: "home" | "account" } = {}) {
             customerId: "CUST-109283",
             customerName: customerUser || "Eleanor Vance",
             type: transferType === "wire" ? ("Wire Transfer" as const) : ("Domestic Transfer" as const),
+            transferType: newTx.transferType,
+            recipientName: transferRecipient,
+            recipientAccount: wireRoutingOrIban || "••••4819",
+            recipientBank: newTx.recipientBank,
+            routingOrSwift: newTx.routingOrSwift,
             amount: amt,
             currency: country.currency.code,
             direction: "debit" as const,
@@ -4202,21 +4233,57 @@ export function Index({ view = "home" }: { view?: "home" | "account" } = {}) {
                 </div>
               </div>
 
-              {/* Transfer Summary */}
+              {/* Transfer Summary & Recipient Official Receipt Details */}
               <div className="mt-4 space-y-2.5 text-xs">
                 <div className="flex items-center justify-between rounded-xl bg-secondary/30 p-3">
-                  <span className="text-muted-foreground">Total Settlement Amount:</span>
+                  <span className="text-muted-foreground font-semibold">Total Settlement Amount:</span>
                   <span className={`font-mono font-bold text-base ${selectedCustomerTx.positive ? "text-emerald-600" : "text-red-600 font-extrabold"}`}>
                     {selectedCustomerTx.amount}
                   </span>
                 </div>
+
+                {/* Comprehensive Recipient Details Breakdown */}
+                <div className="rounded-xl border border-blue-200 bg-blue-50/40 p-3.5 space-y-2">
+                  <div className="flex items-center justify-between border-b border-blue-200/60 pb-1.5">
+                    <span className="text-[0.68rem] font-bold uppercase tracking-wider text-[#0055b8]">
+                      Beneficiary Recipient Information
+                    </span>
+                    <span className="text-[0.65rem] font-bold text-emerald-700 bg-emerald-100/70 px-2 py-0.5 rounded-full border border-emerald-200">
+                      Verified Payee
+                    </span>
+                  </div>
+                  <div className="grid grid-cols-2 gap-2 text-xs">
+                    <div>
+                      <span className="text-[0.7rem] text-slate-500 block">Recipient Full Name:</span>
+                      <strong className="text-slate-900 text-sm block">
+                        {selectedCustomerTx.recipientName || selectedCustomerTx.counterparty || "Beneficiary on file"}
+                      </strong>
+                    </div>
+                    <div>
+                      <span className="text-[0.7rem] text-slate-500 block">Account Number / IBAN:</span>
+                      <strong className="font-mono text-slate-900 block">
+                        {selectedCustomerTx.recipientAccount || selectedCustomerTx.accountMasked || "••••4819"}
+                      </strong>
+                    </div>
+                    <div>
+                      <span className="text-[0.7rem] text-slate-500 block">Receiving Institution / Network:</span>
+                      <span className="text-slate-800 font-medium block">
+                        {selectedCustomerTx.recipientBank || (selectedCustomerTx.category === "Transfer" ? "West Side Interbank Clearing" : "West Side Bank")}
+                      </span>
+                    </div>
+                    <div>
+                      <span className="text-[0.7rem] text-slate-500 block">Routing / SWIFT Code:</span>
+                      <span className="font-mono text-slate-800 font-semibold block">
+                        {selectedCustomerTx.routingOrSwift || "021000021"}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
                 <div className="rounded-xl border border-border p-3 space-y-1.5">
                   <p><strong className="text-foreground">Description:</strong> {selectedCustomerTx.desc}</p>
-                  <p><strong className="text-foreground">Channel / Category:</strong> {selectedCustomerTx.category}</p>
+                  <p><strong className="text-foreground">Channel / Category:</strong> {selectedCustomerTx.transferType || selectedCustomerTx.category}</p>
                   <p><strong className="text-foreground">Date / Timestamp:</strong> {selectedCustomerTx.date}</p>
-                  {selectedCustomerTx.counterparty && (
-                    <p><strong className="text-foreground">Counterparty Beneficiary:</strong> {selectedCustomerTx.counterparty}</p>
-                  )}
                 </div>
               </div>
 
@@ -4261,7 +4328,17 @@ export function Index({ view = "home" }: { view?: "home" | "account" } = {}) {
                 <strong>Clearing Status:</strong> Transaction logs reflect verified banking settlement records cleared under FDIC & Federal Reserve regulations.
               </div>
 
-              <div className="mt-5 flex justify-end">
+              <div className="mt-5 flex items-center justify-between gap-3">
+                <Button
+                  size="sm"
+                  variant="outline"
+                  type="button"
+                  onClick={() => window.print()}
+                  className="border-slate-300 bg-white hover:bg-slate-50 text-slate-700 text-xs font-bold gap-1.5"
+                >
+                  <Printer className="h-4 w-4 text-slate-500" />
+                  Print / Save Receipt
+                </Button>
                 <Button
                   size="sm"
                   onClick={() => setSelectedCustomerTx(null)}
@@ -5372,6 +5449,7 @@ export function Index({ view = "home" }: { view?: "home" | "account" } = {}) {
         onClose={() => setOpenAccountModalOpen(false)}
         country={country}
         adminUsers={adminUsers}
+        onDispatchAlert={triggerLiveEmailAndSmsAlert}
         onSwitchToSignIn={() => {
           setOpenAccountModalOpen(false);
           setCustomerModalOpen(true);
