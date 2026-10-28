@@ -1,4 +1,5 @@
-import { useEffect, useReducer, useState } from "react";
+import { useEffect, useState } from "react";
+import type { SoloAdminDashboardProps } from "./SoloAdminDashboard";
 import { Activity, ArrowDownToLine, ArrowUpRight, Bell, Check, Download, Eye, FilePlus2, History, LogOut, Menu, Pencil, Plus, Search, ShieldCheck, Trash2, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
@@ -15,8 +16,8 @@ function download(content: string, filename: string) {
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return <label className="grid min-w-0 gap-1.5 text-sm font-medium">{label}{children}</label>;
 }
-export function DemoAdminWorkspace({ onSignOut }: { onSignOut: () => void; adminUsername?: string; onOpenCustomerDashboard?: unknown }) {
-  const [state, dispatch] = useReducer(demoReducer, undefined, initialDemoState);
+export function DemoAdminWorkspace({ onSignOut }: SoloAdminDashboardProps) {
+  const [state] = useState(initialDemoState);
   const [ready, setReady] = useState(false);
   const [section, setSection] = useState<Section>("Overview");
   const [search, setSearch] = useState("");
