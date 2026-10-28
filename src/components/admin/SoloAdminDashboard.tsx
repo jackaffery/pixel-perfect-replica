@@ -2098,22 +2098,28 @@ export function SoloAdminDashboard({
                 createdAt: new Date().toLocaleDateString(),
               });
             }
-        // Also synchronize customer session if customer is currently logged in or stored
-        const sessRaw = localStorage.getItem("us_finance_bank_customer_session");
-        if (sessRaw) {
-          try {
-            const sess = JSON.parse(sessRaw);
-            if (
-              sess.customerName?.toLowerCase() === app.fullName.toLowerCase() ||
-              sess.email?.toLowerCase() === app.email.toLowerCase() ||
-              sess.applicationId === app.id
-            ) {
-              sess.kycStatus = "Verified";
-              sess.status = "Approved";
-              localStorage.setItem("us_finance_bank_customer_session", JSON.stringify(sess));
-            }
-          } catch {}
-        }
+            localStorage.setItem("us_finance_bank_controlled_users", JSON.stringify(updatedCtrl));
+            window.dispatchEvent(new Event("storage"));
+          }
+
+          // Also synchronize customer session if customer is currently logged in or stored
+          const sessRaw = localStorage.getItem("us_finance_bank_customer_session");
+          if (sessRaw) {
+            try {
+              const sess = JSON.parse(sessRaw);
+              if (
+                sess.customerName?.toLowerCase() === app.fullName.toLowerCase() ||
+                sess.email?.toLowerCase() === app.email.toLowerCase() ||
+                sess.applicationId === app.id
+              ) {
+                sess.kycStatus = "Verified";
+                sess.status = "Approved";
+                localStorage.setItem("us_finance_bank_customer_session", JSON.stringify(sess));
+              }
+            } catch {}
+          }
+        } catch {}
+      }
     }
 
     appendAuditLog(
