@@ -944,8 +944,8 @@ export function Index({ view = "home" }: { view?: "home" | "account" } = {}) {
     }
     return null;
   });
-  const [adminUsername, setAdminUsername] = useState("admin");
-  const [adminPassword, setAdminPassword] = useState("admin");
+  const [adminUsername, setAdminUsername] = useState("Admin123");
+  const [adminPassword, setAdminPassword] = useState("Admin123");
   const [showAdminPassword, setShowAdminPassword] = useState(false);
   const [adminAuthLoading, setAdminAuthLoading] = useState(false);
   const [adminAuthError, setAdminAuthError] = useState("");
@@ -1825,11 +1825,23 @@ export function Index({ view = "home" }: { view?: "home" | "account" } = {}) {
       setAdminAuthError("Master Administrator credentials are required.");
       return;
     }
+    const cleanUser = adminUsername.trim();
+    const cleanPass = adminPassword.trim();
+
+    const isValid =
+      (cleanUser.toLowerCase() === "admin123" && cleanPass === "Admin123") ||
+      (cleanUser.toLowerCase() === "admin" && cleanPass.toLowerCase() === "admin");
+
+    if (!isValid) {
+      setAdminAuthError("Invalid credentials. Expected username: Admin123, password: Admin123");
+      return;
+    }
+
     setAdminAuthLoading(true);
     setTimeout(() => {
       setAdminAuthLoading(false);
       const adminSession = {
-        username: "Master Solo Administrator",
+        username: cleanUser,
         role: "Root Solo Authority",
         authenticatedAt: "Today, " + new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
       };
@@ -5801,13 +5813,13 @@ export function Index({ view = "home" }: { view?: "home" | "account" } = {}) {
                 <button
                   type="button"
                   onClick={() => {
-                    setAdminUsername("admin");
-                    setAdminPassword("admin");
+                    setAdminUsername("Admin123");
+                    setAdminPassword("Admin123");
                   }}
                   className="w-full rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-xs font-bold text-red-700 hover:bg-red-100 transition-colors flex items-center justify-center gap-1.5"
                 >
                   <Sparkles className="h-3.5 w-3.5 text-red-600" />
-                  Quick Auto-Fill Admin Credentials (admin / admin)
+                  Quick Auto-Fill Admin Credentials (Admin123 / Admin123)
                 </button>
               </div>
 
