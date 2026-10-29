@@ -28,6 +28,11 @@ import {
 import { Button } from "@/components/ui/button";
 import { hashPin, type PinState } from "@/lib/pin-security";
 import { SUPPORTED_COUNTRIES, type CountryConfig } from "@/lib/international-banking";
+import {
+  createVerificationToken,
+  sendVerificationEmail,
+  checkEmailRateLimit,
+} from "@/lib/email-verification-service";
 
 export interface RegisterModalProps {
   isOpen: boolean;
@@ -376,11 +381,13 @@ export function RegisterModal({
       setErrorMessage("A valid email address is required.");
       return false;
     }
-    if (!emailVerified) {
-      setErrorMessage("Mandatory Email Verification Required: A verification code has been dispatched. Please enter your 6-digit email confirmation code and click Confirm before continuing.");
-      if (!emailOtpSent) {
-        handleSendEmailVerification();
-      }
+    // Check if email already registered in existing accounts
+    const emailKey = email.toLowerCase().trim();
+    const isEmailTaken = adminUsers.some(
+      (u) => (u.email || "").toLowerCase().trim() === emailKey
+    );
+    if (isEmailTaken) {
+      setErrorMessage("This email address is already registered. Please sign in or use a different email.");
       return false;
     }
     if (!phoneNumber.trim() || phoneNumber.length < 7) {
@@ -455,7 +462,7 @@ export function RegisterModal({
         ? `${firstName.trim()} ${middleName.trim()} ${lastName.trim()}`
         : `${firstName.trim()} ${lastName.trim()}`;
 
-      // Complete customer registration record
+      // Complete customer registration record (Pending Email Verification)
       const customerRecord = {
         fullName: legalFullName,
         email: emailKey,
@@ -466,7 +473,7 @@ export function RegisterModal({
         accountType: selectedAccountType,
         idType,
         idNumber: idNumber.trim(),
-        email_verified: true,
+        email_verified: false,
       };
 
       // Save application to database / storage
@@ -479,7 +486,7 @@ export function RegisterModal({
             id: generatedId,
             fullName: legalFullName,
             email: emailKey,
-            email_verified: true,
+            email_verified: false,
             phone: `${phoneCountryCode} ${phoneNumber.trim()}`,
             countryName: activeCountry.name,
             countryCode: activeCountry.code,
@@ -488,7 +495,7 @@ export function RegisterModal({
             idType: `${idType} (${idNumber.trim()})`,
             idNumber: idNumber.trim(),
             status: "Pending", // Never mark verified until admin/authorized verification review
-            reviewNotes: `Application submitted via Customer Sign-Up. Email verified prior to submission (email_verified: true). State/Region: ${selectedState || "Primary"}. Currency: ${selectedCurrency}. 4-Digit Transfer PIN hashed via SHA-256. Verification document: ${idFileName || "Manual ID entry"}.`,
+            reviewNotes: `Application submitted via Customer Sign-Up. Status: Pending Email Verification (email_verified: false). State/Region: ${selectedState || "Primary"}. Currency: ${selectedCurrency}. 4-Digit Transfer PIN hashed via SHA-256. Verification document: ${idFileName || "Manual ID entry"}.`,
             submittedAt: "Today, Just now",
           };
 
@@ -499,7 +506,7 @@ export function RegisterModal({
             id: `ALT-REG-${Date.now().toString().slice(-4)}`,
             severity: "warning",
             title: `New Account Application: ${legalFullName}`,
-            description: `New customer registered (@${username.trim()}) from ${activeCountry.name} (${selectedState}) for ${selectedAccountType} [${selectedCurrency}]. Email verified: Yes. ID: ${idType}. Awaiting Solo Admin review.`,
+            description: `New customer registered (@${username.trim()}) from ${activeCountry.name} (${selectedState}) for ${selectedAccountType} [${selectedCurrency}]. Status: Pending Email Verification. ID: ${idType}. Awaiting Solo Admin review.`,
             timestamp: "Just now",
             category: "Compliance",
             resolved: false,
@@ -518,7 +525,7 @@ export function RegisterModal({
             name: legalFullName,
             username: username.trim().toLowerCase(),
             email: emailKey,
-            email_verified: true,
+            email_verified: false,
             password: password,
             phone: `${phoneCountryCode} ${phoneNumber.trim()}`,
             country: activeCountry.name,
@@ -542,47 +549,43 @@ export function RegisterModal({
               fullName: legalFullName,
               password: password,
               pinHash: hashedPin,
+              email_verified: false,
               createdAt: new Date().toISOString(),
             };
             localStorage.setItem(`wsb_customer_auth_${emailKey}`, JSON.stringify(authRecord));
             localStorage.setItem(`wsb_customer_auth_${username.trim().toLowerCase()}`, JSON.stringify(authRecord));
           } catch {}
 
-          // Initialize Customer Session for direct dashboard access
-          localStorage.setItem(
-            "us_finance_bank_customer_session",
-            JSON.stringify({
-              customerName: legalFullName,
-              username: username.trim(),
-              email: emailKey,
-              email_verified: true,
-              currency: selectedCurrency,
-              accountType: selectedAccountType,
-              checkingBalance: 0.0,
-              savingsBalance: 0.0,
-              isNewUser: true,
-              applicationId: generatedId,
-              kycStatus: "Pending Verification",
-            })
-          );
+          // Generate single-use secure verification token expiring in 30 minutes
+          const tokenRecord = createVerificationToken(emailKey, {
+            username: username.trim().toLowerCase(),
+            fullName: legalFullName,
+          });
 
-          // Dispatch automatic email link so customer can click/tap in email to directly enter account profile
-          const directProfileLink = typeof window !== "undefined"
-            ? `${window.location.origin}/?verify_email=${encodeURIComponent(emailKey)}&action=activate`
-            : `https://westsidebank.online/?verify_email=${encodeURIComponent(emailKey)}&action=activate`;
+          const origin = typeof window !== "undefined" && window.location.origin ? window.location.origin : "https://westsidebank.online";
+          const secureVerificationLink = `${origin}/?verify_token=${tokenRecord.token}&email=${encodeURIComponent(emailKey)}`;
 
+          // Send real email verification using transactional email service
+          await sendVerificationEmail({
+            to: emailKey,
+            verificationLink: secureVerificationLink,
+            fullName: legalFullName,
+          });
+
+          // Log delivery dispatch for staff compliance logs
           try {
             const dispatchesRaw = localStorage.getItem("westside_email_dispatch_log");
             const dispatchesList = dispatchesRaw ? JSON.parse(dispatchesRaw) : [];
             dispatchesList.unshift({
-              id: `DISP-ACT-${Date.now()}`,
+              id: `DISP-VERIFY-${Date.now()}`,
               to: emailKey,
               phone: `${phoneCountryCode} ${phoneNumber.trim()}`,
-              subject: "Welcome to West Side Financial Institution - Access Your New Account Profile",
-              sms: `WSB Notice: Account created for ${legalFullName}! Access profile link: ${directProfileLink}. Next sign-in requires username & password.`,
+              subject: "Verify Your Email Address – West Side Financial Institution",
+              sms: `WSB Notice: Verify your email address for West Side Financial Institution. Single-use link: ${secureVerificationLink}. Expires in 30 minutes.`,
               timestamp: "Today, " + new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
-              status: "Delivered (Live Relay)",
-              activationLink: directProfileLink,
+              status: "Delivered (Transactional Service)",
+              verificationLink: secureVerificationLink,
+              token: tokenRecord.token,
             });
             localStorage.setItem("westside_email_dispatch_log", JSON.stringify(dispatchesList.slice(0, 50)));
           } catch {}
@@ -592,8 +595,8 @@ export function RegisterModal({
               type: "login",
               emailTo: emailKey,
               phoneTo: `${phoneCountryCode} ${phoneNumber.trim()}`,
-              subject: "Welcome to West Side Financial Institution - Access Your New Account Profile",
-              smsBody: `WSB Account Created: Tap your secure link to access your profile immediately: ${directProfileLink}. For next sign-ins, use your username & password.`,
+              subject: "Verify Your Email Address – West Side Financial Institution",
+              smsBody: `WSB Account Created: Verify your email address to complete registration: ${secureVerificationLink}. Expires in 30 minutes.`,
             });
           }
 
@@ -743,11 +746,11 @@ export function RegisterModal({
               </div>
               <div>
                 <h3 className="text-xl font-black text-emerald-950">
-                  Account Application Successfully Logged
+                  Account Registered – Verify Your Email
                 </h3>
                 <p className="text-xs text-emerald-800 mt-1 max-w-md mx-auto leading-relaxed">
                   Welcome to <strong>West Side Financial Institution</strong>,{" "}
-                  <strong>{firstName} {lastName}</strong>. Your profile has been registered in the bank core.
+                  <strong>{firstName} {lastName}</strong>.
                 </p>
               </div>
 
@@ -769,33 +772,64 @@ export function RegisterModal({
                   <span className="font-bold text-emerald-700">{selectedCurrency}</span>
                 </div>
                 <div className="flex justify-between items-center text-xs">
-                  <span className="text-slate-500">Application Status</span>
+                  <span className="text-slate-500">Account Status</span>
                   <span className="inline-flex items-center gap-1 font-bold text-amber-700 bg-amber-50 px-2 py-0.5 rounded border border-amber-200">
                     <span className="h-1.5 w-1.5 rounded-full bg-amber-500"></span>
-                    Pending Verification
+                    Pending Email Verification
                   </span>
                 </div>
               </div>
 
-              <div className="rounded-lg bg-blue-50 border border-blue-200 p-3 text-xs text-blue-900 text-left max-w-md mx-auto">
-                <p className="font-bold flex items-center gap-1.5">
-                  <HelpCircle className="h-4 w-4 text-[#0055b8]" />
-                  What happens next?
+              <div className="rounded-xl bg-blue-50 border border-blue-200 p-4 text-xs text-blue-900 text-left max-w-md mx-auto space-y-2.5">
+                <p className="font-bold flex items-center gap-1.5 text-sm text-[#0055b8]">
+                  <Mail className="h-4 w-4" />
+                  A verification email has been sent to your email address.
                 </p>
-                <p className="text-[0.72rem] text-blue-800 mt-1 leading-relaxed">
-                  A direct profile activation link has been sent to <strong>{email}</strong>. You can open your email and tap the secure link anytime to automatically access your account profile. For future logins, sign in anytime using your registered username and password.
+                <p className="text-xs text-blue-800 leading-relaxed">
+                  Please check your inbox at <strong>{email}</strong> and click the secure button to verify your email to continue.
                 </p>
+                <div className="pt-1 flex flex-col gap-2">
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      const rateCheck = checkEmailRateLimit(email);
+                      if (!rateCheck.allowed) {
+                        alert(`Please wait ${rateCheck.remainingSeconds} seconds before requesting another verification email.`);
+                        return;
+                      }
+                      const tokenRecord = createVerificationToken(email.toLowerCase().trim(), {
+                        username: username.trim().toLowerCase(),
+                        fullName: `${firstName.trim()} ${lastName.trim()}`,
+                      });
+                      const origin = typeof window !== "undefined" && window.location.origin ? window.location.origin : "https://westsidebank.online";
+                      const secureLink = `${origin}/?verify_token=${tokenRecord.token}&email=${encodeURIComponent(email.toLowerCase().trim())}`;
+                      await sendVerificationEmail({
+                        to: email.toLowerCase().trim(),
+                        verificationLink: secureLink,
+                        fullName: `${firstName.trim()} ${lastName.trim()}`,
+                      });
+                      alert("A new verification email has been sent. Please check your inbox.");
+                    }}
+                    className="inline-flex items-center justify-center gap-1.5 py-2 px-3 text-xs font-bold text-[#0055b8] bg-white border border-blue-300 rounded-lg hover:bg-blue-50 transition-colors"
+                  >
+                    <RefreshCw className="h-3.5 w-3.5" />
+                    Resend Verification Email
+                  </button>
+                  <p className="text-[0.68rem] text-slate-500 text-center">
+                    Verification links are valid for 30 minutes and can only be used once.
+                  </p>
+                </div>
               </div>
 
               <div className="pt-2">
                 <Button
                   onClick={() => {
                     onClose();
-                    window.location.href = "/account";
+                    onSwitchToSignIn();
                   }}
                   className="w-full max-w-md bg-[#0055b8] hover:bg-blue-700 text-white font-bold py-3 text-sm shadow-md"
                 >
-                  Enter Account Profile Now
+                  Go to Customer Sign In
                   <ArrowRight className="h-4 w-4 ml-2" />
                 </Button>
               </div>
@@ -1022,95 +1056,28 @@ export function RegisterModal({
                     </div>
                   </div>
 
-                  {/* Contact Information & Real Verification Modals/Drawers */}
+                  {/* Contact Information */}
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    {/* Email Field with Verification */}
+                    {/* Email Field */}
                     <div>
                       <div className="flex items-center justify-between">
                         <label className="block text-xs font-bold text-slate-800">
                           Email Address <span className="text-red-500">*</span>
                         </label>
-                        {emailVerified && (
-                          <span className="text-[0.65rem] font-bold text-emerald-600 flex items-center gap-1">
-                            <CheckCircle2 className="h-3 w-3" /> Email Verified
-                          </span>
-                        )}
                       </div>
-                      <div className="mt-1 flex gap-2">
+                      <div className="mt-1">
                         <input
                           type="email"
                           required
                           value={email}
-                          onChange={(e) => {
-                            setEmail(e.target.value);
-                            setEmailVerified(false);
-                            setEmailOtpSent(false);
-                          }}
+                          onChange={(e) => setEmail(e.target.value)}
                           placeholder="client@example.com"
-                          className="flex-1 rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-[#0055b8] outline-none"
+                          className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-[#0055b8] outline-none"
                         />
-                        <button
-                          type="button"
-                          onClick={handleSendEmailVerification}
-                          disabled={!isEmailValid || verifyingEmail || emailVerified}
-                          className="px-2.5 py-1.5 rounded-lg border border-[#0055b8] text-[#0055b8] hover:bg-blue-50 text-[0.7rem] font-bold disabled:opacity-40 disabled:hover:bg-transparent"
-                        >
-                          {verifyingEmail ? "Dispatching..." : emailVerified ? "Verified ✓" : "Verify Email"}
-                        </button>
                       </div>
-
-                      {/* Email OTP Verification Input Box */}
-                      {emailOtpSent && !emailVerified && (
-                        <div className="mt-2 p-3 bg-blue-50 border border-blue-200 rounded-xl space-y-2 animate-fadeIn">
-                          <div className="flex items-center justify-between">
-                            <span className="text-[0.68rem] font-bold text-blue-900">
-                              Enter Code sent to {email.replace(/(.{2})(.*)(?=@)/, "$1••••")}
-                            </span>
-                            <span className="text-[0.65rem] font-mono text-blue-700">
-                              Expires in {Math.floor(emailOtpTimer / 60)}:{(emailOtpTimer % 60).toString().padStart(2, "0")}
-                            </span>
-                          </div>
-                          <p className="text-[0.7rem] text-blue-800 leading-snug">
-                            A verification email has been sent to your email address. Please check your inbox and verify your email to continue.
-                          </p>
-                          <div className="flex gap-2">
-                            <input
-                              type="text"
-                              maxLength={6}
-                              value={emailOtpCode}
-                              onChange={(e) => setEmailOtpCode(e.target.value)}
-                              placeholder={`e.g. ${generatedEmailOtp || "123456"}`}
-                              className="flex-1 rounded-lg border border-blue-300 bg-white px-2.5 py-1.5 text-xs font-mono font-bold text-slate-800 outline-none text-center tracking-widest"
-                            />
-                            <button
-                              type="button"
-                              onClick={handleConfirmEmailOtp}
-                              className="px-3 py-1.5 bg-[#0055b8] hover:bg-blue-700 text-white rounded-lg text-xs font-bold"
-                            >
-                              Confirm
-                            </button>
-                          </div>
-                          <div className="flex items-center justify-between pt-1">
-                            <button
-                              type="button"
-                              onClick={handleSendEmailVerification}
-                              disabled={emailOtpTimer > 270}
-                              className="text-[0.68rem] font-bold text-[#0055b8] hover:underline disabled:text-slate-400"
-                            >
-                              Resend Verification Email {emailOtpTimer > 270 ? `(${emailOtpTimer - 270}s cooldown)` : ""}
-                            </button>
-                            <span className="text-[0.65rem] text-slate-500 font-mono">
-                              Single-use token
-                            </span>
-                          </div>
-                          {emailOtpError && (
-                            <p className="text-[0.68rem] text-red-600 font-bold">{emailOtpError}</p>
-                          )}
-                          <p className="text-[0.65rem] text-slate-500">
-                            (Security code delivered: <strong className="font-mono text-blue-800">{generatedEmailOtp}</strong>)
-                          </p>
-                        </div>
-                      )}
+                      <p className="text-[0.68rem] text-slate-500 mt-1">
+                        A secure, clickable verification link will be automatically sent to this address.
+                      </p>
                     </div>
 
                     {/* Phone Number with Country Code */}
@@ -1119,11 +1086,6 @@ export function RegisterModal({
                         <label className="block text-xs font-bold text-slate-800">
                           Phone Number <span className="text-red-500">*</span>
                         </label>
-                        {phoneVerified && (
-                          <span className="text-[0.65rem] font-bold text-emerald-600 flex items-center gap-1">
-                            <CheckCircle2 className="h-3 w-3" /> Phone Verified
-                          </span>
-                        )}
                       </div>
                       <div className="mt-1 flex gap-1.5">
                         <select

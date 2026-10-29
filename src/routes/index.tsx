@@ -75,6 +75,12 @@ import { WIRE_TRANSFER_COUNTRIES, type WireCountry } from "@/lib/wire-countries"
 import { hashPin, type PinState } from "@/lib/pin-security";
 import { SoloAdminDashboard } from "@/components/admin/SoloAdminDashboard";
 import { RegisterModal } from "@/components/auth/RegisterModal";
+import {
+  validateAndConsumeToken,
+  createVerificationToken,
+  sendVerificationEmail,
+  checkEmailRateLimit,
+} from "@/lib/email-verification-service";
 
 
 // Safe Error Boundary for Admin Dashboard Protection
@@ -324,6 +330,7 @@ export interface AdminControlledUser {
   idNumber: string;
   createdAt: string;
   profilePicUrl?: string;
+  email_verified?: boolean;
 }
 
 const INITIAL_USERS: AdminControlledUser[] = [];
@@ -501,12 +508,20 @@ export function Index({ view = "home" }: { view?: "home" | "account" } = {}) {
   const [passwordResetSuccessNotice, setPasswordResetSuccessNotice] = useState(false);
   const [passwordResetError, setPasswordResetError] = useState("");
 
+  // Email Verification Status Modal State
+  const [emailVerificationModalOpen, setEmailVerificationModalOpen] = useState(false);
+  const [emailVerificationStatus, setEmailVerificationStatus] = useState<"success" | "expired" | "invalid">("success");
+  const [emailVerificationMessage, setEmailVerificationMessage] = useState("");
+  const [emailVerificationTargetEmail, setEmailVerificationTargetEmail] = useState("");
+  const [resendingVerification, setResendingVerification] = useState(false);
+  const [resendVerificationSuccess, setResendVerificationSuccess] = useState("");
+
   // Dedicated Admin Direct Link (Distinct from public home page)
   const adminDedicatedUrl = typeof window !== "undefined"
     ? `${window.location.origin}/?portal=admin`
     : "https://westsidebank.online/?portal=admin";
 
-  // Check URL on mount: Automatically open Staff Admin Sign-In or process Magic Email Login Link
+  // Check URL on mount: Process Email Verification Tokens or Staff Admin Sign-In
   useEffect(() => {
     if (typeof window !== "undefined") {
       const params = new URLSearchParams(window.location.search);
@@ -522,51 +537,74 @@ export function Index({ view = "home" }: { view?: "home" | "account" } = {}) {
         setAdminModalOpen(true);
       }
 
-      // Check for magic account creation email link (auto take customer to profile / dashboard)
-      const verifyEmailParam = params.get("verify_email") || params.get("email");
-      const authActionParam = params.get("action") || params.get("auth");
-      const autoLoginParam = params.get("autologin");
-      if ((authActionParam === "activate" || authActionParam === "verify" || autoLoginParam === "true") && verifyEmailParam) {
-        try {
-          const cleanEmail = decodeURIComponent(verifyEmailParam).toLowerCase().trim();
-          // Find matching user or application
-          const rawControlled = localStorage.getItem("us_finance_bank_controlled_users");
-          const usersList = rawControlled ? JSON.parse(rawControlled) : [];
-          const foundUser = usersList.find((u: any) => (u.email || "").toLowerCase().trim() === cleanEmail);
-          
-          let customerName = foundUser?.name;
-          if (!customerName) {
-            const rawAuth = localStorage.getItem(`wsb_customer_auth_${cleanEmail}`);
-            if (rawAuth) {
-              const parsedAuth = JSON.parse(rawAuth);
-              customerName = parsedAuth.fullName || parsedAuth.username;
+      // Check for email verification token in URL
+      const verifyToken = params.get("verify_token") || params.get("token");
+      const targetEmailParam = params.get("verify_email") || params.get("email");
+
+      if (verifyToken) {
+        const result = validateAndConsumeToken(verifyToken);
+        const resolvedEmail = (result.record?.email || targetEmailParam || "").toLowerCase().trim();
+        setEmailVerificationTargetEmail(resolvedEmail);
+
+        if (result.valid) {
+          setEmailVerificationStatus("success");
+          setEmailVerificationMessage("Your email address has been successfully verified. You can now sign in using your username and password.");
+          setEmailVerificationModalOpen(true);
+
+          // Update database records: mark email_verified = true
+          try {
+            if (resolvedEmail) {
+              // 1. Controlled users pool
+              const rawControlled = localStorage.getItem("us_finance_bank_controlled_users");
+              if (rawControlled) {
+                const list = JSON.parse(rawControlled);
+                const updated = list.map((u: any) =>
+                  (u.email || "").toLowerCase().trim() === resolvedEmail
+                    ? { ...u, email_verified: true }
+                    : u
+                );
+                localStorage.setItem("us_finance_bank_controlled_users", JSON.stringify(updated));
+              }
+
+              // 2. Applications pool
+              const rawApps = localStorage.getItem("us_finance_bank_applications");
+              if (rawApps) {
+                const list = JSON.parse(rawApps);
+                const updated = list.map((a: any) =>
+                  (a.email || "").toLowerCase().trim() === resolvedEmail
+                    ? { ...a, email_verified: true, reviewNotes: `${a.reviewNotes || ""} (Email address confirmed via secure link)` }
+                    : a
+                );
+                localStorage.setItem("us_finance_bank_applications", JSON.stringify(updated));
+              }
+
+              // 3. Customer auth records
+              const rawAuth = localStorage.getItem(`wsb_customer_auth_${resolvedEmail}`);
+              if (rawAuth) {
+                const parsed = JSON.parse(rawAuth);
+                parsed.email_verified = true;
+                localStorage.setItem(`wsb_customer_auth_${resolvedEmail}`, JSON.stringify(parsed));
+                if (parsed.username) {
+                  localStorage.setItem(`wsb_customer_auth_${parsed.username.toLowerCase()}`, JSON.stringify(parsed));
+                }
+              }
+
+              window.dispatchEvent(new Event("storage"));
             }
+          } catch (e) {
+            console.error("Failed to mark email_verified in database", e);
           }
-          if (!customerName) {
-            customerName = cleanEmail.split("@")[0] || "Valued Customer";
-          }
-
-          const customerSession = {
-            customerName: customerName,
-            checkingBalance: foundUser?.checkingBalance ?? 0.0,
-            savingsBalance: foundUser?.savingsBalance ?? 0.0,
-            email: cleanEmail,
-            isNewUser: false,
-            profilePicUrl: foundUser?.profilePicUrl,
-            applicationId: foundUser?.id || `WSB-${Date.now().toString().slice(-6)}`,
-            kycStatus: "Verified",
-          };
-
-          localStorage.setItem("us_finance_bank_customer_session", JSON.stringify(customerSession));
-          localStorage.setItem("us_finance_bank_active_customer", JSON.stringify(customerSession));
-          setCustomerUser(customerName);
-          setCustomerLoginEmail(cleanEmail);
-          setCustomerActiveTab("profile"); // Take directly to their account profile!
-          window.dispatchEvent(new Event("storage"));
-          navigate({ to: "/account" });
-        } catch (e) {
-          console.error("Magic email link login error:", e);
+        } else {
+          setEmailVerificationStatus(result.status === "expired" ? "expired" : "invalid");
+          setEmailVerificationMessage(result.message);
+          setEmailVerificationModalOpen(true);
         }
+
+        // Clean up URL parameters cleanly
+        try {
+          const cleanUrl = window.location.origin + window.location.pathname;
+          window.history.replaceState({}, document.title, cleanUrl);
+        } catch {}
       }
     }
   }, []);
@@ -1085,6 +1123,23 @@ export function Index({ view = "home" }: { view?: "home" | "account" } = {}) {
         setCustomerAuthError("Incorrect password. Please verify your credentials and try again.");
         return;
       }
+    }
+
+    // Verify Email Verification Status (Must verify email before login is permitted)
+    const isVerifiedEmail =
+      matchingUser?.email_verified === true ||
+      storedAuth?.email_verified === true ||
+      (matchingUser && (matchingUser as any).email_verified === undefined); // fallback for existing mock users
+
+    if (
+      (matchingUser && matchingUser.email_verified === false) ||
+      (storedAuth && storedAuth.email_verified === false)
+    ) {
+      const emailForResend = matchingUser?.email || storedAuth?.email || (identifier.includes("@") ? identifier : "");
+      setCustomerAuthError(
+        `Email verification required: Your email address (${emailForResend || "on record"}) has not been verified yet. Please check your inbox for the verification link.`
+      );
+      return;
     }
 
     // Verify PIN against cryptographic hash
@@ -5463,7 +5518,6 @@ export function Index({ view = "home" }: { view?: "home" | "account" } = {}) {
           setCustomerModalOpen(true);
         }}
         onRegistrationSuccess={(customerRecord) => {
-          setCustomerUser(customerRecord.fullName);
           setCustomerLoginEmail(customerRecord.email);
           setCheckingBalance(0.0);
           setSavingsBalance(0.0);
@@ -5483,6 +5537,100 @@ export function Index({ view = "home" }: { view?: "home" | "account" } = {}) {
           }
         }}
       />
+
+      {/* AUTOMATIC EMAIL VERIFICATION FEEDBACK MODAL */}
+      {emailVerificationModalOpen && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-4 backdrop-blur-sm animate-in fade-in duration-200"
+        >
+          <div className="relative w-full max-w-md rounded-2xl border border-border bg-white p-6 shadow-2xl text-center space-y-4">
+            {emailVerificationStatus === "success" ? (
+              <>
+                <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-emerald-600 text-white shadow-lg shadow-emerald-600/30">
+                  <CheckCircle2 className="h-9 w-9" />
+                </div>
+                <h3 className="text-xl font-black text-slate-900">
+                  Email Address Verified
+                </h3>
+                <p className="text-xs text-slate-600 leading-relaxed max-w-sm mx-auto">
+                  Your email address has been successfully verified. You can now sign in using your username and password.
+                </p>
+                <div className="pt-2">
+                  <Button
+                    onClick={() => {
+                      setEmailVerificationModalOpen(false);
+                      setCustomerModalOpen(true);
+                    }}
+                    className="w-full bg-[#0055b8] hover:bg-blue-700 text-white font-bold py-3 text-sm shadow-md"
+                  >
+                    Proceed to Customer Sign In
+                    <ArrowRight className="h-4 w-4 ml-2" />
+                  </Button>
+                </div>
+              </>
+            ) : (
+              <>
+                <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-amber-500 text-white shadow-lg shadow-amber-500/30">
+                  <AlertCircle className="h-9 w-9" />
+                </div>
+                <h3 className="text-xl font-black text-slate-900">
+                  {emailVerificationStatus === "expired" ? "Verification Link Expired" : "Invalid Verification Link"}
+                </h3>
+                <p className="text-xs text-slate-600 leading-relaxed max-w-sm mx-auto">
+                  {emailVerificationMessage}
+                </p>
+
+                {resendVerificationSuccess && (
+                  <div className="p-3 bg-emerald-50 text-emerald-800 border border-emerald-200 rounded-xl text-xs font-semibold">
+                    {resendVerificationSuccess}
+                  </div>
+                )}
+
+                <div className="pt-2 flex flex-col gap-2">
+                  <Button
+                    onClick={async () => {
+                      if (!emailVerificationTargetEmail) {
+                        alert("Please sign in or register to request a verification email.");
+                        setEmailVerificationModalOpen(false);
+                        setCustomerModalOpen(true);
+                        return;
+                      }
+                      const rateCheck = checkEmailRateLimit(emailVerificationTargetEmail);
+                      if (!rateCheck.allowed) {
+                        alert(`Please wait ${rateCheck.remainingSeconds} seconds before requesting a new email.`);
+                        return;
+                      }
+                      setResendingVerification(true);
+                      const tokenRecord = createVerificationToken(emailVerificationTargetEmail);
+                      const origin = typeof window !== "undefined" && window.location.origin ? window.location.origin : "https://westsidebank.online";
+                      const secureLink = `${origin}/?verify_token=${tokenRecord.token}&email=${encodeURIComponent(emailVerificationTargetEmail)}`;
+                      await sendVerificationEmail({
+                        to: emailVerificationTargetEmail,
+                        verificationLink: secureLink,
+                      });
+                      setResendingVerification(false);
+                      setResendVerificationSuccess("A new verification email has been sent. Please check your inbox.");
+                    }}
+                    disabled={resendingVerification}
+                    className="w-full bg-[#0055b8] hover:bg-blue-700 text-white font-bold py-2.5 text-xs shadow-md"
+                  >
+                    {resendingVerification ? "Sending..." : "Request New Verification Email"}
+                  </Button>
+                  <button
+                    type="button"
+                    onClick={() => setEmailVerificationModalOpen(false)}
+                    className="text-xs font-semibold text-slate-500 hover:text-slate-800"
+                  >
+                    Close
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* CHECK APPLICATION STATUS MODAL */}
       {checkStatusModalOpen && (
