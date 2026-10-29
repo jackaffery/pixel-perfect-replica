@@ -7,4 +7,5 @@
 - [x] Fix the site-breaking errors and confirm staff sign-in opens the admin dashboard.
 - [ ] Make every existing admin feature operate on fictional demo customers with visible demo labels.
 - [ ] Verify admin actions, saving, and demo-only boundaries.
-- [ ] Fix the latest build errors preventing publishing.
+- [x] Fix the latest build errors preventing publishing; current build is clean, ten tests pass, and homepage/staff/dashboard load without runtime errors.
+- [ ] Customer verification emails and later username/password login — pending a secure demo-only signup scope; not part of the build-error repair.
