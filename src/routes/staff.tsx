@@ -1,7 +1,19 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState } from "react";
 import { SoloAdminDashboard } from "@/components/admin/SoloAdminDashboard";
-import { ShieldCheck, ArrowLeft, ArrowRight, Lock, Eye, EyeOff, AlertCircle } from "lucide-react";
+import {
+  ShieldCheck,
+  ArrowLeft,
+  ArrowRight,
+  Lock,
+  Eye,
+  EyeOff,
+  AlertCircle,
+  Copy,
+  Check,
+  Globe,
+  Share2,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 export const Route = createFileRoute("/staff")({
@@ -36,6 +48,20 @@ function StaffPortalPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [copiedLink, setCopiedLink] = useState(false);
+
+  const staffDirectUrl =
+    typeof window !== "undefined"
+      ? `${window.location.origin}/staff`
+      : "https://westsidebank.online/staff";
+
+  const handleCopyLink = () => {
+    if (typeof navigator !== "undefined" && navigator.clipboard) {
+      navigator.clipboard.writeText(staffDirectUrl);
+      setCopiedLink(true);
+      setTimeout(() => setCopiedLink(false), 3000);
+    }
+  };
 
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
@@ -136,6 +162,45 @@ function StaffPortalPage() {
           </div>
 
           <div className="p-6 space-y-4">
+            {/* Direct Copyable Staff Sign In Link Box */}
+            <div className="rounded-xl border border-slate-200 bg-slate-50/80 p-3.5 space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
+                  <Globe className="h-4 w-4 text-[#0055b8]" />
+                  Direct Staff Sign In Link
+                </span>
+                <span className="text-[0.65rem] font-bold text-red-600 bg-red-50 px-2 py-0.5 rounded border border-red-200">
+                  Admin Portal
+                </span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <input
+                  type="text"
+                  readOnly
+                  value={staffDirectUrl}
+                  className="flex-1 rounded-lg border border-slate-300 bg-white px-2.5 py-1.5 text-xs font-mono text-slate-700 select-all outline-none"
+                />
+                <button
+                  type="button"
+                  onClick={handleCopyLink}
+                  className="inline-flex items-center gap-1 px-3 py-1.5 bg-[#0055b8] hover:bg-blue-700 text-white rounded-lg text-xs font-bold transition-all shadow-xs shrink-0"
+                  title="Copy link to clipboard"
+                >
+                  {copiedLink ? (
+                    <>
+                      <Check className="h-3.5 w-3.5 text-emerald-300" />
+                      Copied!
+                    </>
+                  ) : (
+                    <>
+                      <Copy className="h-3.5 w-3.5" />
+                      Copy Link
+                    </>
+                  )}
+                </button>
+              </div>
+            </div>
+
             {/* Instruction Notice with exact requested credentials */}
             <div className="rounded-xl bg-blue-50 border border-blue-200 p-3.5 text-xs text-blue-900 space-y-1">
               <p className="font-bold">Staff Access Credentials</p>
