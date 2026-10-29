@@ -15,5 +15,11 @@ describe("App routing", () => {
     expect(matches.at(-1)?.routeId).not.toBe(rootRouteId);
     expect(matches.at(-1)?.routeId).toBe("/");
   });
+
+  it("matches the staff page and imports its admin dependencies without syntax errors", () => {
+    const router = createRouter({ routeTree, context: { queryClient: new QueryClient() } });
+
+    expect(router.matchRoutes("/staff").at(-1)?.routeId).toBe("/staff");
+  });
 });
 
