@@ -8,3 +8,4 @@
 - [ ] Make every existing admin feature operate on fictional demo customers with visible demo labels.
 - [ ] Verify admin actions, saving, and demo-only boundaries.
 - [ ] Fix the latest build errors preventing publishing.
+- [ ] Customer verification emails and later username/password login — pending a secure demo-only signup scope; not part of the build-error repair.
