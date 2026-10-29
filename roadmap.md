@@ -8,4 +8,4 @@
 - [ ] Make every existing admin feature operate on fictional demo customers with visible demo labels.
 - [ ] Verify admin actions, saving, and demo-only boundaries.
 - [x] Fix the latest build errors preventing publishing; current build is clean, ten tests pass, and homepage/staff/dashboard load without runtime errors.
-- [ ] Implement uploaded email-verification brief: real verification delivery, expiring single-use links, sign-in, account-status separation, resend limits, and end-to-end checks — awaiting confirmation of demo-only customer signup scope.
+- [ ] Implement uploaded email-verification brief for demo accounts: Cloud connected; branded email delivery awaits sender-domain setup and profile decision. Signup, link handling, sign-in, approval separation, and end-to-end tests are not implemented yet.
