@@ -74,7 +74,6 @@ import {
 import { WIRE_TRANSFER_COUNTRIES, type WireCountry } from "@/lib/wire-countries";
 import { hashPin, type PinState } from "@/lib/pin-security";
 import { SoloAdminDashboard } from "@/components/admin/SoloAdminDashboard";
-import { DemoAuthModal } from "@/components/auth/DemoAuthModal";
 
 
 
