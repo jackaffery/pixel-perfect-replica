@@ -686,6 +686,7 @@ export function Index({ view = "home" }: { view?: "home" | "account" } = {}) {
   });
   const [customerLoginPassword, setCustomerLoginPassword] = useState("");
   const [customerLoginPin, setCustomerLoginPin] = useState("");
+  const [customerLoginStep, setCustomerLoginStep] = useState<1 | 2>(1);
   const [showCustomerPassword, setShowCustomerPassword] = useState(false);
   const [showCustomerPin, setShowCustomerPin] = useState(false);
   const [rememberCustomer, setRememberCustomer] = useState(true);
@@ -1113,6 +1114,103 @@ export function Index({ view = "home" }: { view?: "home" | "account" } = {}) {
     }
   };
 
+  const handleCustomerLoginStepOne = (e: React.FormEvent) => {
+    e.preventDefault();
+    setCustomerAuthError("");
+    const identifier = customerLoginEmail.trim();
+    const enteredPassword = customerLoginPassword.trim();
+
+    if (!identifier || !enteredPassword) {
+      setCustomerAuthError("Please provide both username/email and password.");
+      return;
+    }
+
+    // Check if user is controlled by Admin and has active restrictions
+    const matchingUser = adminUsers.find(
+      (u) =>
+        u.email.toLowerCase() === identifier.toLowerCase() ||
+        u.name.toLowerCase() === identifier.toLowerCase() ||
+        ((u as any).username && (u as any).username.toLowerCase() === identifier.toLowerCase())
+    );
+
+    // Check saved customer credentials in localStorage (created during user registration)
+    let storedAuth: any = null;
+    if (typeof window !== "undefined") {
+      try {
+        const rawAuth = localStorage.getItem(`wsb_customer_auth_${identifier.toLowerCase()}`);
+        if (rawAuth) storedAuth = JSON.parse(rawAuth);
+      } catch {}
+    }
+
+    // Verify password if a registered password is on record
+    if (storedAuth && storedAuth.password) {
+      if (storedAuth.password !== enteredPassword) {
+        setCustomerAuthError("Incorrect password. Please verify your credentials and try again.");
+        return;
+      }
+    } else if (matchingUser && (matchingUser as any).password) {
+      if ((matchingUser as any).password !== enteredPassword) {
+        setCustomerAuthError("Incorrect password. Please verify your credentials and try again.");
+        return;
+      }
+    }
+
+    // Verify Email Verification Status (Must verify email before login is permitted)
+    if (
+      (matchingUser && matchingUser.email_verified === false) ||
+      (storedAuth && storedAuth.email_verified === false)
+    ) {
+      const emailForResend = matchingUser?.email || storedAuth?.email || (identifier.includes("@") ? identifier : "");
+      setCustomerAuthError(
+        `Email verification required: Your email address (${emailForResend || "on record"}) has not been verified yet. Please check your inbox for the verification link.`
+      );
+      return;
+    }
+
+    // Check if user has an application in the system that was approved
+    let isApprovedInApplications = false;
+    try {
+      const appsRaw = localStorage.getItem("us_finance_bank_applications");
+      if (appsRaw) {
+        const appsList = JSON.parse(appsRaw);
+        if (Array.isArray(appsList)) {
+          const matchingApp = appsList.find(
+            (a: any) =>
+              a.email?.toLowerCase() === identifier.toLowerCase() ||
+              a.fullName?.toLowerCase() === identifier.toLowerCase()
+          );
+          if (matchingApp && matchingApp.status === "Approved") {
+            isApprovedInApplications = true;
+          }
+        }
+      }
+    } catch {}
+
+    if (matchingUser) {
+      if (matchingUser.status === "frozen") {
+        setCustomerAuthError(
+          "ACCOUNT FROZEN: This customer account has been temporarily frozen by the Solo Bank Administrator. Contact administration."
+        );
+        return;
+      }
+      if (matchingUser.status === "suspended") {
+        setCustomerAuthError(
+          "ACCOUNT SUSPENDED: Administrative access revoked by the Solo Bank Administrator."
+        );
+        return;
+      }
+      if (matchingUser.status === "pending_kyc" && !isApprovedInApplications) {
+        setCustomerAuthError(
+          "KYC REVIEW PENDING: Your account registration is awaiting verification and approval from the Solo Bank Administrator."
+        );
+        return;
+      }
+    }
+
+    // Credentials verified! Advance to Step 2 for 4-Digit Security PIN
+    setCustomerLoginStep(2);
+  };
+
   const handleCustomerLoginSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setCustomerAuthError("");
@@ -1121,6 +1219,7 @@ export function Index({ view = "home" }: { view?: "home" | "account" } = {}) {
     const enteredPin = customerLoginPin.trim();
 
     if (!identifier || !enteredPassword) {
+      setCustomerLoginStep(1);
       setCustomerAuthError("Please provide both email/username and password.");
       return;
     }
@@ -5395,7 +5494,11 @@ export function Index({ view = "home" }: { view?: "home" | "account" } = {}) {
               </div>
               <button
                 type="button"
-                onClick={() => setCustomerModalOpen(false)}
+                onClick={() => {
+                  setCustomerModalOpen(false);
+                  setCustomerLoginStep(1);
+                  setCustomerAuthError("");
+                }}
                 className="rounded-full p-1.5 text-blue-200 hover:text-white hover:bg-white/10 transition-colors"
                 aria-label="Close"
               >
@@ -5405,10 +5508,18 @@ export function Index({ view = "home" }: { view?: "home" | "account" } = {}) {
 
             <div className="p-6 sm:p-7 space-y-4">
               <div className="flex items-center justify-between text-xs text-slate-500 border-b border-slate-100 pb-2.5">
-                <span className="font-semibold text-slate-700">Authorized Banking Portal</span>
+                <div className="flex items-center gap-2">
+                  <span className={`inline-flex items-center justify-center rounded-full text-[0.65rem] font-bold px-2 py-0.5 ${customerLoginStep === 1 ? 'bg-blue-100 text-blue-700' : 'bg-slate-100 text-slate-500'}`}>
+                    Step 1: Credentials
+                  </span>
+                  <span className="text-slate-300">›</span>
+                  <span className={`inline-flex items-center justify-center rounded-full text-[0.65rem] font-bold px-2 py-0.5 ${customerLoginStep === 2 ? 'bg-blue-600 text-white' : 'bg-slate-100 text-slate-500'}`}>
+                    Step 2: Security PIN
+                  </span>
+                </div>
                 <span className="inline-flex items-center gap-1 font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
                   <span className="h-1.5 w-1.5 rounded-full bg-emerald-500"></span>
-                  256-bit SSL Secure
+                  256-bit SSL
                 </span>
               </div>
 
@@ -5422,113 +5533,161 @@ export function Index({ view = "home" }: { view?: "home" | "account" } = {}) {
                 </div>
               )}
 
-              <form onSubmit={handleCustomerLoginSubmit} className="space-y-4">
-                <div>
-                  <label htmlFor="c-email" className="block text-xs font-bold text-slate-800 mb-1">
-                    Username or Email Address
-                  </label>
-                  <input
-                    id="c-email"
-                    type="text"
-                    required
-                    value={customerLoginEmail}
-                    onChange={(e) => setCustomerLoginEmail(e.target.value)}
-                    placeholder="e.g. jdoe or member@westsidebank.online"
-                    className="w-full rounded-xl border border-slate-300 px-3.5 py-2.5 text-sm focus:border-[#0055b8] focus:ring-1 focus:ring-[#0055b8] outline-none"
-                  />
-                </div>
-
-                <div>
-                  <div className="flex items-center justify-between mb-1">
-                    <label htmlFor="c-pass" className="block text-xs font-bold text-slate-800">
-                      Account Password
+              {customerLoginStep === 1 ? (
+                /* STEP 1: USERNAME & PASSWORD AUTHENTICATION */
+                <form onSubmit={handleCustomerLoginStepOne} className="space-y-4">
+                  <div>
+                    <label htmlFor="c-email" className="block text-xs font-bold text-slate-800 mb-1">
+                      Username or Email Address
                     </label>
+                    <input
+                      id="c-email"
+                      type="text"
+                      required
+                      value={customerLoginEmail}
+                      onChange={(e) => setCustomerLoginEmail(e.target.value)}
+                      placeholder="e.g. jdoe or member@westsidebank.online"
+                      className="w-full rounded-xl border border-slate-300 px-3.5 py-2.5 text-sm focus:border-[#0055b8] focus:ring-1 focus:ring-[#0055b8] outline-none"
+                    />
+                  </div>
+
+                  <div>
+                    <div className="flex items-center justify-between mb-1">
+                      <label htmlFor="c-pass" className="block text-xs font-bold text-slate-800">
+                        Account Password
+                      </label>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setCustomerModalOpen(false);
+                          setForgotPasswordOpen(true);
+                        }}
+                        className="text-xs font-bold text-[#0055b8] hover:underline"
+                      >
+                        Forgot Password?
+                      </button>
+                    </div>
+                    <div className="relative">
+                      <input
+                        id="c-pass"
+                        type={showCustomerPassword ? "text" : "password"}
+                        required
+                        value={customerLoginPassword}
+                        onChange={(e) => setCustomerLoginPassword(e.target.value)}
+                        placeholder="Enter account password"
+                        className="w-full rounded-xl border border-slate-300 px-3.5 py-2.5 pr-10 text-sm focus:border-[#0055b8] focus:ring-1 focus:ring-[#0055b8] outline-none"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowCustomerPassword(!showCustomerPassword)}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700"
+                      >
+                        {showCustomerPassword ? (
+                          <EyeOff className="h-4 w-4" />
+                        ) : (
+                          <Eye className="h-4 w-4" />
+                        )}
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    <input
+                      id="c-rem"
+                      type="checkbox"
+                      checked={rememberCustomer}
+                      onChange={(e) => setRememberCustomer(e.target.checked)}
+                      className="h-4 w-4 rounded border-slate-300 text-[#0055b8] focus:ring-[#0055b8]"
+                    />
+                    <label htmlFor="c-rem" className="text-xs text-slate-600">
+                      Remember this device for trusted sign-ins
+                    </label>
+                  </div>
+
+                  <Button
+                    type="submit"
+                    className="w-full bg-[#0055b8] hover:bg-blue-700 font-bold text-white py-3 text-sm shadow-md flex items-center justify-center gap-2"
+                  >
+                    <span>Continue to Security PIN</span>
+                    <ArrowRight className="h-4 w-4" />
+                  </Button>
+                </form>
+              ) : (
+                /* STEP 2: SECRET 4-DIGIT SECURITY PIN INPUT */
+                <form onSubmit={handleCustomerLoginSubmit} className="space-y-4">
+                  <div className="rounded-xl border border-blue-100 bg-blue-50/70 p-3.5 flex items-center justify-between">
+                    <div>
+                      <p className="text-[0.7rem] font-bold uppercase tracking-wider text-blue-600">Signing In As</p>
+                      <p className="text-xs font-bold text-slate-900 truncate max-w-[200px]">{customerLoginEmail}</p>
+                    </div>
                     <button
                       type="button"
                       onClick={() => {
-                        setCustomerModalOpen(false);
-                        setForgotPasswordOpen(true);
+                        setCustomerAuthError("");
+                        setCustomerLoginStep(1);
                       }}
                       className="text-xs font-bold text-[#0055b8] hover:underline"
                     >
-                      Forgot Password?
+                      Change
                     </button>
                   </div>
-                  <div className="relative">
-                    <input
-                      id="c-pass"
-                      type={showCustomerPassword ? "text" : "password"}
-                      required
-                      value={customerLoginPassword}
-                      onChange={(e) => setCustomerLoginPassword(e.target.value)}
-                      placeholder="Enter account password"
-                      className="w-full rounded-xl border border-slate-300 px-3.5 py-2.5 pr-10 text-sm focus:border-[#0055b8] focus:ring-1 focus:ring-[#0055b8] outline-none"
-                    />
-                    <button
+
+                  <div>
+                    <div className="flex items-center justify-between mb-1">
+                      <label htmlFor="c-pin" className="block text-xs font-bold text-slate-800">
+                        4-Digit Security PIN
+                      </label>
+                      <span className="text-[0.68rem] text-slate-400 font-mono">
+                        Security Verification
+                      </span>
+                    </div>
+                    <div className="relative">
+                      <input
+                        id="c-pin"
+                        type={showCustomerPin ? "text" : "password"}
+                        maxLength={4}
+                        autoFocus
+                        required
+                        value={customerLoginPin}
+                        onChange={(e) => setCustomerLoginPin(e.target.value.replace(/\D/g, ""))}
+                        placeholder="••••"
+                        className="w-full rounded-xl border border-slate-300 px-3.5 py-3 pr-16 text-lg tracking-[0.35em] font-mono focus:border-[#0055b8] focus:ring-1 focus:ring-[#0055b8] outline-none text-center"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowCustomerPin(!showCustomerPin)}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-800 text-xs font-bold px-2 py-1"
+                      >
+                        {showCustomerPin ? "Hide" : "Show"}
+                      </button>
+                    </div>
+                    <p className="text-[0.7rem] text-slate-500 mt-1.5 text-center">
+                      Enter the 4-digit PIN configured during account registration.
+                    </p>
+                  </div>
+
+                  <div className="flex items-center gap-2 pt-1">
+                    <Button
                       type="button"
-                      onClick={() => setShowCustomerPassword(!showCustomerPassword)}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700"
+                      variant="outline"
+                      onClick={() => {
+                        setCustomerAuthError("");
+                        setCustomerLoginStep(1);
+                      }}
+                      className="border-slate-200 text-xs text-slate-700 hover:bg-slate-100 flex-1"
                     >
-                      {showCustomerPassword ? (
-                        <EyeOff className="h-4 w-4" />
-                      ) : (
-                        <Eye className="h-4 w-4" />
-                      )}
-                    </button>
-                  </div>
-                </div>
-
-                <div>
-                  <div className="flex items-center justify-between mb-1">
-                    <label htmlFor="c-pin" className="block text-xs font-bold text-slate-800">
-                      4-Digit Security PIN
-                    </label>
-                    <span className="text-[0.68rem] text-slate-400 font-mono">
-                      Secret PIN
-                    </span>
-                  </div>
-                  <div className="relative">
-                    <input
-                      id="c-pin"
-                      type={showCustomerPin ? "text" : "password"}
-                      maxLength={4}
-                      required
-                      value={customerLoginPin}
-                      onChange={(e) => setCustomerLoginPin(e.target.value.replace(/\D/g, ""))}
-                      placeholder="••••"
-                      className="w-full rounded-xl border border-slate-300 px-3.5 py-2.5 pr-10 text-sm tracking-widest font-mono focus:border-[#0055b8] focus:ring-1 focus:ring-[#0055b8] outline-none text-center"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setShowCustomerPin(!showCustomerPin)}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700 text-xs font-bold"
+                      Back to Step 1
+                    </Button>
+                    <Button
+                      type="submit"
+                      disabled={customerAuthLoading || customerLoginPin.length < 4}
+                      className="bg-[#0055b8] hover:bg-blue-700 font-bold text-white py-2.5 text-xs shadow-md flex-1"
                     >
-                      {showCustomerPin ? "Hide" : "Show"}
-                    </button>
+                      {customerAuthLoading ? "Verifying PIN..." : "Sign In to Account"}
+                    </Button>
                   </div>
-                </div>
-
-                <div className="flex items-center gap-2">
-                  <input
-                    id="c-rem"
-                    type="checkbox"
-                    checked={rememberCustomer}
-                    onChange={(e) => setRememberCustomer(e.target.checked)}
-                    className="h-4 w-4 rounded border-slate-300 text-[#0055b8] focus:ring-[#0055b8]"
-                  />
-                  <label htmlFor="c-rem" className="text-xs text-slate-600">
-                    Remember this device for trusted sign-ins
-                  </label>
-                </div>
-
-                <Button
-                  type="submit"
-                  disabled={customerAuthLoading}
-                  className="w-full bg-[#0055b8] hover:bg-blue-700 font-bold text-white py-3 text-sm shadow-md"
-                >
-                  {customerAuthLoading ? "Verifying Credentials & PIN..." : "Sign In to Account"}
-                </Button>
-              </form>
+                </form>
+              )}
 
               <div className="border-t border-slate-100 pt-3 text-center text-xs text-slate-600">
                 New customer?{" "}

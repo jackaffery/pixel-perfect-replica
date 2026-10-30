@@ -81,6 +81,10 @@ import {
   type OperationalAlert,
   type SoloAdminAuditEntry,
 } from "./adminData";
+import {
+  createVerificationToken,
+  sendVerificationEmail,
+} from "@/lib/email-verification-service";
 
 export interface SoloAdminDashboardProps {
   onSignOut: () => void;
@@ -382,6 +386,7 @@ export function SoloAdminDashboard({
 
   // Action / Confirmation States
   const [createUserModalOpen, setCreateUserModalOpen] = useState(false);
+  const [createUserError, setCreateUserError] = useState("");
   const [newUserData, setNewUserData] = useState({
     name: "",
     email: "",
@@ -905,10 +910,11 @@ export function SoloAdminDashboard({
   // Safe User Provisioning with Audit Trail
   const handleCreateUser = (e: React.FormEvent) => {
     e.preventDefault();
+    setCreateUserError("");
     const cleanName = newUserData.name.trim();
     const cleanEmail = newUserData.email.trim().toLowerCase();
     if (!cleanName || !cleanEmail) {
-      alert("Please provide both legal full name and a valid email address.");
+      setCreateUserError("Please provide both legal full name and a valid email address.");
       return;
     }
 
@@ -917,7 +923,7 @@ export function SoloAdminDashboard({
       (u) => u.email.trim().toLowerCase() === cleanEmail
     );
     if (duplicate) {
-      alert(`An account with email '${cleanEmail}' already exists for ${duplicate.name} (${duplicate.id}). Please use a unique email or edit the existing profile.`);
+      setCreateUserError(`An account with email '${cleanEmail}' already exists for ${duplicate.name} (${duplicate.id}). Please use a unique email or edit the existing profile.`);
       return;
     }
 
@@ -1057,10 +1063,22 @@ export function SoloAdminDashboard({
       localStorage.setItem("us_finance_bank_active_customer", JSON.stringify(userSession));
     } catch {}
 
-    // Dispatch real activation link to new customer's email so they can tap and access their profile directly
-    const directActivationLink = typeof window !== "undefined"
-      ? `${window.location.origin}/?verify_email=${encodeURIComponent(cleanEmail)}&action=activate`
-      : `https://westsidebank.online/?verify_email=${encodeURIComponent(cleanEmail)}&action=activate`;
+    // Generate secure email verification token and send real clickable verification link
+    const tokenRecord = createVerificationToken(cleanEmail, {
+      fullName: cleanName,
+    });
+    const origin =
+      typeof window !== "undefined" && window.location.origin
+        ? window.location.origin
+        : "https://westsidebank.online";
+    const directActivationLink = `${origin}/?verify_token=${tokenRecord.token}&email=${encodeURIComponent(cleanEmail)}`;
+
+    // Dispatch real email verification via transactional email service (non-blocking)
+    sendVerificationEmail({
+      to: cleanEmail,
+      verificationLink: directActivationLink,
+      fullName: cleanName,
+    }).catch((err) => console.warn("Admin provisioned email dispatch:", err));
 
     try {
       const existingDispatches = localStorage.getItem("westside_email_dispatch_log");
@@ -1069,11 +1087,12 @@ export function SoloAdminDashboard({
         id: `DISP-ADMIN-${Date.now()}`,
         to: cleanEmail,
         phone: newUserData.phone.trim() || "+1 (555) 000-0000",
-        subject: "Welcome to West Side Financial Institution - Access Your New Account Profile",
-        sms: `WSB Notice: Account created by bank admin for ${cleanName}! Direct profile link: ${directActivationLink}. Next login requires username & password.`,
+        subject: "Verify Your Email Address – West Side Financial Institution",
+        sms: `WSB Notice: Account created by bank admin for ${cleanName}! Direct profile verification link: ${directActivationLink}. Valid for 30 minutes.`,
         timestamp: "Today, " + new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
-        status: "Delivered (Live Relay)",
+        status: "Delivered (Transactional Service)",
         activationLink: directActivationLink,
+        token: tokenRecord.token,
       });
       localStorage.setItem("westside_email_dispatch_log", JSON.stringify(dispatchesList.slice(0, 50)));
     } catch {}
@@ -2571,6 +2590,8 @@ export function SoloAdminDashboard({
                     onClick={() => {
                       setMobileSidebarOpen(false);
                       if (item.id === "create-user") {
+                        setActiveSection("users");
+                        setCreateUserError("");
                         setCreateUserModalOpen(true);
                       } else if (item.id === "history") {
                         setActiveSection("transactions");
@@ -2667,6 +2688,8 @@ export function SoloAdminDashboard({
                 type="button"
                 onClick={() => {
                   if (item.id === "create-user") {
+                    setActiveSection("users");
+                    setCreateUserError("");
                     setCreateUserModalOpen(true);
                   } else if (item.id === "history") {
                     setActiveSection("transactions");
@@ -4434,6 +4457,12 @@ export function SoloAdminDashboard({
                     </div>
 
                     <form onSubmit={handleCreateUser} className="mt-4 space-y-4">
+                      {createUserError && (
+                        <div className="flex items-center gap-2 rounded-xl border border-red-200 bg-red-50 p-3 text-xs text-red-700">
+                          <AlertCircle className="h-4 w-4 shrink-0 text-red-600" />
+                          <span>{createUserError}</span>
+                        </div>
+                      )}
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div>
                           <label className="block text-xs font-bold text-slate-700 mb-1">
