@@ -145,38 +145,6 @@ export function RegisterModal({
   const [email, setEmail] = useState("");
   const [phoneCountryCode, setPhoneCountryCode] = useState(activeCountry.phoneCode || "+1");
   const [phoneNumber, setPhoneNumber] = useState("");
-  
-  // Real Verification System with Cryptographic OTPs
-  const [emailVerified, setEmailVerified] = useState(false);
-  const [phoneVerified, setPhoneVerified] = useState(false);
-  const [verifyingEmail, setVerifyingEmail] = useState(false);
-  const [verifyingPhone, setVerifyingPhone] = useState(false);
-  const [emailOtpSent, setEmailOtpSent] = useState(false);
-  const [phoneOtpSent, setPhoneOtpSent] = useState(false);
-  const [emailOtpCode, setEmailOtpCode] = useState("");
-  const [phoneOtpCode, setPhoneOtpCode] = useState("");
-  const [generatedEmailOtp, setGeneratedEmailOtp] = useState("");
-  const [generatedPhoneOtp, setGeneratedPhoneOtp] = useState("");
-  const [emailOtpTimer, setEmailOtpTimer] = useState(0);
-  const [phoneOtpTimer, setPhoneOtpTimer] = useState(0);
-  const [emailOtpError, setEmailOtpError] = useState("");
-  const [phoneOtpError, setPhoneOtpError] = useState("");
-
-  useEffect(() => {
-    let t: any;
-    if (emailOtpTimer > 0) {
-      t = setInterval(() => setEmailOtpTimer((v) => v - 1), 1000);
-    }
-    return () => clearInterval(t);
-  }, [emailOtpTimer]);
-
-  useEffect(() => {
-    let t: any;
-    if (phoneOtpTimer > 0) {
-      t = setInterval(() => setPhoneOtpTimer((v) => v - 1), 1000);
-    }
-    return () => clearInterval(t);
-  }, [phoneOtpTimer]);
 
   // When jurisdiction country changes, update default state and phone prefix
   const handleCountryJurisdictionChange = (newCode: string) => {
@@ -263,102 +231,6 @@ export function RegisterModal({
       }
       setIdFileName(file.name);
       setErrorMessage("");
-    }
-  };
-
-  // OTP Generator using window.crypto
-  const generateSecureOtp = () => {
-    const array = new Uint32Array(1);
-    window.crypto.getRandomValues(array);
-    const code = (((array[0] ?? 0) % 900000) + 100000).toString();
-    return code;
-  };
-
-  const handleSendEmailVerification = () => {
-    if (!isEmailValid) {
-      setErrorMessage("Enter a valid email address first.");
-      return;
-    }
-    setVerifyingEmail(true);
-    setEmailOtpError("");
-    setTimeout(() => {
-      const otp = generateSecureOtp();
-      setGeneratedEmailOtp(otp);
-      setVerifyingEmail(false);
-      setEmailOtpSent(true);
-      setEmailOtpTimer(300); // 5 minutes validity
-
-      // Record live email dispatch in persistent storage and trigger live alert relay
-      if (typeof window !== "undefined") {
-        try {
-          const existingRaw = localStorage.getItem("westside_email_dispatch_log");
-          const existing = existingRaw ? JSON.parse(existingRaw) : [];
-          existing.unshift({
-            id: `DISP-REG-${Date.now()}`,
-            to: email.trim().toLowerCase(),
-            phone: phoneNumber ? `${phoneCountryCode} ${phoneNumber.trim()}` : "Customer Phone",
-            subject: "West Side Financial Institution: Complete Your Registration - Email Verification Code",
-            sms: `WSB Account Registration Code: ${otp}. Use this one-time code to verify your email address. Expires in 5 minutes. Do not share.`,
-            timestamp: "Today, " + new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" }),
-            status: "Delivered (Live Relay)",
-          });
-          localStorage.setItem("westside_email_dispatch_log", JSON.stringify(existing.slice(0, 50)));
-        } catch {}
-      }
-
-      if (onDispatchAlert) {
-        onDispatchAlert({
-          type: "login",
-          emailTo: email.trim().toLowerCase(),
-          ...(phoneNumber.trim() ? { phoneTo: `${phoneCountryCode} ${phoneNumber.trim()}` } : {}),
-          subject: "West Side Financial Institution: Complete Your Registration - Email Verification Code",
-          smsBody: `WSB Registration Verification Code: ${otp}. Please verify your email to complete registration.`,
-        });
-      }
-    }, 600);
-  };
-
-  const handleConfirmEmailOtp = () => {
-    if (!emailOtpCode.trim()) {
-      setEmailOtpError("Please enter the 6-digit verification code.");
-      return;
-    }
-    if (emailOtpCode.trim() === generatedEmailOtp || emailOtpCode.trim() === "123456") {
-      setEmailVerified(true);
-      setEmailOtpSent(false);
-      setEmailOtpError("");
-    } else {
-      setEmailOtpError("Invalid code. Please check your verification email.");
-    }
-  };
-
-  const handleSendPhoneVerification = () => {
-    if (!phoneNumber || phoneNumber.trim().length < 7) {
-      setErrorMessage("Enter a valid phone number first.");
-      return;
-    }
-    setVerifyingPhone(true);
-    setPhoneOtpError("");
-    setTimeout(() => {
-      const otp = generateSecureOtp();
-      setGeneratedPhoneOtp(otp);
-      setVerifyingPhone(false);
-      setPhoneOtpSent(true);
-      setPhoneOtpTimer(300); // 5 minutes validity
-    }, 600);
-  };
-
-  const handleConfirmPhoneOtp = () => {
-    if (!phoneOtpCode.trim()) {
-      setPhoneOtpError("Please enter the 6-digit SMS code.");
-      return;
-    }
-    if (phoneOtpCode.trim() === generatedPhoneOtp || phoneOtpCode.trim() === "123456") {
-      setPhoneVerified(true);
-      setPhoneOtpSent(false);
-      setPhoneOtpError("");
-    } else {
-      setPhoneOtpError("Invalid SMS verification code.");
     }
   };
 
@@ -1105,58 +977,11 @@ export function RegisterModal({
                           value={phoneNumber}
                           onChange={(e) => {
                             setPhoneNumber(e.target.value);
-                            setPhoneVerified(false);
-                            setPhoneOtpSent(false);
                           }}
                           placeholder="555-019-2834"
                           className="flex-1 rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-[#0055b8] outline-none"
                         />
-                        <button
-                          type="button"
-                          onClick={handleSendPhoneVerification}
-                          disabled={!phoneNumber || verifyingPhone || phoneVerified}
-                          className="px-2 py-1.5 rounded-lg border border-[#0055b8] text-[#0055b8] hover:bg-blue-50 text-[0.7rem] font-bold disabled:opacity-40 disabled:hover:bg-transparent"
-                        >
-                          {verifyingPhone ? "..." : phoneVerified ? "✓" : "Verify SMS"}
-                        </button>
                       </div>
-
-                      {/* Phone OTP Verification Input Box */}
-                      {phoneOtpSent && !phoneVerified && (
-                        <div className="mt-2 p-3 bg-blue-50 border border-blue-200 rounded-xl space-y-2 animate-fadeIn">
-                          <div className="flex items-center justify-between">
-                            <span className="text-[0.68rem] font-bold text-blue-900">
-                              Enter SMS code sent to {phoneCountryCode} {phoneNumber.slice(-4).padStart(phoneNumber.length, "•")}
-                            </span>
-                            <span className="text-[0.65rem] font-mono text-blue-700">
-                              Expires in {Math.floor(phoneOtpTimer / 60)}:{(phoneOtpTimer % 60).toString().padStart(2, "0")}
-                            </span>
-                          </div>
-                          <div className="flex gap-2">
-                            <input
-                              type="text"
-                              maxLength={6}
-                              value={phoneOtpCode}
-                              onChange={(e) => setPhoneOtpCode(e.target.value)}
-                              placeholder={`e.g. ${generatedPhoneOtp || "123456"}`}
-                              className="flex-1 rounded-lg border border-blue-300 bg-white px-2.5 py-1.5 text-xs font-mono font-bold text-slate-800 outline-none text-center tracking-widest"
-                            />
-                            <button
-                              type="button"
-                              onClick={handleConfirmPhoneOtp}
-                              className="px-3 py-1.5 bg-[#0055b8] hover:bg-blue-700 text-white rounded-lg text-xs font-bold"
-                            >
-                              Confirm
-                            </button>
-                          </div>
-                          {phoneOtpError && (
-                            <p className="text-[0.68rem] text-red-600 font-bold">{phoneOtpError}</p>
-                          )}
-                          <p className="text-[0.65rem] text-slate-500">
-                            (SMS one-time code: <strong className="font-mono text-blue-800">{generatedPhoneOtp}</strong>)
-                          </p>
-                        </div>
-                      )}
                     </div>
                   </div>
 

@@ -548,7 +548,7 @@ export function Index({ view = "home" }: { view?: "home" | "account" } = {}) {
 
         if (result.valid) {
           setEmailVerificationStatus("success");
-          setEmailVerificationMessage("Your email address has been successfully verified. You can now sign in using your username and password.");
+          setEmailVerificationMessage("Your email address has been successfully verified. Logging you in to your customer profile...");
           setEmailVerificationModalOpen(true);
 
           // Update database records: mark email_verified = true
@@ -556,40 +556,82 @@ export function Index({ view = "home" }: { view?: "home" | "account" } = {}) {
             if (resolvedEmail) {
               // 1. Controlled users pool
               const rawControlled = localStorage.getItem("us_finance_bank_controlled_users");
+              let matchingControlledUser: any = null;
               if (rawControlled) {
                 const list = JSON.parse(rawControlled);
-                const updated = list.map((u: any) =>
-                  (u.email || "").toLowerCase().trim() === resolvedEmail
-                    ? { ...u, email_verified: true }
-                    : u
-                );
+                const updated = list.map((u: any) => {
+                  if ((u.email || "").toLowerCase().trim() === resolvedEmail) {
+                    matchingControlledUser = { ...u, email_verified: true };
+                    return matchingControlledUser;
+                  }
+                  return u;
+                });
                 localStorage.setItem("us_finance_bank_controlled_users", JSON.stringify(updated));
               }
 
               // 2. Applications pool
               const rawApps = localStorage.getItem("us_finance_bank_applications");
+              let matchingApp: any = null;
               if (rawApps) {
                 const list = JSON.parse(rawApps);
-                const updated = list.map((a: any) =>
-                  (a.email || "").toLowerCase().trim() === resolvedEmail
-                    ? { ...a, email_verified: true, reviewNotes: `${a.reviewNotes || ""} (Email address confirmed via secure link)` }
-                    : a
-                );
+                const updated = list.map((a: any) => {
+                  if ((a.email || "").toLowerCase().trim() === resolvedEmail) {
+                    matchingApp = { ...a, email_verified: true, reviewNotes: `${a.reviewNotes || ""} (Email address confirmed via secure link)` };
+                    return matchingApp;
+                  }
+                  return a;
+                });
                 localStorage.setItem("us_finance_bank_applications", JSON.stringify(updated));
               }
 
               // 3. Customer auth records
+              let parsedAuth: any = null;
               const rawAuth = localStorage.getItem(`wsb_customer_auth_${resolvedEmail}`);
               if (rawAuth) {
-                const parsed = JSON.parse(rawAuth);
-                parsed.email_verified = true;
-                localStorage.setItem(`wsb_customer_auth_${resolvedEmail}`, JSON.stringify(parsed));
-                if (parsed.username) {
-                  localStorage.setItem(`wsb_customer_auth_${parsed.username.toLowerCase()}`, JSON.stringify(parsed));
+                parsedAuth = JSON.parse(rawAuth);
+                parsedAuth.email_verified = true;
+                localStorage.setItem(`wsb_customer_auth_${resolvedEmail}`, JSON.stringify(parsedAuth));
+                if (parsedAuth.username) {
+                  localStorage.setItem(`wsb_customer_auth_${parsedAuth.username.toLowerCase()}`, JSON.stringify(parsedAuth));
                 }
               }
 
+              // Automatically log customer into their profile dashboard
+              const customerName =
+                matchingControlledUser?.name ||
+                matchingApp?.fullName ||
+                parsedAuth?.fullName ||
+                result.record?.fullName ||
+                (resolvedEmail.includes("@") ? resolvedEmail.split("@")[0] : resolvedEmail);
+
+              const chkBal = matchingControlledUser?.checkingBalance ?? 0.0;
+              const savBal = matchingControlledUser?.savingsBalance ?? 0.0;
+              const profPic = matchingControlledUser?.profilePicUrl || undefined;
+
+              const activeSession = {
+                customerName,
+                checkingBalance: chkBal,
+                savingsBalance: savBal,
+                email: resolvedEmail,
+                isNewUser: !matchingControlledUser,
+                profilePicUrl: profPic,
+              };
+
+              localStorage.setItem("us_finance_bank_customer_session", JSON.stringify(activeSession));
+              setCustomerUser(customerName);
+              setCheckingBalance(chkBal);
+              setSavingsBalance(savBal);
+              if (profPic) {
+                setCustomerProfilePic(profPic);
+              }
+
               window.dispatchEvent(new Event("storage"));
+
+              // Automatically transition customer to /account dashboard
+              setTimeout(() => {
+                setEmailVerificationModalOpen(false);
+                navigate({ to: "/account" });
+              }, 1200);
             }
           } catch (e) {
             console.error("Failed to mark email_verified in database", e);
@@ -5555,17 +5597,17 @@ export function Index({ view = "home" }: { view?: "home" | "account" } = {}) {
                   Email Address Verified
                 </h3>
                 <p className="text-xs text-slate-600 leading-relaxed max-w-sm mx-auto">
-                  Your email address has been successfully verified. You can now sign in using your username and password.
+                  {emailVerificationMessage || "Your email address has been successfully verified. Entering your profile..."}
                 </p>
                 <div className="pt-2">
                   <Button
                     onClick={() => {
                       setEmailVerificationModalOpen(false);
-                      setCustomerModalOpen(true);
+                      navigate({ to: "/account" });
                     }}
                     className="w-full bg-[#0055b8] hover:bg-blue-700 text-white font-bold py-3 text-sm shadow-md"
                   >
-                    Proceed to Customer Sign In
+                    Open Customer Dashboard
                     <ArrowRight className="h-4 w-4 ml-2" />
                   </Button>
                 </div>
