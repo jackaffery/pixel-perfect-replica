@@ -4233,8 +4233,8 @@ export function Index({ view = "home" }: { view?: "home" | "account" } = {}) {
                           <span className="font-extrabold text-red-600">60 Countries</span>
                         </div>
                         <div className="p-2.5 rounded-lg bg-slate-50 border border-slate-100">
-                          <span className="text-[0.65rem] text-slate-500 block">Two-Factor Auth</span>
-                          <span className="font-extrabold text-emerald-600">Email OTP (10m)</span>
+                          <span className="text-[0.65rem] text-slate-500 block">Security Verification</span>
+                          <span className="font-extrabold text-emerald-600">PIN Protected</span>
                         </div>
                       </div>
                     </div>
@@ -4982,8 +4982,8 @@ export function Index({ view = "home" }: { view?: "home" | "account" } = {}) {
                       desc: "All traffic is secured by TLS 1.3 encryption. Passwords and sensitive documents are hashed with modern salting algorithms.",
                     },
                     {
-                      title: "Multi-Factor Authentication (MFA / 2FA)",
-                      desc: "Automated one-time security codes safeguard sign-ins, balance transfers, and password recovery operations.",
+                      title: "Secure Verification Links",
+                      desc: "Cryptographically signed, time-limited verification links safeguard sign-ups, account activations, and credentials.",
                     },
                     {
                       title: "Instant Card Lock / Unlock",
@@ -5038,7 +5038,7 @@ export function Index({ view = "home" }: { view?: "home" | "account" } = {}) {
                       {country.currency.symbol}60,650.80 {country.currency.code}
                     </div>
                     <div className="mt-2 text-[0.7rem] text-emerald-400">
-                      ✓ Biometric 2FA Active • {country.name} Banking Channel
+                      ✓ Secure Banking Channel • {country.name} Jurisdiction
                     </div>
                   </div>
                   <div className="grid grid-cols-2 gap-3">
