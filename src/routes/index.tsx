@@ -1,3 +1,4 @@
+import { Link } from "@tanstack/react-router";
 import { resendDemoConfirmation } from "@/lib/demo-auth";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import * as React from "react";
