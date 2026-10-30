@@ -155,6 +155,23 @@ export function SoloAdminDashboard({
   // Core State
   const [adminUsers, setAdminUsers] = useState<AdminUserRecord[]>(() => {
     if (typeof window !== "undefined") {
+      // Ensure clean 0.00 ledger on fresh deployment
+      if (!localStorage.getItem("wsb_fresh_ledger_v2_initialized")) {
+        try {
+          localStorage.setItem("wsb_fresh_ledger_v2_initialized", "true");
+          localStorage.removeItem("us_finance_bank_accounts");
+          localStorage.removeItem("us_finance_bank_transactions");
+          localStorage.removeItem("us_finance_bank_customers");
+          localStorage.removeItem("us_finance_bank_users");
+          localStorage.removeItem("us_finance_bank_controlled_users");
+          localStorage.removeItem("us_finance_bank_applications");
+          localStorage.removeItem("us_finance_bank_alerts");
+          localStorage.removeItem("us_finance_bank_pending_profile_edits");
+          localStorage.removeItem("us_finance_bank_customer_session");
+          localStorage.removeItem("us_finance_bank_active_customer");
+        } catch {}
+        return [];
+      }
       const saved = localStorage.getItem("us_finance_bank_users");
       if (saved) {
         try {
@@ -162,7 +179,7 @@ export function SoloAdminDashboard({
         } catch {}
       }
     }
-    return MOCK_ADMIN_USERS;
+    return [];
   });
 
   const persistAdminUsers = (newUsers: AdminUserRecord[]) => {
@@ -257,7 +274,7 @@ export function SoloAdminDashboard({
         } catch {}
       }
     }
-    return MOCK_CUSTOMERS;
+    return [];
   });
   const [accounts, setAccounts] = useState<BankAccountRecord[]>(() => {
     if (typeof window !== "undefined") {
@@ -268,7 +285,7 @@ export function SoloAdminDashboard({
         } catch {}
       }
     }
-    return MOCK_ACCOUNTS;
+    return [];
   });
   const [transactions, setTransactions] = useState<BankTransactionRecord[]>(() => {
     if (typeof window !== "undefined") {
@@ -281,7 +298,7 @@ export function SoloAdminDashboard({
         }
       }
     }
-    return MOCK_TRANSACTIONS;
+    return [];
   });
   const [complianceReviews, setComplianceReviews] = useState<ComplianceReviewItem[]>(MOCK_COMPLIANCE_REVIEWS);
   const [supportCases, setSupportCases] = useState<SupportCase[]>(MOCK_SUPPORT_CASES);
@@ -2997,6 +3014,35 @@ export function SoloAdminDashboard({
                       className="rounded-lg bg-amber-600 hover:bg-amber-700 px-3 py-2 text-xs font-bold text-white shadow-sm transition-colors text-center"
                     >
                       Applications ({applications.filter((a) => a.status === "Pending" || a.status === "Under Review").length})
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (confirm("Reset admin metrics and clear ledger to fresh 0.00?")) {
+                          try {
+                            localStorage.setItem("wsb_fresh_ledger_v2_initialized", "true");
+                            localStorage.removeItem("us_finance_bank_accounts");
+                            localStorage.removeItem("us_finance_bank_transactions");
+                            localStorage.removeItem("us_finance_bank_customers");
+                            localStorage.removeItem("us_finance_bank_users");
+                            localStorage.removeItem("us_finance_bank_controlled_users");
+                            localStorage.removeItem("us_finance_bank_applications");
+                            localStorage.removeItem("us_finance_bank_alerts");
+                            localStorage.removeItem("us_finance_bank_pending_profile_edits");
+                          } catch {}
+                          setAccounts([]);
+                          setTransactions([]);
+                          setCustomers([]);
+                          setAdminUsers([]);
+                          setApplications([]);
+                          setAlerts([]);
+                        }
+                      }}
+                      className="rounded-lg border border-white/20 bg-white/10 hover:bg-white/20 px-3 py-2 text-xs font-bold text-white shadow-sm transition-colors text-center flex items-center justify-center gap-1.5"
+                      title="Clear sample ledger to fresh $0.00"
+                    >
+                      <RefreshCw className="h-3 w-3" />
+                      Fresh 0.00
                     </button>
                   </div>
                 </div>
