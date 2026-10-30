@@ -75,7 +75,7 @@ import {
 } from "@/lib/international-banking";
 import { WIRE_TRANSFER_COUNTRIES, type WireCountry } from "@/lib/wire-countries";
 import { hashPin, type PinState } from "@/lib/pin-security";
-import { RegisterModal } from "@/components/auth/RegisterModal";
+import { DemoAuthModal } from "@/components/auth/DemoAuthModal";
 import { SoloAdminDashboard } from "@/components/admin/SoloAdminDashboard";
 import {
   validateAndConsumeToken,
@@ -585,7 +585,7 @@ export function Index({ view = "home" }: { view?: "home" | "account" } = {}) {
             localStorage.setItem("us_finance_bank_active_customer", JSON.stringify(newSession));
           } catch {}
 
-          setCustomerUser(customerDisplayName);
+          setCustomerUser(customerDisplayName ?? null);
           setCustomerLoginEmail(verifiedTargetEmail);
           setCheckingBalance(0.0);
           setSavingsBalance(0.0);
@@ -5445,8 +5445,19 @@ export function Index({ view = "home" }: { view?: "home" | "account" } = {}) {
         </footer>
       )}
 
-      {/* CUSTOMER LOGIN MODAL (USERNAME, PASSWORD & 4-DIGIT PIN AUTHENTICATION) */}
+      {/* DEMO CUSTOMER SIGN IN — email + password against real accounts */}
       {customerModalOpen && (
+        <DemoAuthModal
+          key="signin"
+          mode="signin"
+          onClose={() => setCustomerModalOpen(false)}
+          onSwitch={() => {
+            setCustomerModalOpen(false);
+            setOpenAccountModalOpen(true);
+          }}
+        />
+      )}
+      {false && (
         <div
           role="dialog"
           aria-modal="true"
@@ -5683,37 +5694,18 @@ export function Index({ view = "home" }: { view?: "home" | "account" } = {}) {
         </div>
       )}
 
-      {/* COMPLETE CUSTOMER BANK ACCOUNT REGISTRATION PROCESS MODAL */}
-      <RegisterModal
-        isOpen={openAccountModalOpen}
-        onClose={() => setOpenAccountModalOpen(false)}
-        country={country}
-        adminUsers={adminUsers}
-        onDispatchAlert={triggerLiveEmailAndSmsAlert}
-        onSwitchToSignIn={() => {
-          setOpenAccountModalOpen(false);
-          setCustomerModalOpen(true);
-        }}
-        onRegistrationSuccess={(customerRecord) => {
-          setCustomerLoginEmail(customerRecord.email);
-          setCheckingBalance(0.0);
-          setSavingsBalance(0.0);
-          
-          // Re-sync controlled users list
-          const controlledUsersRaw = localStorage.getItem("us_finance_bank_controlled_users");
-          if (controlledUsersRaw) {
-            try {
-              setAdminUsers(JSON.parse(controlledUsersRaw));
-            } catch {}
-          }
-          const appsRaw = localStorage.getItem("us_finance_bank_applications");
-          if (appsRaw) {
-            try {
-              setApplications(JSON.parse(appsRaw));
-            } catch {}
-          }
-        }}
-      />
+      {/* DEMO ACCOUNT SIGNUP — sends a real confirmation email */}
+      {openAccountModalOpen && (
+        <DemoAuthModal
+          key="signup"
+          mode="signup"
+          onClose={() => setOpenAccountModalOpen(false)}
+          onSwitch={() => {
+            setOpenAccountModalOpen(false);
+            setCustomerModalOpen(true);
+          }}
+        />
+      )}
 
       {/* AUTOMATIC EMAIL VERIFICATION FEEDBACK MODAL */}
       {emailVerificationModalOpen && (
