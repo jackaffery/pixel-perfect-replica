@@ -8,3 +8,4 @@
 - [ ] Make every existing admin feature operate on fictional demo customers with visible demo labels.
 - [ ] Verify admin actions, saving, and demo-only boundaries.
 - [ ] Fix the latest build errors preventing publishing.
+- [ ] Fix signup confirmation emails for demo customers: real Cloud Auth requests, confirmation callback, email/password login, recovery, and delivery verification.
