@@ -1101,17 +1101,25 @@ export function Index({ view = "home" }: { view?: "home" | "account" } = {}) {
       } catch {}
     }
 
-    // Verify password if a registered password is on record
+    // Verify credentials securely without disclosing whether the user or email exists
+    if (!storedAuth && !matchingUser) {
+      setCustomerAuthError("Invalid credentials. Please verify your username and password.");
+      return;
+    }
+
     if (storedAuth && storedAuth.password) {
       if (storedAuth.password !== enteredPassword) {
-        setCustomerAuthError("Incorrect password. Please verify your credentials and try again.");
+        setCustomerAuthError("Invalid credentials. Please verify your username and password.");
         return;
       }
     } else if (matchingUser && (matchingUser as any).password) {
       if ((matchingUser as any).password !== enteredPassword) {
-        setCustomerAuthError("Incorrect password. Please verify your credentials and try again.");
+        setCustomerAuthError("Invalid credentials. Please verify your username and password.");
         return;
       }
+    } else {
+      setCustomerAuthError("Invalid credentials. Please verify your username and password.");
+      return;
     }
 
     // Verify Email Verification Status (Must verify email before login is permitted)
@@ -1212,17 +1220,25 @@ export function Index({ view = "home" }: { view?: "home" | "account" } = {}) {
       } catch {}
     }
 
-    // Verify password if a registered password is on record
+    // Verify credentials securely without disclosing whether the user or email exists
+    if (!storedAuth && !matchingUser) {
+      setCustomerAuthError("Invalid credentials. Please verify your username and password.");
+      return;
+    }
+
     if (storedAuth && storedAuth.password) {
       if (storedAuth.password !== enteredPassword) {
-        setCustomerAuthError("Incorrect password. Please verify your credentials and try again.");
+        setCustomerAuthError("Invalid credentials. Please verify your username and password.");
         return;
       }
     } else if (matchingUser && (matchingUser as any).password) {
       if ((matchingUser as any).password !== enteredPassword) {
-        setCustomerAuthError("Incorrect password. Please verify your credentials and try again.");
+        setCustomerAuthError("Invalid credentials. Please verify your username and password.");
         return;
       }
+    } else {
+      setCustomerAuthError("Invalid credentials. Please verify your username and password.");
+      return;
     }
 
     // Verify Email Verification Status (Must verify email before login is permitted)
