@@ -3044,6 +3044,7 @@ export function Index({ view = "home" }: { view?: "home" | "account" } = {}) {
             className="border-b border-border bg-gradient-to-b from-[#003882] via-[#0055b8] to-[#0284c7] text-white py-6 sm:py-10"
           >
             <div className="mx-auto max-w-4xl px-4 sm:px-6">
+              <div className="mb-3 flex justify-end"><Link to="/profile" className="rounded-md bg-white px-3 py-1.5 text-xs font-bold text-[#003882]">Edit profile &amp; picture</Link></div>
               {/* App-like Container with Sky Blue, White, and Red styling */}
               <div className="rounded-2xl sm:rounded-3xl border-2 border-white/20 bg-gradient-to-br from-[#004b9e] via-[#0055b8] to-[#0284c7] p-5 sm:p-7 shadow-2xl relative overflow-hidden">
                 {/* Header: Bank Landmark Emblem + Bank Name + Verified Shield */}
