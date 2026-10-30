@@ -585,7 +585,7 @@ export function Index({ view = "home" }: { view?: "home" | "account" } = {}) {
             localStorage.setItem("us_finance_bank_active_customer", JSON.stringify(newSession));
           } catch {}
 
-          setCustomerUser(customerDisplayName);
+          setCustomerUser(customerDisplayName ?? null);
           setCustomerLoginEmail(verifiedTargetEmail);
           setCheckingBalance(0.0);
           setSavingsBalance(0.0);
