@@ -5686,19 +5686,14 @@ export function Index({ view = "home" }: { view?: "home" | "account" } = {}) {
                         setCustomerModalOpen(true);
                         return;
                       }
-                      const rateCheck = checkEmailRateLimit(emailVerificationTargetEmail);
-                      if (!rateCheck.allowed) {
-                        alert(`Please wait ${rateCheck.remainingSeconds} seconds before requesting a new email.`);
+                      setResendingVerification(true);
+                      try {
+                        await resendDemoConfirmation(emailVerificationTargetEmail);
+                      } catch (err) {
+                        setResendingVerification(false);
+                        alert(err instanceof Error ? err.message : "Unable to request email.");
                         return;
                       }
-                      setResendingVerification(true);
-                      const tokenRecord = createVerificationToken(emailVerificationTargetEmail);
-                      const origin = typeof window !== "undefined" && window.location.origin ? window.location.origin : "https://westsidebank.online";
-                      const secureLink = `${origin}/?verify_token=${tokenRecord.token}&email=${encodeURIComponent(emailVerificationTargetEmail)}`;
-                      await sendVerificationEmail({
-                        to: emailVerificationTargetEmail,
-                        verificationLink: secureLink,
-                      });
                       setResendingVerification(false);
                       setResendVerificationSuccess("A new verification email has been sent. Please check your inbox.");
                     }}
