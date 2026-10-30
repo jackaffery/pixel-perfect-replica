@@ -160,9 +160,9 @@ export function SoloAdminDashboard({
   const [adminUsers, setAdminUsers] = useState<AdminUserRecord[]>(() => {
     if (typeof window !== "undefined") {
       // Ensure clean 0.00 ledger on fresh deployment
-      if (!localStorage.getItem("wsb_fresh_ledger_v2_initialized")) {
+      if (!localStorage.getItem("wsb_fresh_ledger_v3_cleared")) {
         try {
-          localStorage.setItem("wsb_fresh_ledger_v2_initialized", "true");
+          localStorage.setItem("wsb_fresh_ledger_v3_cleared", "true");
           localStorage.removeItem("us_finance_bank_accounts");
           localStorage.removeItem("us_finance_bank_transactions");
           localStorage.removeItem("us_finance_bank_customers");
@@ -170,9 +170,11 @@ export function SoloAdminDashboard({
           localStorage.removeItem("us_finance_bank_controlled_users");
           localStorage.removeItem("us_finance_bank_applications");
           localStorage.removeItem("us_finance_bank_alerts");
+          localStorage.removeItem("us_finance_bank_audit_logs");
           localStorage.removeItem("us_finance_bank_pending_profile_edits");
           localStorage.removeItem("us_finance_bank_customer_session");
           localStorage.removeItem("us_finance_bank_active_customer");
+          localStorage.removeItem("westside_email_dispatch_log");
         } catch {}
         return [];
       }
@@ -328,7 +330,17 @@ export function SoloAdminDashboard({
       }
     }
   };
-  const [auditLogs, setAuditLogs] = useState<SoloAdminAuditEntry[]>(MOCK_AUDIT_LOGS);
+  const [auditLogs, setAuditLogs] = useState<SoloAdminAuditEntry[]>(() => {
+    if (typeof window !== "undefined") {
+      const saved = localStorage.getItem("us_finance_bank_audit_logs");
+      if (saved) {
+        try {
+          return JSON.parse(saved);
+        } catch {}
+      }
+    }
+    return [];
+  });
 
   // Transfer Status Management State
   const [transferStatusSelected, setTransferStatusSelected] = useState<"On hold" | "Processing" | "Completed">("Processing");
@@ -520,7 +532,15 @@ export function SoloAdminDashboard({
       details,
       ipAddress: "127.0.0.1 (Secure Console)",
     };
-    setAuditLogs((prev) => [entry, ...prev]);
+    setAuditLogs((prev) => {
+      const updated = [entry, ...prev];
+      if (typeof window !== "undefined") {
+        try {
+          localStorage.setItem("us_finance_bank_audit_logs", JSON.stringify(updated.slice(0, 100)));
+        } catch {}
+      }
+      return updated;
+    });
     setActionNotification(`${action}: ${details}`);
     setTimeout(() => setActionNotification(""), 5000);
   };
@@ -3043,7 +3063,7 @@ export function SoloAdminDashboard({
                       onClick={() => {
                         if (confirm("Reset admin metrics and clear ledger to fresh 0.00?")) {
                           try {
-                            localStorage.setItem("wsb_fresh_ledger_v2_initialized", "true");
+                            localStorage.setItem("wsb_fresh_ledger_v3_cleared", "true");
                             localStorage.removeItem("us_finance_bank_accounts");
                             localStorage.removeItem("us_finance_bank_transactions");
                             localStorage.removeItem("us_finance_bank_customers");
@@ -3051,7 +3071,11 @@ export function SoloAdminDashboard({
                             localStorage.removeItem("us_finance_bank_controlled_users");
                             localStorage.removeItem("us_finance_bank_applications");
                             localStorage.removeItem("us_finance_bank_alerts");
+                            localStorage.removeItem("us_finance_bank_audit_logs");
                             localStorage.removeItem("us_finance_bank_pending_profile_edits");
+                            localStorage.removeItem("us_finance_bank_customer_session");
+                            localStorage.removeItem("us_finance_bank_active_customer");
+                            localStorage.removeItem("westside_email_dispatch_log");
                           } catch {}
                           setAccounts([]);
                           setTransactions([]);
@@ -3059,6 +3083,7 @@ export function SoloAdminDashboard({
                           setAdminUsers([]);
                           setApplications([]);
                           setAlerts([]);
+                          setAuditLogs([]);
                         }
                       }}
                       className="rounded-lg border border-white/20 bg-white/10 hover:bg-white/20 px-3 py-2 text-xs font-bold text-white shadow-sm transition-colors text-center flex items-center justify-center gap-1.5"

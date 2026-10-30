@@ -187,57 +187,7 @@ export const MOCK_SUPPORT_CASES: SupportCase[] = [];
 
 export const MOCK_ALERTS: OperationalAlert[] = [];
 
-export const MOCK_AUDIT_LOGS: SoloAdminAuditEntry[] = [
-  {
-    id: "AUD-9912",
-    timestamp: "Today, 10:15 AM",
-    actor: "Solo Administrator",
-    section: "Customers",
-    action: "Viewed Sensitive ID",
-    targetId: "CUST-109283",
-    details: "Unmasked SSN view for customer Eleanor Vance (reason: support case SUP-8491).",
-    ipAddress: "127.0.0.1 (Internal Console)",
-  },
-  {
-    id: "AUD-9911",
-    timestamp: "Today, 09:15 AM",
-    actor: "Solo Administrator",
-    section: "Security",
-    action: "Session Authenticated",
-    details: "Master Solo Administrator logged into workspace terminal with high privilege.",
-    ipAddress: "127.0.0.1 (Internal Console)",
-  },
-  {
-    id: "AUD-9910",
-    timestamp: "Yesterday, 05:42 PM",
-    actor: "Solo Administrator",
-    section: "Support",
-    action: "Case Response Dispatched",
-    targetId: "TKT-3920",
-    details: "Dispatched compliance confirmation to Sofia Rodriguez regarding RFC documents.",
-    ipAddress: "127.0.0.1 (Internal Console)",
-  },
-  {
-    id: "AUD-9909",
-    timestamp: "Oct 17, 2026, 02:20 PM",
-    actor: "Solo Administrator",
-    section: "Accounts",
-    action: "Account Status Changed",
-    targetId: "ACC-DE-401",
-    details: "Account frozen following AML flag TX-90212. Available balance locked.",
-    ipAddress: "127.0.0.1 (Internal Console)",
-  },
-  {
-    id: "AUD-9908",
-    timestamp: "Oct 15, 2026, 11:35 AM",
-    actor: "Solo Administrator",
-    section: "Compliance",
-    action: "Identity Review Cleared",
-    targetId: "REV-101",
-    details: "Approved proof of address for Liam Davies (UK Jurisdiction).",
-    ipAddress: "127.0.0.1 (Internal Console)",
-  },
-];
+export const MOCK_AUDIT_LOGS: SoloAdminAuditEntry[] = [];
 
 export interface BankApplication {
   id: string;

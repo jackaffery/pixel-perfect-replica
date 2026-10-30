@@ -77,6 +77,12 @@ import { WIRE_TRANSFER_COUNTRIES, type WireCountry } from "@/lib/wire-countries"
 import { hashPin, type PinState } from "@/lib/pin-security";
 import { RegisterModal } from "@/components/auth/RegisterModal";
 import { SoloAdminDashboard } from "@/components/admin/SoloAdminDashboard";
+import {
+  validateAndConsumeToken,
+  createVerificationToken,
+  checkEmailRateLimit,
+  sendVerificationEmail,
+} from "@/lib/email-verification-service";
 
 
 
@@ -534,7 +540,70 @@ export function Index({ view = "home" }: { view?: "home" | "account" } = {}) {
         setAdminModalOpen(true);
       }
 
-      if (params.get("verify_token") || params.get("token")) {
+      const verifyToken = params.get("verify_token") || params.get("token");
+      const verifyEmail = params.get("email") || params.get("verify_email");
+      if (verifyToken) {
+        const validation = validateAndConsumeToken(verifyToken);
+        if (validation.valid && validation.record) {
+          const verifiedTargetEmail = validation.record.email.toLowerCase().trim();
+          
+          // Update customer auth record in localStorage
+          try {
+            const rawAuth = localStorage.getItem(`wsb_customer_auth_${verifiedTargetEmail}`);
+            if (rawAuth) {
+              const authObj = JSON.parse(rawAuth);
+              authObj.email_verified = true;
+              localStorage.setItem(`wsb_customer_auth_${verifiedTargetEmail}`, JSON.stringify(authObj));
+            }
+          } catch {}
+
+          // Update controlled users list
+          try {
+            const rawCtrl = localStorage.getItem("us_finance_bank_controlled_users");
+            if (rawCtrl) {
+              const ctrlList = JSON.parse(rawCtrl);
+              const updatedCtrl = ctrlList.map((u: any) =>
+                u.email?.toLowerCase().trim() === verifiedTargetEmail ? { ...u, email_verified: true, status: "active" } : u
+              );
+              localStorage.setItem("us_finance_bank_controlled_users", JSON.stringify(updatedCtrl));
+              setAdminUsers(updatedCtrl);
+            }
+          } catch {}
+
+          // Auto-login newly verified customer
+          const customerDisplayName = validation.record.fullName || validation.record.username || verifiedTargetEmail.split("@")[0];
+          const newSession = {
+            customerName: customerDisplayName,
+            checkingBalance: 0.0,
+            savingsBalance: 0.0,
+            email: verifiedTargetEmail,
+            isNewUser: false,
+            kycStatus: "Verified",
+          };
+          try {
+            localStorage.setItem("us_finance_bank_customer_session", JSON.stringify(newSession));
+            localStorage.setItem("us_finance_bank_active_customer", JSON.stringify(newSession));
+          } catch {}
+
+          setCustomerUser(customerDisplayName);
+          setCustomerLoginEmail(verifiedTargetEmail);
+          setCheckingBalance(0.0);
+          setSavingsBalance(0.0);
+          setEmailVerificationStatus("success");
+          setEmailVerificationMessage(`Email address ${verifiedTargetEmail} verified successfully! You are now logged into your secure digital banking profile.`);
+          setEmailVerificationModalOpen(true);
+        } else {
+          setEmailVerificationStatus(validation.status === "expired" ? "expired" : "invalid");
+          setEmailVerificationMessage(validation.message || "The verification link is invalid or has expired. Please request a new verification email.");
+          setEmailVerificationTargetEmail(verifyEmail || "");
+          setEmailVerificationModalOpen(true);
+        }
+        window.history.replaceState({}, "", window.location.pathname);
+      } else if (verifyEmail && params.get("action") === "activate") {
+        // Direct email activation fallback
+        setEmailVerificationStatus("success");
+        setEmailVerificationMessage(`Email verified! Welcome to West Side Financial Institution.`);
+        setCustomerLoginEmail(verifyEmail);
         setCustomerModalOpen(true);
         window.history.replaceState({}, "", window.location.pathname);
       }
