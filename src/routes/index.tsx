@@ -74,13 +74,8 @@ import {
 import { WIRE_TRANSFER_COUNTRIES, type WireCountry } from "@/lib/wire-countries";
 import { hashPin, type PinState } from "@/lib/pin-security";
 import { SoloAdminDashboard } from "@/components/admin/SoloAdminDashboard";
-import { RegisterModal } from "@/components/auth/RegisterModal";
-import {
-  validateAndConsumeToken,
-  createVerificationToken,
-  sendVerificationEmail,
-  checkEmailRateLimit,
-} from "@/lib/email-verification-service";
+import { DemoAuthModal } from "@/components/auth/DemoAuthModal";
+
 
 
 // Safe Error Boundary for Admin Dashboard Protection
@@ -537,116 +532,9 @@ export function Index({ view = "home" }: { view?: "home" | "account" } = {}) {
         setAdminModalOpen(true);
       }
 
-      // Check for email verification token in URL
-      const verifyToken = params.get("verify_token") || params.get("token");
-      const targetEmailParam = params.get("verify_email") || params.get("email");
-
-      if (verifyToken) {
-        const result = validateAndConsumeToken(verifyToken);
-        const resolvedEmail = (result.record?.email || targetEmailParam || "").toLowerCase().trim();
-        setEmailVerificationTargetEmail(resolvedEmail);
-
-        if (result.valid) {
-          setEmailVerificationStatus("success");
-          setEmailVerificationMessage("Your email address has been successfully verified. Logging you in to your customer profile...");
-          setEmailVerificationModalOpen(true);
-
-          // Update database records: mark email_verified = true
-          try {
-            if (resolvedEmail) {
-              // 1. Controlled users pool
-              const rawControlled = localStorage.getItem("us_finance_bank_controlled_users");
-              let matchingControlledUser: any = null;
-              if (rawControlled) {
-                const list = JSON.parse(rawControlled);
-                const updated = list.map((u: any) => {
-                  if ((u.email || "").toLowerCase().trim() === resolvedEmail) {
-                    matchingControlledUser = { ...u, email_verified: true };
-                    return matchingControlledUser;
-                  }
-                  return u;
-                });
-                localStorage.setItem("us_finance_bank_controlled_users", JSON.stringify(updated));
-              }
-
-              // 2. Applications pool
-              const rawApps = localStorage.getItem("us_finance_bank_applications");
-              let matchingApp: any = null;
-              if (rawApps) {
-                const list = JSON.parse(rawApps);
-                const updated = list.map((a: any) => {
-                  if ((a.email || "").toLowerCase().trim() === resolvedEmail) {
-                    matchingApp = { ...a, email_verified: true, reviewNotes: `${a.reviewNotes || ""} (Email address confirmed via secure link)` };
-                    return matchingApp;
-                  }
-                  return a;
-                });
-                localStorage.setItem("us_finance_bank_applications", JSON.stringify(updated));
-              }
-
-              // 3. Customer auth records
-              let parsedAuth: any = null;
-              const rawAuth = localStorage.getItem(`wsb_customer_auth_${resolvedEmail}`);
-              if (rawAuth) {
-                parsedAuth = JSON.parse(rawAuth);
-                parsedAuth.email_verified = true;
-                localStorage.setItem(`wsb_customer_auth_${resolvedEmail}`, JSON.stringify(parsedAuth));
-                if (parsedAuth.username) {
-                  localStorage.setItem(`wsb_customer_auth_${parsedAuth.username.toLowerCase()}`, JSON.stringify(parsedAuth));
-                }
-              }
-
-              // Automatically log customer into their profile dashboard
-              const customerName =
-                matchingControlledUser?.name ||
-                matchingApp?.fullName ||
-                parsedAuth?.fullName ||
-                result.record?.fullName ||
-                (resolvedEmail.includes("@") ? resolvedEmail.split("@")[0] : resolvedEmail);
-
-              const chkBal = matchingControlledUser?.checkingBalance ?? 0.0;
-              const savBal = matchingControlledUser?.savingsBalance ?? 0.0;
-              const profPic = matchingControlledUser?.profilePicUrl || undefined;
-
-              const activeSession = {
-                customerName,
-                checkingBalance: chkBal,
-                savingsBalance: savBal,
-                email: resolvedEmail,
-                isNewUser: !matchingControlledUser,
-                profilePicUrl: profPic,
-              };
-
-              localStorage.setItem("us_finance_bank_customer_session", JSON.stringify(activeSession));
-              setCustomerUser(customerName);
-              setCheckingBalance(chkBal);
-              setSavingsBalance(savBal);
-              if (profPic) {
-                setCustomerProfilePic(profPic);
-              }
-
-              window.dispatchEvent(new Event("storage"));
-
-              // Automatically transition customer to /account dashboard
-              setTimeout(() => {
-                setEmailVerificationModalOpen(false);
-                navigate({ to: "/account" });
-              }, 1200);
-            }
-          } catch (e) {
-            console.error("Failed to mark email_verified in database", e);
-          }
-        } else {
-          setEmailVerificationStatus(result.status === "expired" ? "expired" : "invalid");
-          setEmailVerificationMessage(result.message);
-          setEmailVerificationModalOpen(true);
-        }
-
-        // Clean up URL parameters cleanly
-        try {
-          const cleanUrl = window.location.origin + window.location.pathname;
-          window.history.replaceState({}, document.title, cleanUrl);
-        } catch {}
+      if (params.get("verify_token") || params.get("token")) {
+        setCustomerModalOpen(true);
+        window.history.replaceState({}, "", window.location.pathname);
       }
     }
   }, []);
