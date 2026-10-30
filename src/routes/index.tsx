@@ -527,6 +527,29 @@ export function Index({ view = "home" }: { view?: "home" | "account" } = {}) {
   // Check URL on mount: Process Email Verification Tokens or Staff Admin Sign-In
   useEffect(() => {
     if (typeof window !== "undefined") {
+      // Clear previously registered emails and customer accounts so users can reapply with fresh live links
+      if (!localStorage.getItem("wsb_cleared_customer_emails_v1")) {
+        try {
+          localStorage.setItem("wsb_cleared_customer_emails_v1", "true");
+          localStorage.removeItem("us_finance_bank_controlled_users");
+          localStorage.removeItem("us_finance_bank_applications");
+          localStorage.removeItem("us_finance_bank_customer_session");
+          localStorage.removeItem("us_finance_bank_active_customer");
+          localStorage.removeItem("wsb_email_verification_tokens");
+          localStorage.removeItem("westside_email_dispatch_log");
+          
+          // Purge all customer auth and pin keys from storage
+          const keysToRemove: string[] = [];
+          for (let i = 0; i < localStorage.length; i++) {
+            const key = localStorage.key(i);
+            if (key && (key.startsWith("wsb_customer_auth_") || key.startsWith("us_finance_bank_pin_"))) {
+              keysToRemove.push(key);
+            }
+          }
+          keysToRemove.forEach((k) => localStorage.removeItem(k));
+        } catch {}
+      }
+
       const params = new URLSearchParams(window.location.search);
       const hash = window.location.hash.toLowerCase();
       if (

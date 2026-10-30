@@ -159,10 +159,10 @@ export function SoloAdminDashboard({
   // Core State
   const [adminUsers, setAdminUsers] = useState<AdminUserRecord[]>(() => {
     if (typeof window !== "undefined") {
-      // Ensure clean 0.00 ledger on fresh deployment
-      if (!localStorage.getItem("wsb_fresh_ledger_v3_cleared")) {
+      // Ensure clean 0.00 ledger on fresh deployment and purge registered customer emails
+      if (!localStorage.getItem("wsb_fresh_ledger_v4_cleared")) {
         try {
-          localStorage.setItem("wsb_fresh_ledger_v3_cleared", "true");
+          localStorage.setItem("wsb_fresh_ledger_v4_cleared", "true");
           localStorage.removeItem("us_finance_bank_accounts");
           localStorage.removeItem("us_finance_bank_transactions");
           localStorage.removeItem("us_finance_bank_customers");
@@ -175,6 +175,17 @@ export function SoloAdminDashboard({
           localStorage.removeItem("us_finance_bank_customer_session");
           localStorage.removeItem("us_finance_bank_active_customer");
           localStorage.removeItem("westside_email_dispatch_log");
+          localStorage.removeItem("wsb_email_verification_tokens");
+          
+          // Purge all customer auth and pin records
+          const keysToRemove: string[] = [];
+          for (let i = 0; i < localStorage.length; i++) {
+            const key = localStorage.key(i);
+            if (key && (key.startsWith("wsb_customer_auth_") || key.startsWith("us_finance_bank_pin_"))) {
+              keysToRemove.push(key);
+            }
+          }
+          keysToRemove.forEach((k) => localStorage.removeItem(k));
         } catch {}
         return [];
       }
