@@ -73,9 +73,8 @@ import {
 } from "@/lib/international-banking";
 import { WIRE_TRANSFER_COUNTRIES, type WireCountry } from "@/lib/wire-countries";
 import { hashPin, type PinState } from "@/lib/pin-security";
+import { RegisterModal } from "@/components/auth/RegisterModal";
 import { SoloAdminDashboard } from "@/components/admin/SoloAdminDashboard";
-import { DemoAuthModal } from "@/components/auth/DemoAuthModal";
-import { resendDemoConfirmation } from "@/lib/demo-auth";
 
 
 
@@ -5597,7 +5596,36 @@ export function Index({ view = "home" }: { view?: "home" | "account" } = {}) {
       )}
 
       {/* COMPLETE CUSTOMER BANK ACCOUNT REGISTRATION PROCESS MODAL */}
-      {openAccountModalOpen && <DemoAuthModal mode="signup" onClose={() => setOpenAccountModalOpen(false)} onSwitch={() => { setOpenAccountModalOpen(false); setCustomerModalOpen(true); }} />}
+      <RegisterModal
+        isOpen={openAccountModalOpen}
+        onClose={() => setOpenAccountModalOpen(false)}
+        country={country}
+        adminUsers={adminUsers}
+        onDispatchAlert={triggerLiveEmailAndSmsAlert}
+        onSwitchToSignIn={() => {
+          setOpenAccountModalOpen(false);
+          setCustomerModalOpen(true);
+        }}
+        onRegistrationSuccess={(customerRecord) => {
+          setCustomerLoginEmail(customerRecord.email);
+          setCheckingBalance(0.0);
+          setSavingsBalance(0.0);
+          
+          // Re-sync controlled users list
+          const controlledUsersRaw = localStorage.getItem("us_finance_bank_controlled_users");
+          if (controlledUsersRaw) {
+            try {
+              setAdminUsers(JSON.parse(controlledUsersRaw));
+            } catch {}
+          }
+          const appsRaw = localStorage.getItem("us_finance_bank_applications");
+          if (appsRaw) {
+            try {
+              setApplications(JSON.parse(appsRaw));
+            } catch {}
+          }
+        }}
+      />
 
       {/* AUTOMATIC EMAIL VERIFICATION FEEDBACK MODAL */}
       {emailVerificationModalOpen && (
@@ -5658,15 +5686,21 @@ export function Index({ view = "home" }: { view?: "home" | "account" } = {}) {
                         setCustomerModalOpen(true);
                         return;
                       }
-                      setResendingVerification(true);
-                      try {
-                        await resendDemoConfirmation(emailVerificationTargetEmail);
-                        setResendVerificationSuccess("Email request accepted. Check your inbox and spam folder.");
-                      } catch (error) {
-                        setResendVerificationSuccess(error instanceof Error ? error.message : "Unable to request email.");
-                      } finally {
-                        setResendingVerification(false);
+                      const rateCheck = checkEmailRateLimit(emailVerificationTargetEmail);
+                      if (!rateCheck.allowed) {
+                        alert(`Please wait ${rateCheck.remainingSeconds} seconds before requesting a new email.`);
+                        return;
                       }
+                      setResendingVerification(true);
+                      const tokenRecord = createVerificationToken(emailVerificationTargetEmail);
+                      const origin = typeof window !== "undefined" && window.location.origin ? window.location.origin : "https://westsidebank.online";
+                      const secureLink = `${origin}/?verify_token=${tokenRecord.token}&email=${encodeURIComponent(emailVerificationTargetEmail)}`;
+                      await sendVerificationEmail({
+                        to: emailVerificationTargetEmail,
+                        verificationLink: secureLink,
+                      });
+                      setResendingVerification(false);
+                      setResendVerificationSuccess("A new verification email has been sent. Please check your inbox.");
                     }}
                     disabled={resendingVerification}
                     className="w-full bg-[#0055b8] hover:bg-blue-700 text-white font-bold py-2.5 text-xs shadow-md"
