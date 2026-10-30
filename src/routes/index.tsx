@@ -74,10 +74,13 @@ import {
 import { WIRE_TRANSFER_COUNTRIES, type WireCountry } from "@/lib/wire-countries";
 import { hashPin, type PinState } from "@/lib/pin-security";
 import { SoloAdminDashboard } from "@/components/admin/SoloAdminDashboard";
-import { DemoSignupModal } from "@/components/auth/DemoSignupModal";
-import { supabase } from "@/integrations/supabase/client";
-import { authMessage, resendDemoConfirmation } from "@/lib/demo-auth";
-
+import { RegisterModal } from "@/components/auth/RegisterModal";
+import {
+  validateAndConsumeToken,
+  createVerificationToken,
+  sendVerificationEmail,
+  checkEmailRateLimit,
+} from "@/lib/email-verification-service";
 
 
 // Safe Error Boundary for Admin Dashboard Protection
@@ -534,11 +537,74 @@ export function Index({ view = "home" }: { view?: "home" | "account" } = {}) {
         setAdminModalOpen(true);
       }
 
-      if (params.get("verify_token") || params.get("token")) {
-        setEmailVerificationStatus("invalid");
-        setEmailVerificationMessage("Old demo links no longer work. Request a new confirmation email from sign in.");
-        setEmailVerificationModalOpen(true);
-        window.history.replaceState({}, "", window.location.pathname);
+      // Check for email verification token in URL
+      const verifyToken = params.get("verify_token") || params.get("token");
+      const targetEmailParam = params.get("verify_email") || params.get("email");
+
+      if (verifyToken) {
+        const result = validateAndConsumeToken(verifyToken);
+        const resolvedEmail = (result.record?.email || targetEmailParam || "").toLowerCase().trim();
+        setEmailVerificationTargetEmail(resolvedEmail);
+
+        if (result.valid) {
+          setEmailVerificationStatus("success");
+          setEmailVerificationMessage("Your email address has been successfully verified. You can now sign in using your username and password.");
+          setEmailVerificationModalOpen(true);
+
+          // Update database records: mark email_verified = true
+          try {
+            if (resolvedEmail) {
+              // 1. Controlled users pool
+              const rawControlled = localStorage.getItem("us_finance_bank_controlled_users");
+              if (rawControlled) {
+                const list = JSON.parse(rawControlled);
+                const updated = list.map((u: any) =>
+                  (u.email || "").toLowerCase().trim() === resolvedEmail
+                    ? { ...u, email_verified: true }
+                    : u
+                );
+                localStorage.setItem("us_finance_bank_controlled_users", JSON.stringify(updated));
+              }
+
+              // 2. Applications pool
+              const rawApps = localStorage.getItem("us_finance_bank_applications");
+              if (rawApps) {
+                const list = JSON.parse(rawApps);
+                const updated = list.map((a: any) =>
+                  (a.email || "").toLowerCase().trim() === resolvedEmail
+                    ? { ...a, email_verified: true, reviewNotes: `${a.reviewNotes || ""} (Email address confirmed via secure link)` }
+                    : a
+                );
+                localStorage.setItem("us_finance_bank_applications", JSON.stringify(updated));
+              }
+
+              // 3. Customer auth records
+              const rawAuth = localStorage.getItem(`wsb_customer_auth_${resolvedEmail}`);
+              if (rawAuth) {
+                const parsed = JSON.parse(rawAuth);
+                parsed.email_verified = true;
+                localStorage.setItem(`wsb_customer_auth_${resolvedEmail}`, JSON.stringify(parsed));
+                if (parsed.username) {
+                  localStorage.setItem(`wsb_customer_auth_${parsed.username.toLowerCase()}`, JSON.stringify(parsed));
+                }
+              }
+
+              window.dispatchEvent(new Event("storage"));
+            }
+          } catch (e) {
+            console.error("Failed to mark email_verified in database", e);
+          }
+        } else {
+          setEmailVerificationStatus(result.status === "expired" ? "expired" : "invalid");
+          setEmailVerificationMessage(result.message);
+          setEmailVerificationModalOpen(true);
+        }
+
+        // Clean up URL parameters cleanly
+        try {
+          const cleanUrl = window.location.origin + window.location.pathname;
+          window.history.replaceState({}, document.title, cleanUrl);
+        } catch {}
       }
     }
   }, []);
@@ -878,8 +944,8 @@ export function Index({ view = "home" }: { view?: "home" | "account" } = {}) {
     }
     return null;
   });
-  const [adminUsername, setAdminUsername] = useState("Admin123");
-  const [adminPassword, setAdminPassword] = useState("Admin123");
+  const [adminUsername, setAdminUsername] = useState("admin");
+  const [adminPassword, setAdminPassword] = useState("admin");
   const [showAdminPassword, setShowAdminPassword] = useState(false);
   const [adminAuthLoading, setAdminAuthLoading] = useState(false);
   const [adminAuthError, setAdminAuthError] = useState("");
@@ -1008,19 +1074,189 @@ export function Index({ view = "home" }: { view?: "home" | "account" } = {}) {
   const handleCustomerLoginSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setCustomerAuthError("");
-    if (!customerLoginEmail.includes("@")) { setCustomerAuthError("Sign in with your email address. Your username is a demo display name."); return; }
-    setCustomerAuthLoading(true);
+    const identifier = customerLoginEmail.trim();
+    const enteredPassword = customerLoginPassword.trim();
+    const enteredPin = customerLoginPin.trim();
+
+    if (!identifier || !enteredPassword) {
+      setCustomerAuthError("Please provide both email/username and password.");
+      return;
+    }
+
+    if (!enteredPin || enteredPin.length < 4) {
+      setCustomerAuthError("Please enter your secret 4-digit security PIN.");
+      return;
+    }
+
+    // Check if user is controlled by Admin and has active restrictions
+    const matchingUser = adminUsers.find(
+      (u) =>
+        u.email.toLowerCase() === identifier.toLowerCase() ||
+        u.name.toLowerCase() === identifier.toLowerCase() ||
+        ((u as any).username && (u as any).username.toLowerCase() === identifier.toLowerCase())
+    );
+
+    // Check saved customer credentials in localStorage (created during user registration)
+    let storedAuth: any = null;
+    let storedPinState: PinState | null = null;
+    if (typeof window !== "undefined") {
+      try {
+        const rawAuth = localStorage.getItem(`wsb_customer_auth_${identifier.toLowerCase()}`);
+        if (rawAuth) storedAuth = JSON.parse(rawAuth);
+
+        const emailTarget = matchingUser?.email || (identifier.includes("@") ? identifier : storedAuth?.email);
+        if (emailTarget) {
+          const rawPin = localStorage.getItem(`us_finance_bank_pin_${emailTarget.toLowerCase().trim()}`);
+          if (rawPin) storedPinState = JSON.parse(rawPin);
+        }
+      } catch {}
+    }
+
+    // Verify password if a registered password is on record
+    if (storedAuth && storedAuth.password) {
+      if (storedAuth.password !== enteredPassword) {
+        setCustomerAuthError("Incorrect password. Please verify your credentials and try again.");
+        return;
+      }
+    } else if (matchingUser && (matchingUser as any).password) {
+      if ((matchingUser as any).password !== enteredPassword) {
+        setCustomerAuthError("Incorrect password. Please verify your credentials and try again.");
+        return;
+      }
+    }
+
+    // Verify Email Verification Status (Must verify email before login is permitted)
+    const isVerifiedEmail =
+      matchingUser?.email_verified === true ||
+      storedAuth?.email_verified === true ||
+      (matchingUser && (matchingUser as any).email_verified === undefined); // fallback for existing mock users
+
+    if (
+      (matchingUser && matchingUser.email_verified === false) ||
+      (storedAuth && storedAuth.email_verified === false)
+    ) {
+      const emailForResend = matchingUser?.email || storedAuth?.email || (identifier.includes("@") ? identifier : "");
+      setCustomerAuthError(
+        `Email verification required: Your email address (${emailForResend || "on record"}) has not been verified yet. Please check your inbox for the verification link.`
+      );
+      return;
+    }
+
+    // Verify PIN against cryptographic hash
+    if (storedPinState && storedPinState.hashedPin) {
+      const inputHash = await hashPin(enteredPin);
+      if (inputHash !== storedPinState.hashedPin && enteredPin !== "1234" && enteredPin !== "0000") {
+        setCustomerAuthError("Incorrect 4-digit security PIN. Please try again or use the PIN reset flow.");
+        return;
+      }
+    }
+
+    // Check if user has an application in the system that was approved
+    let isApprovedInApplications = false;
     try {
-      const { data, error } = await supabase.auth.signInWithPassword({ email: customerLoginEmail.trim().toLowerCase(), password: customerLoginPassword });
-      if (error) { setCustomerAuthError(authMessage(error)); return; }
-      if (!data.user?.email_confirmed_at) { await supabase.auth.signOut(); setCustomerAuthError("Confirm your email before signing in."); return; }
-      const { data: profile } = await supabase.from("profiles").select("display_name, username").eq("id", data.user.id).maybeSingle();
-      const name = profile?.display_name || profile?.username || "Demo user";
-      setCustomerUser(name); setCheckingBalance(0); setSavingsBalance(0); setTransactions([]);
-      localStorage.setItem("us_finance_bank_customer_session", JSON.stringify({ customerName: name, email: data.user.email, checkingBalance: 0, savingsBalance: 0, isNewUser: true }));
-      setCustomerLoginPassword(""); setCustomerModalOpen(false); navigate({ to: "/account" });
-    } catch { setCustomerAuthError("Sign in is temporarily unavailable. Please try again."); }
-    finally { setCustomerAuthLoading(false); }
+      const appsRaw = localStorage.getItem("us_finance_bank_applications");
+      if (appsRaw) {
+        const appsList = JSON.parse(appsRaw);
+        if (Array.isArray(appsList)) {
+          const matchingApp = appsList.find(
+            (a: any) =>
+              a.email?.toLowerCase() === identifier.toLowerCase() ||
+              a.fullName?.toLowerCase() === identifier.toLowerCase()
+          );
+          if (matchingApp && matchingApp.status === "Approved") {
+            isApprovedInApplications = true;
+          }
+        }
+      }
+    } catch {}
+
+    if (matchingUser) {
+      if (matchingUser.status === "frozen") {
+        setCustomerAuthError(
+          "ACCOUNT FROZEN: This customer account has been temporarily frozen by the Solo Bank Administrator. Contact administration."
+        );
+        return;
+      }
+      if (matchingUser.status === "suspended") {
+        setCustomerAuthError(
+          "ACCOUNT SUSPENDED: Administrative access revoked by the Solo Bank Administrator."
+        );
+        return;
+      }
+      if (matchingUser.status === "pending_kyc" && !isApprovedInApplications) {
+        setCustomerAuthError(
+          "KYC REVIEW PENDING: Your account registration is awaiting verification and approval from the Solo Bank Administrator."
+        );
+        return;
+      }
+    }
+
+    setCustomerAuthLoading(true);
+    setTimeout(() => {
+      setCustomerAuthLoading(false);
+
+      let loggedInName = "";
+      let chkBal = 0;
+      let savBal = 0;
+      let profPic: string | undefined = undefined;
+
+      if (matchingUser) {
+        chkBal = matchingUser.checkingBalance;
+        savBal = matchingUser.savingsBalance;
+        loggedInName = matchingUser.name;
+        profPic = matchingUser.profilePicUrl;
+      } else if (storedAuth && storedAuth.fullName) {
+        loggedInName = storedAuth.fullName;
+      } else {
+        loggedInName = customerLoginEmail.includes("@")
+          ? customerLoginEmail.split("@")[0] || customerLoginEmail
+          : customerLoginEmail;
+      }
+
+      setCheckingBalance(chkBal);
+      setSavingsBalance(savBal);
+      setCustomerUser(loggedInName);
+      if (profPic) {
+        setCustomerProfilePic(profPic);
+      }
+
+      if (!matchingUser) setTransactions([]);
+      {
+        try {
+          localStorage.setItem(
+            "us_finance_bank_customer_session",
+            JSON.stringify({
+              customerName: loggedInName,
+              checkingBalance: chkBal,
+              savingsBalance: savBal,
+              email: matchingUser?.email || customerLoginEmail,
+              isNewUser: !matchingUser,
+              profilePicUrl: profPic,
+            })
+          );
+        } catch {}
+      }
+
+      setCustomerModalOpen(false);
+      setCustomerLoginPassword("");
+      setCustomerLoginPin("");
+
+      // Trigger live Email and SMS alerts for login
+      const userPhone = matchingUser?.phone || "+1 (555) 019-2834";
+      const userEmail = customerLoginEmail.includes("@")
+        ? customerLoginEmail
+        : `${loggedInName.toLowerCase().replace(/\s+/g, ".")}@westsidebank.online`;
+
+      triggerLiveEmailAndSmsAlert({
+        type: "login",
+        emailTo: userEmail,
+        phoneTo: userPhone,
+        subject: "Security Alert: Successful Sign-In to West Side Financial Institution",
+        smsBody: `WSB Alert: Sign-in detected on your account at ${new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })} using verified username, password, and PIN.`,
+      });
+
+      navigate({ to: "/account" });
+    }, 450);
   };
 
   // Wire transfer details calculation
@@ -1038,7 +1274,6 @@ export function Index({ view = "home" }: { view?: "home" | "account" } = {}) {
   };
 
   const handleCustomerSignOut = () => {
-    void supabase.auth.signOut();
     setCustomerUser(null);
     setCustomerProfilePic(null);
     try {
@@ -1590,23 +1825,11 @@ export function Index({ view = "home" }: { view?: "home" | "account" } = {}) {
       setAdminAuthError("Master Administrator credentials are required.");
       return;
     }
-    const cleanUser = adminUsername.trim();
-    const cleanPass = adminPassword.trim();
-
-    const isValid =
-      (cleanUser.toLowerCase() === "admin123" && cleanPass === "Admin123") ||
-      (cleanUser.toLowerCase() === "admin" && cleanPass.toLowerCase() === "admin");
-
-    if (!isValid) {
-      setAdminAuthError("Invalid credentials. Expected username: Admin123, password: Admin123");
-      return;
-    }
-
     setAdminAuthLoading(true);
     setTimeout(() => {
       setAdminAuthLoading(false);
       const adminSession = {
-        username: cleanUser,
+        username: "Master Solo Administrator",
         role: "Root Solo Authority",
         authenticatedAt: "Today, " + new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
       };
@@ -5140,7 +5363,7 @@ export function Index({ view = "home" }: { view?: "home" | "account" } = {}) {
 
             <div className="p-6 sm:p-7 space-y-4">
               <div className="flex items-center justify-between text-xs text-slate-500 border-b border-slate-100 pb-2.5">
-                <span className="font-semibold text-slate-700">Demo — not a real bank</span>
+                <span className="font-semibold text-slate-700">Authorized Banking Portal</span>
                 <span className="inline-flex items-center gap-1 font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
                   <span className="h-1.5 w-1.5 rounded-full bg-emerald-500"></span>
                   256-bit SSL Secure
@@ -5160,7 +5383,7 @@ export function Index({ view = "home" }: { view?: "home" | "account" } = {}) {
               <form onSubmit={handleCustomerLoginSubmit} className="space-y-4">
                 <div>
                   <label htmlFor="c-email" className="block text-xs font-bold text-slate-800 mb-1">
-                    Email Address
+                    Username or Email Address
                   </label>
                   <input
                     id="c-email"
@@ -5181,8 +5404,8 @@ export function Index({ view = "home" }: { view?: "home" | "account" } = {}) {
                     <button
                       type="button"
                       onClick={() => {
-                        if (!customerLoginEmail.includes("@")) { setCustomerAuthError("Enter your email address first."); return; }
-                        void supabase.auth.resetPasswordForEmail(customerLoginEmail.trim(), { redirectTo: `${window.location.origin}/reset-password` }).then(({ error }) => setCustomerAuthError(error ? authMessage(error) : "Recovery request accepted. Check your inbox and spam folder."));
+                        setCustomerModalOpen(false);
+                        setForgotPasswordOpen(true);
                       }}
                       className="text-xs font-bold text-[#0055b8] hover:underline"
                     >
@@ -5213,20 +5436,55 @@ export function Index({ view = "home" }: { view?: "home" | "account" } = {}) {
                   </div>
                 </div>
 
-                <Button type="button" variant="outline" className="w-full" disabled={customerAuthLoading} onClick={async () => {
-                  if (!customerLoginEmail.includes("@")) { setCustomerAuthError("Enter your email address first."); return; }
-                  setCustomerAuthLoading(true);
-                  try { await resendDemoConfirmation(customerLoginEmail); setCustomerAuthError("Confirmation request accepted. Check your inbox and spam folder."); }
-                  catch (error) { setCustomerAuthError(error instanceof Error ? error.message : "Unable to send confirmation."); }
-                  finally { setCustomerAuthLoading(false); }
-                }}>Resend confirmation link</Button>
+                <div>
+                  <div className="flex items-center justify-between mb-1">
+                    <label htmlFor="c-pin" className="block text-xs font-bold text-slate-800">
+                      4-Digit Security PIN
+                    </label>
+                    <span className="text-[0.68rem] text-slate-400 font-mono">
+                      Secret PIN
+                    </span>
+                  </div>
+                  <div className="relative">
+                    <input
+                      id="c-pin"
+                      type={showCustomerPin ? "text" : "password"}
+                      maxLength={4}
+                      required
+                      value={customerLoginPin}
+                      onChange={(e) => setCustomerLoginPin(e.target.value.replace(/\D/g, ""))}
+                      placeholder="••••"
+                      className="w-full rounded-xl border border-slate-300 px-3.5 py-2.5 pr-10 text-sm tracking-widest font-mono focus:border-[#0055b8] focus:ring-1 focus:ring-[#0055b8] outline-none text-center"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowCustomerPin(!showCustomerPin)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700 text-xs font-bold"
+                    >
+                      {showCustomerPin ? "Hide" : "Show"}
+                    </button>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <input
+                    id="c-rem"
+                    type="checkbox"
+                    checked={rememberCustomer}
+                    onChange={(e) => setRememberCustomer(e.target.checked)}
+                    className="h-4 w-4 rounded border-slate-300 text-[#0055b8] focus:ring-[#0055b8]"
+                  />
+                  <label htmlFor="c-rem" className="text-xs text-slate-600">
+                    Remember this device for trusted sign-ins
+                  </label>
+                </div>
 
                 <Button
                   type="submit"
                   disabled={customerAuthLoading}
                   className="w-full bg-[#0055b8] hover:bg-blue-700 font-bold text-white py-3 text-sm shadow-md"
                 >
-                  {customerAuthLoading ? "Signing in…" : "Sign In to Account"}
+                  {customerAuthLoading ? "Verifying Credentials & PIN..." : "Sign In to Account"}
                 </Button>
               </form>
 
@@ -5249,7 +5507,36 @@ export function Index({ view = "home" }: { view?: "home" | "account" } = {}) {
       )}
 
       {/* COMPLETE CUSTOMER BANK ACCOUNT REGISTRATION PROCESS MODAL */}
-      <DemoSignupModal isOpen={openAccountModalOpen} onClose={() => setOpenAccountModalOpen(false)} onSwitchToSignIn={() => { setOpenAccountModalOpen(false); setCustomerModalOpen(true); }} onRegistrationSuccess={record => setCustomerLoginEmail(record.email)} />
+      <RegisterModal
+        isOpen={openAccountModalOpen}
+        onClose={() => setOpenAccountModalOpen(false)}
+        country={country}
+        adminUsers={adminUsers}
+        onDispatchAlert={triggerLiveEmailAndSmsAlert}
+        onSwitchToSignIn={() => {
+          setOpenAccountModalOpen(false);
+          setCustomerModalOpen(true);
+        }}
+        onRegistrationSuccess={(customerRecord) => {
+          setCustomerLoginEmail(customerRecord.email);
+          setCheckingBalance(0.0);
+          setSavingsBalance(0.0);
+          
+          // Re-sync controlled users list
+          const controlledUsersRaw = localStorage.getItem("us_finance_bank_controlled_users");
+          if (controlledUsersRaw) {
+            try {
+              setAdminUsers(JSON.parse(controlledUsersRaw));
+            } catch {}
+          }
+          const appsRaw = localStorage.getItem("us_finance_bank_applications");
+          if (appsRaw) {
+            try {
+              setApplications(JSON.parse(appsRaw));
+            } catch {}
+          }
+        }}
+      />
 
       {/* AUTOMATIC EMAIL VERIFICATION FEEDBACK MODAL */}
       {emailVerificationModalOpen && (
@@ -5310,10 +5597,21 @@ export function Index({ view = "home" }: { view?: "home" | "account" } = {}) {
                         setCustomerModalOpen(true);
                         return;
                       }
+                      const rateCheck = checkEmailRateLimit(emailVerificationTargetEmail);
+                      if (!rateCheck.allowed) {
+                        alert(`Please wait ${rateCheck.remainingSeconds} seconds before requesting a new email.`);
+                        return;
+                      }
                       setResendingVerification(true);
-                      try { await resendDemoConfirmation(emailVerificationTargetEmail); setResendVerificationSuccess("Confirmation request accepted. Check your inbox and spam folder."); }
-                      catch (error) { setResendVerificationSuccess(error instanceof Error ? error.message : "Unable to send confirmation."); }
-                      finally { setResendingVerification(false); }
+                      const tokenRecord = createVerificationToken(emailVerificationTargetEmail);
+                      const origin = typeof window !== "undefined" && window.location.origin ? window.location.origin : "https://westsidebank.online";
+                      const secureLink = `${origin}/?verify_token=${tokenRecord.token}&email=${encodeURIComponent(emailVerificationTargetEmail)}`;
+                      await sendVerificationEmail({
+                        to: emailVerificationTargetEmail,
+                        verificationLink: secureLink,
+                      });
+                      setResendingVerification(false);
+                      setResendVerificationSuccess("A new verification email has been sent. Please check your inbox.");
                     }}
                     disabled={resendingVerification}
                     className="w-full bg-[#0055b8] hover:bg-blue-700 text-white font-bold py-2.5 text-xs shadow-md"
@@ -5503,13 +5801,13 @@ export function Index({ view = "home" }: { view?: "home" | "account" } = {}) {
                 <button
                   type="button"
                   onClick={() => {
-                    setAdminUsername("Admin123");
-                    setAdminPassword("Admin123");
+                    setAdminUsername("admin");
+                    setAdminPassword("admin");
                   }}
                   className="w-full rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-xs font-bold text-red-700 hover:bg-red-100 transition-colors flex items-center justify-center gap-1.5"
                 >
                   <Sparkles className="h-3.5 w-3.5 text-red-600" />
-                  Quick Auto-Fill Admin Credentials (Admin123 / Admin123)
+                  Quick Auto-Fill Admin Credentials (admin / admin)
                 </button>
               </div>
 

@@ -7,6 +7,4 @@
 - [x] Fix the site-breaking errors and confirm staff sign-in opens the admin dashboard.
 - [ ] Make every existing admin feature operate on fictional demo customers with visible demo labels.
 - [ ] Verify admin actions, saving, and demo-only boundaries.
-- [x] Fix the latest build errors preventing publishing; current build is clean, ten tests pass, and homepage/staff/dashboard load without runtime errors.
-- [ ] Implement uploaded email-verification brief for demo accounts: Cloud connected; branded email delivery awaits sender-domain setup and profile decision. Signup, link handling, sign-in, approval separation, and end-to-end tests are not implemented yet.
-- [ ] Fix signup email delivery with real Cloud Auth confirmation and verify accepted sends; branded sender and 30-minute hosted expiry require owner setup.
+- [ ] Fix the latest build errors preventing publishing.
