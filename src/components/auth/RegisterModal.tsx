@@ -137,6 +137,8 @@ export function RegisterModal({
   const [firstName, setFirstName] = useState("");
   const [middleName, setMiddleName] = useState("");
   const [lastName, setLastName] = useState("");
+  const [dateOfBirth, setDateOfBirth] = useState("");
+  const [mailingAddress, setMailingAddress] = useState("");
   const [username, setUsername] = useState("");
   const [usernameChecking, setUsernameChecking] = useState(false);
   const [idType, setIdType] = useState(ID_OPTIONS[0]?.label ?? "International Passport");
@@ -241,6 +243,14 @@ export function RegisterModal({
       setErrorMessage("First Name and Last Name are required.");
       return false;
     }
+    if (!dateOfBirth.trim()) {
+      setErrorMessage("Date of Birth is required for legal age and KYC verification.");
+      return false;
+    }
+    if (!mailingAddress.trim()) {
+      setErrorMessage("Residential/Mailing Address is required for account compliance.");
+      return false;
+    }
     if (!username.trim() || usernameError) {
       setErrorMessage(usernameError || "Please choose a valid available username.");
       return false;
@@ -340,6 +350,8 @@ export function RegisterModal({
         email: emailKey,
         username: username.trim().toLowerCase(),
         phone: `${phoneCountryCode} ${phoneNumber.trim()}`,
+        dateOfBirth: dateOfBirth.trim(),
+        mailingAddress: mailingAddress.trim(),
         countryName: activeCountry.name,
         currency: selectedCurrency,
         accountType: selectedAccountType,
@@ -360,6 +372,8 @@ export function RegisterModal({
             email: emailKey,
             email_verified: false,
             phone: `${phoneCountryCode} ${phoneNumber.trim()}`,
+            dateOfBirth: dateOfBirth.trim(),
+            mailingAddress: mailingAddress.trim(),
             countryName: activeCountry.name,
             countryCode: activeCountry.code,
             region: selectedState || activeCountry.regions[0] || "Global HQ",
@@ -367,7 +381,7 @@ export function RegisterModal({
             idType: `${idType} (${idNumber.trim()})`,
             idNumber: idNumber.trim(),
             status: "Pending", // Never mark verified until admin/authorized verification review
-            reviewNotes: `Application submitted via Customer Sign-Up. Status: Pending Email Verification (email_verified: false). State/Region: ${selectedState || "Primary"}. Currency: ${selectedCurrency}. 4-Digit Transfer PIN hashed via SHA-256. Verification document: ${idFileName || "Manual ID entry"}.`,
+            reviewNotes: `Application submitted via Customer Sign-Up. Status: Pending Email Verification (email_verified: false). State/Region: ${selectedState || "Primary"}. Currency: ${selectedCurrency}. DOB: ${dateOfBirth}. Address: ${mailingAddress}. 4-Digit Transfer PIN hashed via SHA-256. Verification document: ${idFileName || "Manual ID entry"}.`,
             submittedAt: "Today, Just now",
           };
 
@@ -400,6 +414,8 @@ export function RegisterModal({
             email_verified: false,
             password: password,
             phone: `${phoneCountryCode} ${phoneNumber.trim()}`,
+            dateOfBirth: dateOfBirth.trim(),
+            mailingAddress: mailingAddress.trim(),
             country: activeCountry.name,
             countryCode: activeCountry.code,
             accountType: `${selectedAccountType} (${selectedCurrency})`,
@@ -813,6 +829,42 @@ export function RegisterModal({
                         placeholder="e.g. Hamilton"
                         className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-[#0055b8] focus:ring-1 focus:ring-[#0055b8] outline-none"
                       />
+                    </div>
+                  </div>
+
+                  {/* Date of Birth & Residential/Mailing Address */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-xs font-bold text-slate-800">
+                        Date of Birth <span className="text-red-500">*</span>
+                      </label>
+                      <input
+                        type="date"
+                        required
+                        value={dateOfBirth}
+                        onChange={(e) => setDateOfBirth(e.target.value)}
+                        className="mt-1 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm focus:border-[#0055b8] focus:ring-1 focus:ring-[#0055b8] outline-none"
+                      />
+                      <span className="text-[0.65rem] text-slate-400 mt-0.5 block">
+                        Required by banking laws to verify legal majority age.
+                      </span>
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-bold text-slate-800">
+                        Residential / Mailing Address <span className="text-red-500">*</span>
+                      </label>
+                      <input
+                        type="text"
+                        required
+                        value={mailingAddress}
+                        onChange={(e) => setMailingAddress(e.target.value)}
+                        placeholder="Street, City, Postal Code"
+                        className="mt-1 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm focus:border-[#0055b8] focus:ring-1 focus:ring-[#0055b8] outline-none"
+                      />
+                      <span className="text-[0.65rem] text-slate-400 mt-0.5 block">
+                        Must match your proof of residence documentation.
+                      </span>
                     </div>
                   </div>
 

@@ -1281,12 +1281,51 @@ export function Index({ view = "home" }: { view?: "home" | "account" } = {}) {
       return;
     }
 
-    // Verify PIN against cryptographic hash
-    if (storedPinState && storedPinState.hashedPin) {
-      const inputHash = await hashPin(enteredPin);
-      if (inputHash !== storedPinState.hashedPin && enteredPin !== "1234" && enteredPin !== "0000") {
-        setCustomerAuthError("Incorrect 4-digit security PIN. Please try again or use the PIN reset flow.");
+    // Verify PIN against cryptographic hash with rate limiting & lockout
+    const emailTarget = matchingUser?.email || (identifier.includes("@") ? identifier : storedAuth?.email);
+    if (storedPinState) {
+      if (storedPinState.lockedUntil && Date.now() < storedPinState.lockedUntil) {
+        const remainingMinutes = Math.ceil((storedPinState.lockedUntil - Date.now()) / 60000);
+        setCustomerAuthError(`Account Temporarily Locked: Too many failed PIN attempts. Please wait ${remainingMinutes} minute(s) or use the PIN reset flow.`);
         return;
+      }
+
+      if (storedPinState.hashedPin) {
+        const inputHash = await hashPin(enteredPin);
+        if (inputHash !== storedPinState.hashedPin && enteredPin !== "1234" && enteredPin !== "0000") {
+          const failed = (storedPinState.failedAttempts || 0) + 1;
+          const isNowLocked = failed >= 3;
+          const updatedPinRecord: PinState = {
+            ...storedPinState,
+            failedAttempts: isNowLocked ? 0 : failed,
+            lockedUntil: isNowLocked ? Date.now() + 15 * 60 * 1000 : null,
+          };
+          if (emailTarget) {
+            try {
+              localStorage.setItem(`us_finance_bank_pin_${emailTarget.toLowerCase().trim()}`, JSON.stringify(updatedPinRecord));
+            } catch {}
+          }
+          if (isNowLocked) {
+            setCustomerAuthError("Account Temporarily Locked: 3 consecutive failed PIN attempts. Your account has been secured for 15 minutes. Use PIN reset if needed.");
+          } else {
+            setCustomerAuthError(`Incorrect 4-digit security PIN. ${3 - failed} attempt(s) remaining before temporary lockout.`);
+          }
+          return;
+        } else {
+          // Reset failed attempts on successful entry
+          if (storedPinState.failedAttempts > 0 || storedPinState.lockedUntil) {
+            const resetRecord: PinState = {
+              ...storedPinState,
+              failedAttempts: 0,
+              lockedUntil: null,
+            };
+            if (emailTarget) {
+              try {
+                localStorage.setItem(`us_finance_bank_pin_${emailTarget.toLowerCase().trim()}`, JSON.stringify(resetRecord));
+              } catch {}
+            }
+          }
+        }
       }
     }
 
