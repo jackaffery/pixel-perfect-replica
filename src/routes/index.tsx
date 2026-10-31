@@ -75,7 +75,7 @@ import {
 } from "@/lib/international-banking";
 import { WIRE_TRANSFER_COUNTRIES, type WireCountry } from "@/lib/wire-countries";
 import { hashPin, type PinState } from "@/lib/pin-security";
-import { DemoAuthModal } from "@/components/auth/DemoAuthModal";
+import { RegisterModal } from "@/components/auth/RegisterModal";
 import { SoloAdminDashboard } from "@/components/admin/SoloAdminDashboard";
 import {
   validateAndConsumeToken,
@@ -2908,14 +2908,6 @@ export function Index({ view = "home" }: { view?: "home" | "account" } = {}) {
                   <LogIn className="mr-1.5 h-4 w-4 text-accent" />
                   {t.signIn}
                 </Button>
-                <a
-                  href="/staff"
-                  className="inline-flex items-center gap-1.5 rounded-lg border border-red-500/40 bg-red-600/10 hover:bg-red-600/20 text-red-600 dark:text-red-400 px-3 py-1.5 text-xs font-bold transition-all shadow-xs"
-                  title="Staff Sign In • Solo Admin Console"
-                >
-                  <SlidersHorizontal className="h-3.5 w-3.5 text-red-600 shrink-0" />
-                  <span>Staff Sign In</span>
-                </a>
               </>
             )}
           </div>
@@ -3043,16 +3035,6 @@ export function Index({ view = "home" }: { view?: "home" | "account" } = {}) {
                 >
                   {t.signIn}
                 </Button>
-              </li>
-              <li className="pt-1">
-                <a
-                  href="/staff"
-                  onClick={() => setMobileMenuOpen(false)}
-                  className="flex items-center gap-2 rounded-lg border border-red-500/30 bg-red-50 text-red-700 px-3 py-2 text-xs font-bold transition-colors w-full"
-                >
-                  <SlidersHorizontal className="h-4 w-4 text-red-600 shrink-0" />
-                  <span>Staff Sign In (Solo Admin)</span>
-                </a>
               </li>
 
               {/* Mobile Dedicated Currency & Language Selection with Graphic SVG Flags */}
@@ -5455,14 +5437,6 @@ export function Index({ view = "home" }: { view?: "home" | "account" } = {}) {
                       Check Application Status
                     </button>
                   </li>
-                  <li>
-                    <a
-                      href="/staff"
-                      className="hover:text-white flex items-center gap-1.5 text-white/90 font-medium underline-offset-2 hover:underline"
-                    >
-                      <SlidersHorizontal className="h-3 w-3 text-red-400" /> Staff Sign In (Solo Admin)
-                    </a>
-                  </li>
                 </ul>
               </div>
 
@@ -5507,19 +5481,8 @@ export function Index({ view = "home" }: { view?: "home" | "account" } = {}) {
         </footer>
       )}
 
-      {/* DEMO CUSTOMER SIGN IN — email + password against real accounts */}
+      {/* REAL BANK CUSTOMER SIGN IN — Two-Step (Username/Password -> 4-Digit PIN) */}
       {customerModalOpen && (
-        <DemoAuthModal
-          key="signin"
-          mode="signin"
-          onClose={() => setCustomerModalOpen(false)}
-          onSwitch={() => {
-            setCustomerModalOpen(false);
-            setOpenAccountModalOpen(true);
-          }}
-        />
-      )}
-      {false && (
         <div
           role="dialog"
           aria-modal="true"
@@ -5756,18 +5719,37 @@ export function Index({ view = "home" }: { view?: "home" | "account" } = {}) {
         </div>
       )}
 
-      {/* DEMO ACCOUNT SIGNUP — sends a real confirmation email */}
-      {openAccountModalOpen && (
-        <DemoAuthModal
-          key="signup"
-          mode="signup"
-          onClose={() => setOpenAccountModalOpen(false)}
-          onSwitch={() => {
-            setOpenAccountModalOpen(false);
-            setCustomerModalOpen(true);
-          }}
-        />
-      )}
+      {/* REAL BANK CUSTOMER REGISTRATION PROCESS MODAL */}
+      <RegisterModal
+        isOpen={openAccountModalOpen}
+        onClose={() => setOpenAccountModalOpen(false)}
+        country={country}
+        adminUsers={adminUsers}
+        onDispatchAlert={triggerLiveEmailAndSmsAlert}
+        onSwitchToSignIn={() => {
+          setOpenAccountModalOpen(false);
+          setCustomerModalOpen(true);
+        }}
+        onRegistrationSuccess={(customerRecord) => {
+          setCustomerLoginEmail(customerRecord.email);
+          setCheckingBalance(0.0);
+          setSavingsBalance(0.0);
+          
+          // Re-sync controlled users list
+          const controlledUsersRaw = localStorage.getItem("us_finance_bank_controlled_users");
+          if (controlledUsersRaw) {
+            try {
+              setAdminUsers(JSON.parse(controlledUsersRaw));
+            } catch {}
+          }
+          const appsRaw = localStorage.getItem("us_finance_bank_applications");
+          if (appsRaw) {
+            try {
+              setApplications(JSON.parse(appsRaw));
+            } catch {}
+          }
+        }}
+      />
 
       {/* AUTOMATIC EMAIL VERIFICATION FEEDBACK MODAL */}
       {emailVerificationModalOpen && (
