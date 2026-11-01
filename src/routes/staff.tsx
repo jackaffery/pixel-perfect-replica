@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState } from "react";
-import { SoloAdminDashboard } from "@/components/admin/SoloAdminDashboard";
+import { DemoAdminWorkspace } from "@/components/admin/DemoAdminWorkspace";
 import {
   ShieldCheck,
   ArrowLeft,
@@ -115,7 +115,7 @@ function StaffPortalPage() {
   };
 
   if (authenticated) {
-    return <SoloAdminDashboard onSignOut={handleSignOut} adminUsername={username || "Admin123"} />;
+    return <DemoAdminWorkspace onSignOut={handleSignOut} adminUsername={username || "Admin123"} />;
   }
 
   return (
