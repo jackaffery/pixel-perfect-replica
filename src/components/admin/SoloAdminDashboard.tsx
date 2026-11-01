@@ -576,8 +576,8 @@ export function SoloAdminDashboard({
       reason: reason || "Administrative action executed by Staff Admin",
     };
 
-    setAdminUsers((prev) =>
-      prev.map((u) =>
+    setAdminUsers((prev) => {
+      const updated = prev.map((u) =>
         u.id === userId
           ? {
               ...u,
@@ -590,8 +590,51 @@ export function SoloAdminDashboard({
               accessChangeHistory: [historyEntry, ...u.accessChangeHistory],
             }
           : u
-      )
-    );
+      );
+      persistAdminUsers(updated);
+      return updated;
+    });
+
+    // Synchronize status to customer portal storage & active sessions
+    if (typeof window !== "undefined") {
+      try {
+        const ctrlRaw = localStorage.getItem("us_finance_bank_controlled_users");
+        if (ctrlRaw) {
+          const ctrlList = JSON.parse(ctrlRaw);
+          const mappedStatus =
+            newStatus === "Suspended" || newStatus === "Closed"
+              ? "suspended"
+              : newStatus === "Restricted"
+              ? "frozen"
+              : "active";
+          const updatedCtrl = ctrlList.map((c: any) =>
+            c.id === userId || c.email?.toLowerCase() === user.email.toLowerCase()
+              ? { ...c, status: mappedStatus }
+              : c
+          );
+          localStorage.setItem("us_finance_bank_controlled_users", JSON.stringify(updatedCtrl));
+        }
+
+        const sessRaw = localStorage.getItem("us_finance_bank_customer_session");
+        if (sessRaw) {
+          const sess = JSON.parse(sessRaw);
+          if (sess.email?.toLowerCase() === user.email.toLowerCase()) {
+            if (newStatus === "Suspended" || newStatus === "Closed") {
+              sess.status = "Suspended";
+              sess.restricted = true;
+            } else if (newStatus === "Restricted") {
+              sess.status = "Frozen";
+              sess.restricted = true;
+            } else {
+              sess.status = "Active";
+              sess.restricted = false;
+            }
+            localStorage.setItem("us_finance_bank_customer_session", JSON.stringify(sess));
+          }
+        }
+        window.dispatchEvent(new Event("storage"));
+      } catch {}
+    }
 
     appendAuditLog(
       "Users",
