@@ -145,13 +145,22 @@
     border-color: var(--color-border);
   }
 
+  html,
+  body {
+    max-width: 100vw;
+    overflow-x: hidden;
+  }
+
   body {
     background-color: var(--color-background);
     color: var(--color-foreground);
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
   }
 
   html {
     scroll-padding-top: 7rem;
+    -webkit-tap-highlight-color: transparent;
   }
 
   :focus-visible {

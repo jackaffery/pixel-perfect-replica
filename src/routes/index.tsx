@@ -5486,9 +5486,9 @@ export function Index({ view = "home" }: { view?: "home" | "account" } = {}) {
         <div
           role="dialog"
           aria-modal="true"
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-4 backdrop-blur-sm animate-in fade-in duration-200"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-3 sm:p-4 backdrop-blur-sm animate-in fade-in duration-200 overflow-y-auto"
         >
-          <div className="relative w-full max-w-md rounded-2xl border border-white/20 bg-white shadow-2xl overflow-hidden">
+          <div className="relative w-full max-w-md my-auto max-h-[92vh] flex flex-col rounded-2xl border border-white/20 bg-white shadow-2xl overflow-hidden">
             {/* Bank Signature Navy Blue Header */}
             <div className="bg-[#0055b8] px-6 py-5 text-white flex items-center justify-between border-b border-blue-700">
               <div className="flex items-center gap-3">
@@ -5518,7 +5518,7 @@ export function Index({ view = "home" }: { view?: "home" | "account" } = {}) {
               </button>
             </div>
 
-            <div className="p-6 sm:p-7 space-y-4">
+            <div className="p-5 sm:p-7 space-y-4 overflow-y-auto">
               <div className="flex items-center justify-between text-xs text-slate-500 border-b border-slate-100 pb-2.5">
                 <div className="flex items-center gap-2">
                   <span className={`inline-flex items-center justify-center rounded-full text-[0.65rem] font-bold px-2 py-0.5 ${customerLoginStep === 1 ? 'bg-blue-100 text-blue-700' : 'bg-slate-100 text-slate-500'}`}>
@@ -5756,9 +5756,9 @@ export function Index({ view = "home" }: { view?: "home" | "account" } = {}) {
         <div
           role="dialog"
           aria-modal="true"
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-4 backdrop-blur-sm animate-in fade-in duration-200"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-3 sm:p-4 backdrop-blur-sm animate-in fade-in duration-200 overflow-y-auto"
         >
-          <div className="relative w-full max-w-md rounded-2xl border border-border bg-white p-6 shadow-2xl text-center space-y-4">
+          <div className="relative w-full max-w-md my-auto max-h-[92vh] overflow-y-auto rounded-2xl border border-border bg-white p-5 sm:p-6 shadow-2xl text-center space-y-4">
             {emailVerificationStatus === "success" ? (
               <>
                 <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-emerald-600 text-white shadow-lg shadow-emerald-600/30">
@@ -5845,9 +5845,9 @@ export function Index({ view = "home" }: { view?: "home" | "account" } = {}) {
         <div
           role="dialog"
           aria-modal="true"
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-xs"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-3 sm:p-4 backdrop-blur-xs overflow-y-auto"
         >
-          <div className="relative w-full max-w-md rounded-2xl border border-border bg-white p-7 shadow-2xl">
+          <div className="relative w-full max-w-md my-auto max-h-[92vh] overflow-y-auto rounded-2xl border border-border bg-white p-5 sm:p-7 shadow-2xl">
             <button
               type="button"
               onClick={() => {
@@ -5923,9 +5923,9 @@ export function Index({ view = "home" }: { view?: "home" | "account" } = {}) {
         <div
           role="dialog"
           aria-modal="true"
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-4 backdrop-blur-sm animate-in fade-in duration-200"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-3 sm:p-4 backdrop-blur-sm animate-in fade-in duration-200 overflow-y-auto"
         >
-          <div className="relative w-full max-w-lg rounded-2xl border border-white/20 bg-white shadow-2xl overflow-hidden">
+          <div className="relative w-full max-w-lg my-auto max-h-[92vh] flex flex-col rounded-2xl border border-white/20 bg-white shadow-2xl overflow-hidden">
             {/* Header: Home Page Navy Blue & Subtle Red Gold Accents */}
             <div className="bg-[#0055b8] px-6 py-5 text-white flex items-center justify-between border-b border-blue-700">
               <div className="flex items-center gap-3">
@@ -5956,7 +5956,7 @@ export function Index({ view = "home" }: { view?: "home" | "account" } = {}) {
               </button>
             </div>
 
-            <div className="p-6 sm:p-7 space-y-4">
+            <div className="p-5 sm:p-7 space-y-4 overflow-y-auto">
               {/* SEPARATE ADMIN WEB LINK BOX (Distinct from public home page) */}
               <div className="rounded-xl border border-blue-200 bg-blue-50/70 p-3.5 text-xs text-slate-800">
                 <div className="flex items-center justify-between mb-1.5">
@@ -6524,9 +6524,9 @@ export function Index({ view = "home" }: { view?: "home" | "account" } = {}) {
         <div
           role="dialog"
           aria-modal="true"
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-xs"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-3 sm:p-4 backdrop-blur-xs overflow-y-auto"
         >
-          <div className="relative w-full max-w-md rounded-2xl border border-border bg-white p-7 shadow-2xl">
+          <div className="relative w-full max-w-md my-auto max-h-[92vh] overflow-y-auto rounded-2xl border border-border bg-white p-5 sm:p-7 shadow-2xl">
             <button
               type="button"
               onClick={() => {
@@ -6659,9 +6659,9 @@ export function Index({ view = "home" }: { view?: "home" | "account" } = {}) {
         <div
           role="dialog"
           aria-modal="true"
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-xs"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-3 sm:p-4 backdrop-blur-xs overflow-y-auto"
         >
-          <div className="relative w-full max-w-md rounded-2xl border border-border bg-white p-7 shadow-2xl">
+          <div className="relative w-full max-w-md my-auto max-h-[92vh] overflow-y-auto rounded-2xl border border-border bg-white p-5 sm:p-7 shadow-2xl">
             <button
               type="button"
               onClick={() => {
@@ -6784,9 +6784,9 @@ export function Index({ view = "home" }: { view?: "home" | "account" } = {}) {
         <div
           role="dialog"
           aria-modal="true"
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-xs"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-3 sm:p-4 backdrop-blur-xs overflow-y-auto"
         >
-          <div className="relative w-full max-w-md rounded-2xl border border-border bg-white p-6 shadow-2xl text-foreground">
+          <div className="relative w-full max-w-md my-auto max-h-[92vh] overflow-y-auto rounded-2xl border border-border bg-white p-5 sm:p-6 shadow-2xl text-foreground">
             <button
               type="button"
               onClick={() => setPinResetModalOpen(false)}
