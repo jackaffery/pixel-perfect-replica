@@ -430,6 +430,79 @@ export function RegisterModal({
 
           localStorage.setItem("us_finance_bank_controlled_users", JSON.stringify([newControlledUser, ...controlledUsers]));
 
+          // Synchronize directly into us_finance_bank_users so the User Management table instantly reflects this new account
+          try {
+            const rawUsers = localStorage.getItem("us_finance_bank_users");
+            const userList = rawUsers ? JSON.parse(rawUsers) : [];
+            const newAdminUserRecord = {
+              id: generatedId,
+              name: legalFullName,
+              email: emailKey,
+              phone: `${phoneCountryCode} ${phoneNumber.trim()}`,
+              mailingAddress: mailingAddress.trim() || `${selectedState || "Main"}, ${activeCountry.name}`,
+              linkedCustomerId: `CUST-${generatedId.slice(-4)}`,
+              onlineAccessStatus: "Active",
+              verificationStatus: "Pending Review",
+              dateJoined: new Date().toISOString().slice(0, 10),
+              displayDateJoined: "Today, " + new Date().toLocaleDateString([], { month: "short", day: "numeric", year: "numeric" }),
+              checkingBalance: 0.0,
+              savingsBalance: 0.0,
+              security: {
+                twoFactorEnabled: false,
+                activeSessionsCount: 0,
+                lastSignIn: "Never",
+                lastSignInIp: "N/A",
+                passwordResetRequired: false,
+              },
+              communicationPreferences: {
+                emailAlerts: true,
+                smsNotifications: true,
+                paperlessStatements: true,
+                marketingUpdates: false,
+              },
+              adminNotes: [
+                `[${new Date().toLocaleDateString([], { month: "short", day: "numeric", year: "numeric" })} - System]: Customer successfully self-registered via Online Banking Portal. KYC: ${idType} (${idNumber.trim()}). Awaiting Admin Verification.`
+              ],
+              accessChangeHistory: [
+                {
+                  id: `HIS-${Date.now().toString().slice(-4)}`,
+                  timestamp: "Today, " + new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+                  actor: "System",
+                  action: "Customer Self-Registered",
+                  previousState: "None",
+                  newState: "Pending Verification / Active Access",
+                  reason: "Self-service registration form completed",
+                }
+              ],
+            };
+            const updatedUserList = [newAdminUserRecord, ...userList.filter((u: any) => u.email?.toLowerCase() !== emailKey)];
+            localStorage.setItem("us_finance_bank_users", JSON.stringify(updatedUserList));
+
+            // Also synchronize customers table for admin overview
+            const rawCusts = localStorage.getItem("us_finance_bank_customers");
+            const custList = rawCusts ? JSON.parse(rawCusts) : [];
+            const newCustomerRecord = {
+              id: `CUST-${generatedId.slice(-4)}`,
+              name: legalFullName,
+              email: emailKey,
+              phone: `${phoneCountryCode} ${phoneNumber.trim()}`,
+              country: activeCountry.name,
+              countryCode: activeCountry.code,
+              verificationStatus: "Pending Review",
+              riskLevel: "Low",
+              status: "Active",
+              idType: `${idType} (${idNumber.trim()})`,
+              idNumberMasked: "••••" + idNumber.slice(-4),
+              address: mailingAddress.trim() || `${selectedState || "Main"}, ${activeCountry.name}`,
+              joinedDate: "Today",
+              adminNotes: "Self-registered customer from public portal.",
+              linkedAccountIds: [`ACC-${generatedId.slice(-4)}-1`],
+            };
+            localStorage.setItem("us_finance_bank_customers", JSON.stringify([newCustomerRecord, ...custList.filter((c: any) => c.email?.toLowerCase() !== emailKey)]));
+          } catch (syncErr) {
+            console.error("Admin user sync error:", syncErr);
+          }
+
           // Initialize Customer Credentials record for username, password & PIN authentication
           try {
             const authRecord = {

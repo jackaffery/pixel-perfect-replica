@@ -190,11 +190,55 @@ export function SoloAdminDashboard({
         return [];
       }
       const saved = localStorage.getItem("us_finance_bank_users");
+      const ctrlSaved = localStorage.getItem("us_finance_bank_controlled_users");
+      let usersList: AdminUserRecord[] = [];
       if (saved) {
         try {
-          return JSON.parse(saved);
+          usersList = JSON.parse(saved);
         } catch {}
       }
+      // Merge any controlled users that are not yet in admin users
+      if (ctrlSaved) {
+        try {
+          const ctrlList = JSON.parse(ctrlSaved);
+          if (Array.isArray(ctrlList)) {
+            ctrlList.forEach((c: any) => {
+              if (c && c.email && !usersList.some((u) => u.email?.toLowerCase() === c.email.toLowerCase())) {
+                usersList.push({
+                  id: c.id || `USB-USR-${Math.floor(100000 + Math.random() * 900000)}`,
+                  name: c.name || "Registered Customer",
+                  email: c.email,
+                  phone: c.phone || "+1 (555) 000-0000",
+                  mailingAddress: c.mailingAddress || c.country || "Main Jurisdiction",
+                  linkedCustomerId: `CUST-${(c.id || "").slice(-4)}`,
+                  onlineAccessStatus: c.status === "suspended" ? "Suspended" : "Active",
+                  verificationStatus: c.status === "active" ? "Verified" : "Pending Review",
+                  dateJoined: new Date().toISOString().slice(0, 10),
+                  displayDateJoined: c.createdAt || ("Today, " + new Date().toLocaleDateString([], { month: "short", day: "numeric", year: "numeric" })),
+                  checkingBalance: c.checkingBalance || 0.0,
+                  savingsBalance: c.savingsBalance || 0.0,
+                  security: {
+                    twoFactorEnabled: false,
+                    activeSessionsCount: 0,
+                    lastSignIn: "Never",
+                    lastSignInIp: "N/A",
+                    passwordResetRequired: false,
+                  },
+                  communicationPreferences: {
+                    emailAlerts: true,
+                    smsNotifications: true,
+                    paperlessStatements: true,
+                    marketingUpdates: false,
+                  },
+                  adminNotes: [`[System]: Auto-synchronized from customer registrations. Status: ${c.status || "Pending"}`],
+                  accessChangeHistory: [],
+                });
+              }
+            });
+          }
+        } catch {}
+      }
+      return usersList;
     }
     return [];
   });
@@ -240,9 +284,50 @@ export function SoloAdminDashboard({
           setApplications(JSON.parse(e.newValue));
         } catch {}
       }
-      if (e.key === "us_finance_bank_users" && e.newValue) {
+      if ((e.key === "us_finance_bank_users" || e.key === "us_finance_bank_controlled_users") && e.newValue) {
         try {
-          setAdminUsers(JSON.parse(e.newValue));
+          const rawU = localStorage.getItem("us_finance_bank_users");
+          const rawC = localStorage.getItem("us_finance_bank_controlled_users");
+          const uList: AdminUserRecord[] = rawU ? JSON.parse(rawU) : [];
+          if (rawC) {
+            const cList = JSON.parse(rawC);
+            if (Array.isArray(cList)) {
+              cList.forEach((c: any) => {
+                if (c && c.email && !uList.some((u) => u.email?.toLowerCase() === c.email.toLowerCase())) {
+                  uList.push({
+                    id: c.id || `USB-USR-${Math.floor(100000 + Math.random() * 900000)}`,
+                    name: c.name || "Registered Customer",
+                    email: c.email,
+                    phone: c.phone || "+1 (555) 000-0000",
+                    mailingAddress: c.mailingAddress || c.country || "Main Jurisdiction",
+                    linkedCustomerId: `CUST-${(c.id || "").slice(-4)}`,
+                    onlineAccessStatus: c.status === "suspended" ? "Suspended" : "Active",
+                    verificationStatus: c.status === "active" ? "Verified" : "Pending Review",
+                    dateJoined: new Date().toISOString().slice(0, 10),
+                    displayDateJoined: c.createdAt || ("Today, " + new Date().toLocaleDateString([], { month: "short", day: "numeric", year: "numeric" })),
+                    checkingBalance: c.checkingBalance || 0.0,
+                    savingsBalance: c.savingsBalance || 0.0,
+                    security: {
+                      twoFactorEnabled: false,
+                      activeSessionsCount: 0,
+                      lastSignIn: "Never",
+                      lastSignInIp: "N/A",
+                      passwordResetRequired: false,
+                    },
+                    communicationPreferences: {
+                      emailAlerts: true,
+                      smsNotifications: true,
+                      paperlessStatements: true,
+                      marketingUpdates: false,
+                    },
+                    adminNotes: [`[System]: Auto-synchronized from customer registrations. Status: ${c.status || "Pending"}`],
+                    accessChangeHistory: [],
+                  });
+                }
+              });
+            }
+          }
+          setAdminUsers(uList);
         } catch {}
       }
       if (e.key === "us_finance_bank_alerts" && e.newValue) {
@@ -253,6 +338,11 @@ export function SoloAdminDashboard({
       if (e.key === "us_finance_bank_pending_profile_edits" && e.newValue) {
         try {
           setPendingProfileEdits(JSON.parse(e.newValue));
+        } catch {}
+      }
+      if (e.key === "us_finance_bank_customers" && e.newValue) {
+        try {
+          setCustomers(JSON.parse(e.newValue));
         } catch {}
       }
     };
@@ -1356,6 +1446,30 @@ export function SoloAdminDashboard({
 
     const updated = adminUsers.filter((u) => u.id !== userId);
     persistAdminUsers(updated);
+
+    // Also remove from controlled users and purge session if active
+    if (typeof window !== "undefined") {
+      try {
+        const ctrlRaw = localStorage.getItem("us_finance_bank_controlled_users");
+        if (ctrlRaw) {
+          const ctrlList = JSON.parse(ctrlRaw);
+          if (Array.isArray(ctrlList)) {
+            const filtered = ctrlList.filter((c: any) => c.id !== userId && c.email?.toLowerCase() !== userToDelete.email.toLowerCase());
+            localStorage.setItem("us_finance_bank_controlled_users", JSON.stringify(filtered));
+          }
+        }
+        const sessRaw = localStorage.getItem("us_finance_bank_customer_session");
+        if (sessRaw) {
+          const sess = JSON.parse(sessRaw);
+          if (sess.email?.toLowerCase() === userToDelete.email.toLowerCase()) {
+            localStorage.removeItem("us_finance_bank_customer_session");
+            localStorage.removeItem("us_finance_bank_active_customer");
+          }
+        }
+        window.dispatchEvent(new Event("storage"));
+      } catch {}
+    }
+
     appendAuditLog(
       "Users",
       "Deleted User Record",
@@ -1383,6 +1497,29 @@ export function SoloAdminDashboard({
     const targetUser = userToDeleteModal;
     const updated = adminUsers.filter((u) => u.id !== targetUser.id);
     persistAdminUsers(updated);
+
+    // Also remove from controlled users and purge session if active
+    if (typeof window !== "undefined") {
+      try {
+        const ctrlRaw = localStorage.getItem("us_finance_bank_controlled_users");
+        if (ctrlRaw) {
+          const ctrlList = JSON.parse(ctrlRaw);
+          if (Array.isArray(ctrlList)) {
+            const filtered = ctrlList.filter((c: any) => c.id !== targetUser.id && c.email?.toLowerCase() !== targetUser.email.toLowerCase());
+            localStorage.setItem("us_finance_bank_controlled_users", JSON.stringify(filtered));
+          }
+        }
+        const sessRaw = localStorage.getItem("us_finance_bank_customer_session");
+        if (sessRaw) {
+          const sess = JSON.parse(sessRaw);
+          if (sess.email?.toLowerCase() === targetUser.email.toLowerCase()) {
+            localStorage.removeItem("us_finance_bank_customer_session");
+            localStorage.removeItem("us_finance_bank_active_customer");
+          }
+        }
+        window.dispatchEvent(new Event("storage"));
+      } catch {}
+    }
 
     appendAuditLog(
       "Users",
@@ -1427,6 +1564,39 @@ export function SoloAdminDashboard({
     );
 
     persistAdminUsers(updatedUsers);
+
+    // Sync to controlled users and active customer sessions
+    if (typeof window !== "undefined") {
+      try {
+        const ctrlRaw = localStorage.getItem("us_finance_bank_controlled_users");
+        if (ctrlRaw) {
+          const ctrlList = JSON.parse(ctrlRaw);
+          const mappedStatus = targetStatus === "Suspended" ? "suspended" : "active";
+          const updatedCtrl = ctrlList.map((c: any) =>
+            c.id === user.id || c.email?.toLowerCase() === user.email.toLowerCase()
+              ? { ...c, status: mappedStatus }
+              : c
+          );
+          localStorage.setItem("us_finance_bank_controlled_users", JSON.stringify(updatedCtrl));
+        }
+
+        const sessRaw = localStorage.getItem("us_finance_bank_customer_session");
+        if (sessRaw) {
+          const sess = JSON.parse(sessRaw);
+          if (sess.email?.toLowerCase() === user.email.toLowerCase()) {
+            if (targetStatus === "Suspended") {
+              sess.status = "Suspended";
+              sess.restricted = true;
+            } else {
+              sess.status = "Active";
+              sess.restricted = false;
+            }
+            localStorage.setItem("us_finance_bank_customer_session", JSON.stringify(sess));
+          }
+        }
+        window.dispatchEvent(new Event("storage"));
+      } catch {}
+    }
 
     appendAuditLog(
       "Users",
@@ -1488,6 +1658,58 @@ export function SoloAdminDashboard({
     );
 
     persistAdminUsers(updatedUsers);
+
+    // Synchronize edits to controlled users list & active customer sessions
+    if (typeof window !== "undefined") {
+      try {
+        const ctrlRaw = localStorage.getItem("us_finance_bank_controlled_users");
+        if (ctrlRaw) {
+          const ctrlList = JSON.parse(ctrlRaw);
+          if (Array.isArray(ctrlList)) {
+            const mappedStatus =
+              editUserFormData.onlineAccessStatus === "Suspended"
+                ? "suspended"
+                : editUserFormData.verificationStatus === "Verified"
+                ? "active"
+                : "pending_kyc";
+            const updatedCtrl = ctrlList.map((c: any) =>
+              c.id === targetUser.id || c.email?.toLowerCase() === targetUser.email.toLowerCase()
+                ? {
+                    ...c,
+                    name: editUserFormData.name,
+                    email: editUserFormData.email,
+                    phone: editUserFormData.phone,
+                    mailingAddress: editUserFormData.mailingAddress,
+                    status: mappedStatus,
+                  }
+                : c
+            );
+            localStorage.setItem("us_finance_bank_controlled_users", JSON.stringify(updatedCtrl));
+          }
+        }
+
+        const sessRaw = localStorage.getItem("us_finance_bank_customer_session");
+        if (sessRaw) {
+          const sess = JSON.parse(sessRaw);
+          if (sess.email?.toLowerCase() === targetUser.email.toLowerCase()) {
+            sess.customerName = editUserFormData.name;
+            sess.email = editUserFormData.email;
+            if (editUserFormData.verificationStatus === "Verified") {
+              sess.kycStatus = "Verified";
+              sess.status = "Active";
+            }
+            if (editUserFormData.onlineAccessStatus === "Suspended") {
+              sess.status = "Suspended";
+              sess.restricted = true;
+            } else {
+              sess.restricted = false;
+            }
+            localStorage.setItem("us_finance_bank_customer_session", JSON.stringify(sess));
+          }
+        }
+        window.dispatchEvent(new Event("storage"));
+      } catch {}
+    }
 
     appendAuditLog(
       "Users",
