@@ -8,9 +8,9 @@ export const Route = createFileRoute("/profile")({
   head: () => ({
     meta: [
       { title: "My Profile | West Side Financial Institution" },
-      { name: "description", content: "Edit your demo profile details and profile picture." },
+      { name: "description", content: "Edit your profile details and profile picture." },
       { property: "og:title", content: "My Profile | West Side Financial Institution" },
-      { property: "og:description", content: "Demo profile settings." },
+      { property: "og:description", content: "Customer profile settings." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
       { name: "robots", content: "noindex" },
@@ -84,8 +84,10 @@ function ProfilePage() {
   return (
     <main className="min-h-screen bg-background p-6 text-foreground">
       <div className="mx-auto max-w-lg py-10">
-        <p className="text-sm font-semibold text-destructive">Demo — not a real bank</p>
-        <h1 className="my-4 text-2xl font-bold">My profile</h1>
+        <span className="text-[0.68rem] uppercase tracking-widest font-bold text-[#0055b8]">
+          West Side Financial Institution
+        </span>
+        <h1 className="my-2 text-2xl font-bold">My Profile</h1>
         {loading ? <p role="status">Loading…</p> : !userId ? (
           <div className="space-y-4"><p>Sign in to edit your profile.</p><Button asChild><Link to="/">Go to sign in</Link></Button></div>
         ) : (
