@@ -2441,7 +2441,7 @@ export function Index({ view = "home" }: { view?: "home" | "account" } = {}) {
         id: query,
         status: "Application Not Found",
         date: "N/A",
-        details: "No application matches this reference ID in the central system. Please ensure your ID starts with USB- or contact westsidebankassistance@westsidebank.online (+1-567-US).",
+        details: "No application matches this reference ID in the central system. Please ensure your ID starts with USB- or contact supportwestsidefinancialinstitution@westsidefinancialinstitution.online (+1-567-US).",
       });
     }
   };
@@ -2638,8 +2638,8 @@ export function Index({ view = "home" }: { view?: "home" | "account" } = {}) {
             <span className="hidden text-white/30 sm:inline">|</span>
             <span className="hidden text-white/80 md:inline items-center gap-1.5">
               <Mail className="h-3 w-3 text-accent inline mr-1" />
-              <a href="mailto:westsidebankassistance@westsidebank.online" className="text-white hover:underline">
-                westsidebankassistance@westsidebank.online
+              <a href="mailto:supportwestsidefinancialinstitution@westsidefinancialinstitution.online" className="text-white hover:underline">
+                supportwestsidefinancialinstitution@westsidefinancialinstitution.online
               </a>
             </span>
             <span className="hidden text-white/30 lg:inline">|</span>
@@ -5189,10 +5189,10 @@ export function Index({ view = "home" }: { view?: "home" | "account" } = {}) {
                       <div className="min-w-0">
                         <p className="text-xs text-muted-foreground">Official Assistance Email</p>
                         <a
-                          href="mailto:westsidebankassistance@westsidebank.online"
+                          href="mailto:supportwestsidefinancialinstitution@westsidefinancialinstitution.online"
                           className="text-sm font-extrabold text-accent hover:underline break-all"
                         >
-                          westsidebankassistance@westsidebank.online
+                          supportwestsidefinancialinstitution@westsidefinancialinstitution.online
                         </a>
                       </div>
                     </div>
@@ -5220,14 +5220,14 @@ export function Index({ view = "home" }: { view?: "home" | "account" } = {}) {
                       </span>
                       <div>
                         <p className="text-xs text-muted-foreground">Official Communications Desk</p>
-                        <p className="text-sm font-bold text-primary">westsidebankassistance@westsidebank.online</p>
+                        <p className="text-sm font-bold text-primary">supportwestsidefinancialinstitution@westsidefinancialinstitution.online</p>
                       </div>
                     </div>
                   </div>
 
                   <p className="mt-4 text-xs leading-relaxed text-muted-foreground border-t border-border/70 pt-3">
                     All authorized inquiries, verification documentation, and support tickets are coordinated via{" "}
-                    <strong className="text-primary">westsidebankassistance@westsidebank.online</strong> and hotline{" "}
+                    <strong className="text-primary">supportwestsidefinancialinstitution@westsidefinancialinstitution.online</strong> and hotline{" "}
                     <strong className="text-primary">+1-567-US</strong>.
                   </p>
                 </div>
@@ -5248,7 +5248,7 @@ export function Index({ view = "home" }: { view?: "home" | "account" } = {}) {
               <div className="rounded-2xl border border-border bg-white p-7 shadow-sm">
                 <h3 className="text-lg font-bold text-primary">Send an Inquiry to Official Support</h3>
                 <p className="mt-1 text-xs text-muted-foreground">
-                  Direct support: <strong className="text-primary">westsidebankassistance@westsidebank.online</strong> • Hotline: <strong className="text-primary">+1-567-US</strong>
+                  Direct support: <strong className="text-primary">supportwestsidefinancialinstitution@westsidefinancialinstitution.online</strong> • Hotline: <strong className="text-primary">+1-567-US</strong>
                 </p>
 
                 {contactSuccess ? (
@@ -5259,7 +5259,7 @@ export function Index({ view = "home" }: { view?: "home" | "account" } = {}) {
                     </h4>
                     <p className="mt-2 text-xs leading-relaxed text-emerald-800">
                       Thank you for contacting West Side Financial Institution. Your message has been routed to{" "}
-                      <strong>westsidebankassistance@westsidebank.online</strong> (Hotline: +1-567-US) with ticket #
+                      <strong>supportwestsidefinancialinstitution@westsidefinancialinstitution.online</strong> (Hotline: +1-567-US) with ticket #
                       {Math.floor(100000 + Math.random() * 900000)}.
                     </p>
                     <Button
@@ -5365,8 +5365,8 @@ export function Index({ view = "home" }: { view?: "home" | "account" } = {}) {
                 <div className="mt-4 space-y-1.5 text-xs">
                   <p className="text-white/90">
                     <span className="text-white/60">Email:</span>{" "}
-                    <a href="mailto:westsidebankassistance@westsidebank.online" className="text-accent font-bold hover:underline">
-                      westsidebankassistance@westsidebank.online
+                    <a href="mailto:supportwestsidefinancialinstitution@westsidefinancialinstitution.online" className="text-accent font-bold hover:underline">
+                      supportwestsidefinancialinstitution@westsidefinancialinstitution.online
                     </a>
                   </p>
                   <p className="text-white/90">
@@ -5453,7 +5453,7 @@ export function Index({ view = "home" }: { view?: "home" | "account" } = {}) {
 
             <div className="mt-10 border-t border-white/10 pt-6 text-xs text-white/60">
               <p className="leading-relaxed">
-                Official West Side Financial Institution portal. Contact: westsidebankassistance@westsidebank.online • Tel: +1-567-US. Treat the listed countries
+                Official West Side Financial Institution portal. Contact: supportwestsidefinancialinstitution@westsidefinancialinstitution.online • Tel: +1-567-US. Treat the listed countries
                 as the bank's intended service coverage, not as a claim of completed licensing or
                 charter. Country-specific compliance, tax reporting, and KYC frameworks are
                 customized per jurisdiction and subject to legal review before production launch.
@@ -5904,8 +5904,8 @@ export function Index({ view = "home" }: { view?: "home" | "account" } = {}) {
                 </p>
                 <div className="mt-3 text-[0.7rem] text-muted-foreground border-t border-border pt-2">
                   {statusSearchResult.date} • Need help? Contact{" "}
-                  <a href="mailto:westsidebankassistance@westsidebank.online" className="text-primary font-bold hover:underline">
-                    westsidebankassistance@westsidebank.online
+                  <a href="mailto:supportwestsidefinancialinstitution@westsidefinancialinstitution.online" className="text-primary font-bold hover:underline">
+                    supportwestsidefinancialinstitution@westsidefinancialinstitution.online
                   </a>{" "}
                   or call{" "}
                   <a href="tel:+1-567-US" className="text-primary font-bold hover:underline">

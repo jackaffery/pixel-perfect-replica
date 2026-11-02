@@ -253,7 +253,7 @@ export function buildVerificationEmailHtml(verificationLink: string, recipientNa
               <p style="font-size: 13px; line-height: 20px; color: #334155; margin: 24px 0 0 0;">
                 Warm regards,<br>
                 <strong>West Side Financial Institution Customer Support</strong><br>
-                <span style="font-size: 11px; color: #64748b;">westsidebankassistance@westsidebank.online • Hotline: +1-567-US</span>
+                <span style="font-size: 11px; color: #64748b;">supportwestsidefinancialinstitution@westsidefinancialinstitution.online • Hotline: +1-567-US</span>
               </p>
             </td>
           </tr>
@@ -298,7 +298,7 @@ If you did not create this account, you can safely ignore this email.
 For your security, this verification link will expire after 30 minutes and can only be used once.
 
 West Side Financial Institution Customer Support
-westsidebankassistance@westsidebank.online | +1-567-US`;
+supportwestsidefinancialinstitution@westsidefinancialinstitution.online | +1-567-US`;
 
   const now = new Date().toISOString();
 
