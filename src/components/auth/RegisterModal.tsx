@@ -33,6 +33,7 @@ import {
   sendVerificationEmail,
   checkEmailRateLimit,
 } from "@/lib/email-verification-service";
+import { supabase } from "@/integrations/supabase/client";
 
 export interface RegisterModalProps {
   isOpen: boolean;
@@ -460,6 +461,23 @@ export function RegisterModal({
             fullName: legalFullName,
           });
 
+          // Also trigger Supabase Cloud Auth confirmation email to guarantee actual inbox delivery
+          try {
+            await supabase.auth.signUp({
+              email: emailKey,
+              password,
+              options: {
+                emailRedirectTo: `${origin}/auth/callback`,
+                data: {
+                  username: username.trim().toLowerCase(),
+                  display_name: legalFullName,
+                },
+              },
+            });
+          } catch (cloudErr) {
+            console.warn("Cloud auth dispatch notice:", cloudErr);
+          }
+
           // Log delivery dispatch for staff compliance logs
           try {
             const dispatchesRaw = localStorage.getItem("westside_email_dispatch_log");
@@ -696,6 +714,15 @@ export function RegisterModal({
                         verificationLink: secureLink,
                         fullName: `${firstName.trim()} ${lastName.trim()}`,
                       });
+                      try {
+                        await supabase.auth.resend({
+                          type: "signup",
+                          email: email.toLowerCase().trim(),
+                          options: {
+                            emailRedirectTo: `${origin}/auth/callback`,
+                          },
+                        });
+                      } catch {}
                       alert("A new verification email has been sent. Please check your inbox.");
                     }}
                     className="inline-flex items-center justify-center gap-1.5 py-2 px-3 text-xs font-bold text-[#0055b8] bg-white border border-blue-300 rounded-lg hover:bg-blue-50 transition-colors"
