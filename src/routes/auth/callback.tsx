@@ -73,8 +73,8 @@ function Callback() {
 
           // 3. Establish active logged-in customer session
           const displayName =
-            user.user_metadata?.display_name ||
-            user.user_metadata?.username ||
+            user.user_metadata?.["display_name"] ||
+            user.user_metadata?.["username"] ||
             email.split('@')[0];
 
           const newSession = {
