@@ -694,7 +694,7 @@ export function SoloAdminDashboard({
           const mappedStatus =
             newStatus === "Suspended" || newStatus === "Closed"
               ? "suspended"
-              : newStatus === "Restricted"
+              : (newStatus as string) === "Restricted"
               ? "frozen"
               : "active";
           const updatedCtrl = ctrlList.map((c: any) =>
@@ -712,7 +712,7 @@ export function SoloAdminDashboard({
             if (newStatus === "Suspended" || newStatus === "Closed") {
               sess.status = "Suspended";
               sess.restricted = true;
-            } else if (newStatus === "Restricted") {
+            } else if ((newStatus as string) === "Restricted") {
               sess.status = "Frozen";
               sess.restricted = true;
             } else {
